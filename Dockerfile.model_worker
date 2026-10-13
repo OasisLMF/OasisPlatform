@@ -21,7 +21,7 @@ ARG oasislmf_branch
 RUN if [ -n "$oasislmf_branch" ]; then \
     pip uninstall oasislmf -y; \
     pip install --user --no-warn-script-location -v \
-      git+https://git@github.com/OasisLMF/OasisLMF.git@${oasislmf_branch}#egg=oasislmf[extra]; \
+      "oasislmf[extra] @ git+https://git@github.com/OasisLMF/OasisLMF.git@${oasislmf_branch}"; \
   fi
 
 # Install ODS-Tools from git branch (Optional): docker build --build-arg ods_tools_branch=develop
@@ -29,7 +29,7 @@ ARG ods_tools_branch
 RUN if [ -n "$ods_tools_branch" ]; then \
     pip uninstall ods-tools -y; \
     pip install --user --no-warn-script-location -v \
-      git+https://git@github.com/OasisLMF/ODS_Tools.git@${ods_tools_branch}#egg=ods-tools; \
+      "ods-tools @ git+https://git@github.com/OasisLMF/ODS_Tools.git@${ods_tools_branch}"; \
   fi
 
 # Install Oasis-Data-Manager from git branch (Optional): docker build --build-arg odm_branch=develop
@@ -37,7 +37,7 @@ ARG odm_branch
 RUN if [ -n "$odm_branch" ]; then \
     pip uninstall oasis-data-manager -y; \
     pip install --user --no-warn-script-location -v \
-      git+https://git@github.com/OasisLMF/OasisDataManager.git@${odm_branch}#egg=oasis-data-manager; \
+      "oasis-data-manager @ git+https://git@github.com/OasisLMF/OasisDataManager.git@${odm_branch}"; \
   fi
 
 # Normalise all installed file timestamps to epoch 0 so Numba's mtime-based

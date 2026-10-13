@@ -22,7 +22,7 @@ ARG ods_tools_branch
 RUN if [ ! -z "$ods_tools_branch" ] ; then \
     apk add --no-cache git; \
     pip uninstall ods-tools -y; \
-    pip install --user --no-warn-script-location -v git+https://git@github.com/OasisLMF/ODS_Tools.git@${ods_tools_branch}#egg=ods-tools; \
+    pip install --user --no-warn-script-location -v "ods-tools @ git+https://git@github.com/OasisLMF/ODS_Tools.git@${ods_tools_branch}"; \
   fi
 
 # Install Oasis-Data-Manager from git branch (Optional) 'docker build --build-arg odm_branch=develop'
@@ -30,7 +30,7 @@ ARG odm_branch
 RUN if [ ! -z "$odm_branch" ] ; then \
     apk add --no-cache git; \
     pip uninstall oasis-data-manager -y; \
-    pip install --user --no-warn-script-location -v git+https://git@github.com/OasisLMF/OasisDataManager.git@${odm_branch}#egg=oasis-data-manager; \
+    pip install --user --no-warn-script-location -v "oasis-data-manager @ git+https://git@github.com/OasisLMF/OasisDataManager.git@${odm_branch}"; \
   fi
 
 # Slim down site-packages: drop bundled test suites (scipy/numpy/etc) and strip debug symbols
