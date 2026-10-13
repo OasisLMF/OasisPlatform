@@ -36,6 +36,11 @@ RUN if [ ! -z "$odm_branch" ] ; then \
     pip install --user --no-warn-script-location -v git+https://git@github.com/OasisLMF/OasisDataManager.git@${odm_branch}#egg=oasis-data-manager; \
   fi
 
+# Slim down site-packages: drop bundled test suites (scipy/numpy/etc) and strip debug symbols
+# from compiled libs (llvmlite is built from source with debug info)
+RUN find /root/.local -type d -name tests -prune -exec rm -rf {} + \
+ && find /root/.local -name '*.so*' -type f -exec strip --strip-unneeded {} +
+
 # Stage the runtime filesystem in /rootfs
 #  - bash (startup scripts), curl (wait-for-server) and a minimal set of busybox applets
 #  - any shared libs needed by the above + compiled python packages, which are missing from the runtime image
