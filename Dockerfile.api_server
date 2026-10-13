@@ -40,14 +40,16 @@ RUN find /root/.local -type d -name tests -prune -exec rm -rf {} + \
 
 # Stage the runtime filesystem in /rootfs
 #  - bash (startup scripts), curl (wait-for-server) and a minimal set of busybox applets
+#  - MariaDB client auth plugins (dlopen'd at connect time, so not found by ldd)
 #  - any shared libs needed by the above + compiled python packages, which are missing from the runtime image
 COPY --from=runtime-base / /runtime-base
 RUN mkdir -p /rootfs/bin /rootfs/usr/bin \
  && cp /bin/bash /bin/busybox /rootfs/bin/ \
  && cp /usr/bin/curl /rootfs/usr/bin/ \
+ && mkdir -p /rootfs/usr/lib/mariadb && cp -a /usr/lib/mariadb/plugin /rootfs/usr/lib/mariadb/ \
  && for app in sh basename cat chmod cp date dirname env find grep head id ls mkdir mv ps rm sed sleep tail timeout tr wc; do ln -s /bin/busybox /rootfs/bin/$app; done \
  && ln -s /bin/busybox /rootfs/usr/bin/env \
- && { find /root/.local -type f \( -name '*.so' -o -name '*.so.[0-9]*' \); echo /bin/bash; echo /bin/busybox; echo /usr/bin/curl; } \
+ && { find /root/.local -type f \( -name '*.so' -o -name '*.so.[0-9]*' \); echo /bin/bash; echo /bin/busybox; echo /usr/bin/curl; ls /usr/lib/mariadb/plugin/*.so; } \
     | xargs -r -n1 ldd 2>/dev/null | awk '$2 == "=>" && $3 ~ /^\// {print $3}' | sort -u \
     | while read lib; do \
         [ -e "/runtime-base$lib" ] && continue; \
