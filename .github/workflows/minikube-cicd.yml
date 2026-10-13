@@ -37,7 +37,7 @@ jobs:
       OASIS_MODEL_DATA_DIR: /shared-fs/PIWIND
       ACTIONS_STEP_DEBUG: true
       oasislmf_branch: ${{ github.event_name != 'workflow_dispatch' && 'main' ||  inputs.oasislmf_branch }}
-      ods_branch: ${{ github.event_name != 'workflow_dispatch' && 'main' ||  inputs.ods_branch }}
+      ods_branch: ${{ github.event_name != 'workflow_dispatch' && 'feature/optional-numba' ||  inputs.ods_branch }}
       piwind_branch: ${{ github.event_name != 'workflow_dispatch' && 'main' ||  inputs.piwind_branch }}
 
     steps:
