@@ -6,7 +6,7 @@ Written in python as the hardened runtime image has no shell:
   1. wait for the server db, celery db and broker to accept TCP connections
   2. optionally run migrations (STARTUP_RUN_MIGRATIONS=true), with the Platform 2 fallback
   3. create / update the default admin user (set_default_user.py)
-  4. exec the container command, e.g. ./wsgi/run-wsgi.sh
+  4. exec the container command, e.g. ./wsgi/run-wsgi.py
 """
 import os
 import socket

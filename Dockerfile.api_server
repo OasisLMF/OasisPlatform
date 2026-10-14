@@ -56,7 +56,10 @@ COPY ./src/server ./src/server
 COPY ./src/common ./src/common
 COPY ./src/conf ./src/conf
 COPY ./VERSION ./VERSION
-RUN chmod +x ./asgi/run-asgi.sh ./wsgi/run-wsgi.sh \
+# run-wsgi.sh / run-asgi.sh symlinks kept for compatibility with deployments still using the old commands
+RUN chmod +x ./asgi/run-asgi.py ./wsgi/run-wsgi.py \
+ && ln -s run-wsgi.py ./wsgi/run-wsgi.sh \
+ && ln -s run-asgi.py ./asgi/run-asgi.sh \
  && OASIS_API_SECRET_KEY=supersecret python3 manage.py collectstatic --noinput
 
 COPY --chmod=755 ./src/startup_server.py /rootfs/usr/local/bin/startup
@@ -98,7 +101,7 @@ EXPOSE 8001
 EXPOSE 51970
 
 ENTRYPOINT ["startup"]
-CMD ["./wsgi/run-wsgi.sh"]
+CMD ["./wsgi/run-wsgi.py"]
 
 
 # ---- STAGE 2b: hardened flavour (default, must stay the last stage) ----
@@ -121,4 +124,4 @@ EXPOSE 8001
 EXPOSE 51970
 
 ENTRYPOINT ["startup"]
-CMD ["./wsgi/run-wsgi.sh"]
+CMD ["./wsgi/run-wsgi.py"]
