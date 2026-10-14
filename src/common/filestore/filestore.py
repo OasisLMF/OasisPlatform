@@ -60,8 +60,14 @@ def get_filestore(settings, section='worker', raise_error=True) -> Union[BaseSto
         )
     elif selected_storage in ['azure']:
         from oasis_data_manager.filestore.backends.azure_abfs import AzureABFSStorage
-        return AzureABFSStorage(
-            root_dir=settings.get(section, 'ROOT_DIR', fallback=""),
+        root_dir = settings.get(section, 'ROOT_DIR', fallback="")
+        storage_class = AzureABFSStorage
+        if section == 'worker' and not root_dir:
+            # Exchange container-relative keys with the server (model data keeps the location as its root)
+            from .azure import ContainerRootedAzureStorage
+            storage_class = ContainerRootedAzureStorage
+        return storage_class(
+            root_dir=root_dir,
             account_name=settings.get(section, 'AZURE_ACCOUNT_NAME'),
             account_key=settings.get(section, 'AZURE_ACCOUNT_KEY'),
             azure_container=settings.get(section, 'AZURE_CONTAINER'),
@@ -95,8 +101,9 @@ def remote_subdir(filestore, subdir):
 
     `AwsS3Storage.put()` prefixes `location` onto the returned key, but `delete_dir()`
     and the other path based calls do not, so a bare `subdir` misses the uploaded
-    objects whenever AWS_LOCATION is set. Other backends either have no `location`
-    or already include it in their root dir.
+    objects whenever AWS_LOCATION is set. `ContainerRootedAzureStorage` does the same
+    with AZURE_LOCATION. Other backends either have no `location` or already include
+    it in their root dir.
     """
     location = getattr(filestore, 'location', '') or ''
     if not subdir or not location:
