@@ -632,16 +632,15 @@ def mark_task_as_queued(analysis_id, slug, task_id, dt):
 
 @celery_app_v2.task(name='subtask_error_log')
 def subtask_error_log(analysis_id, initiator_id, slug, task_id, log_file):
+    # 'log_file' is a worker storage reference, copy it via 'store_file' (like the success
+    # path) - storing the raw key breaks on S3/Azure, where the server's own storage prefix
+    # gets prepended onto the worker's key and the file is never found.
+    initiator = get_user_model().objects.get(pk=initiator_id)
     AnalysisTaskStatus.objects.filter(
         analysis_id=analysis_id,
         slug=slug,
     ).update(
-        output_log=RelatedFile.objects.create(
-            file=str(log_file),
-            filename='{}-output.log'.format(task_id),
-            content_type='text/plain',
-            creator_id=initiator_id,
-        )
+        output_log=store_file(log_file, 'text/plain', initiator, filename='{}-output.log'.format(task_id))
     )
 
 
