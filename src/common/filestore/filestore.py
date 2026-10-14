@@ -1,4 +1,5 @@
 import logging
+import os
 from typing import Union
 
 from oasis_data_manager.errors import OasisException
@@ -87,3 +88,17 @@ def get_filestore(settings, section='worker', raise_error=True) -> Union[BaseSto
             raise OasisException('Invalid value for STORAGE_TYPE: {}'.format(selected_storage))
         else:
             return None
+
+
+def remote_subdir(filestore, subdir):
+    """Return the storage path that `filestore.put(..., subdir=subdir)` writes under.
+
+    `AwsS3Storage.put()` prefixes `location` onto the returned key, but `delete_dir()`
+    and the other path based calls do not, so a bare `subdir` misses the uploaded
+    objects whenever AWS_LOCATION is set. Other backends either have no `location`
+    or already include it in their root dir.
+    """
+    location = getattr(filestore, 'location', '') or ''
+    if not subdir or not location:
+        return subdir
+    return os.path.join(location, subdir)
