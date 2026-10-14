@@ -77,3 +77,11 @@ class AzureWorkerFilestore(TestCase):
 
         self.assertNotIsInstance(filestore, ContainerRootedAzureStorage)
         self.assertEqual(filestore.root_dir, 'container/custom')
+
+    def test_boolean_options_set_false___parsed_as_false(self):
+        filestore = get_filestore(self._settings(AZURE_SSL='False', AZURE_OVERWRITE_FILES='False', AZURE_SHARED_CONTAINER='False'))
+
+        self.assertIs(filestore.azure_ssl, False)
+        self.assertIs(filestore.overwrite_files, False)
+        self.assertIs(filestore.shared_container, False)
+        self.assertEqual(filestore.azure_protocol, 'http')
