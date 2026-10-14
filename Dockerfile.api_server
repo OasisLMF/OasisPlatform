@@ -11,8 +11,7 @@ FROM ${PYTHON_RUNTIME_IMAGE} AS runtime-base
 FROM ${PYTHON_BUILD_IMAGE} AS build-packages
 
 ENV PIP_BREAK_SYSTEM_PACKAGES=1
-RUN apk add --no-cache gcc g++ make musl-dev linux-headers pkgconf python3-dev mariadb-connector-c-dev \
-    bash curl mariadb-connector-c musl-utils git
+RUN apk add --no-cache gcc g++ make musl-dev linux-headers pkgconf python3-dev mariadb-connector-c-dev git
 
 COPY ./requirements-server.txt ./requirements-server.txt
 RUN pip install --user --no-warn-script-location -r ./requirements-server.txt && pip install --no-warn-script-location --user mysqlclient
@@ -38,25 +37,33 @@ RUN if [ ! -z "$odm_branch" ] ; then \
 RUN find /root/.local -type d -name tests -prune -exec rm -rf {} + \
  && find /root/.local -type f \( -name '*.so' -o -name '*.so.[0-9]*' \) -exec strip --strip-unneeded {} +
 
-# Stage the runtime filesystem in /rootfs
-#  - bash (startup scripts), curl (wait-for-server) and a minimal set of busybox applets
-#  - MariaDB client auth plugins (dlopen'd at connect time, so not found by ldd)
-#  - any shared libs needed by the above + compiled python packages, which are missing from the runtime image
+# Stage the runtime packages in /rootfs, apk resolves their dependencies into a separate root
+#  - bash (startup scripts), curl (wait-for-server), busybox (applets linked below)
+#  - mariadb-connector-c: libmariadb + auth plugins for mysqlclient (the only package built from source,
+#    python wheels bundle their own libs). Add the package here if another source build needs a system lib.
+# Files already in the runtime image are skipped (keeping its own musl, libcrypto etc.) and the new
+# packages are merged into its apk database so security scanners can see them.
+ARG RUNTIME_APK_PACKAGES="bash curl busybox mariadb-connector-c"
 COPY --from=runtime-base / /runtime-base
-RUN mkdir -p /rootfs/bin /rootfs/usr/bin \
- && cp /bin/bash /bin/busybox /rootfs/bin/ \
- && cp /usr/bin/curl /rootfs/usr/bin/ \
- && mkdir -p /rootfs/usr/lib/mariadb && cp -a /usr/lib/mariadb/plugin /rootfs/usr/lib/mariadb/ \
- && for app in sh basename cat chmod cp date dirname env find grep head id ls mkdir mv ps rm sed sleep tail timeout tr wc; do ln -s /bin/busybox /rootfs/bin/$app; done \
- && ln -s /bin/busybox /rootfs/usr/bin/env \
- && { find /root/.local -type f \( -name '*.so' -o -name '*.so.[0-9]*' \); echo /bin/bash; echo /bin/busybox; echo /usr/bin/curl; ls /usr/lib/mariadb/plugin/*.so; } \
-    | xargs -r -n1 ldd 2>/dev/null | awk '$2 == "=>" && $3 ~ /^\// {print $3}' | sort -u \
-    | while read lib; do \
-        [ -e "/runtime-base$lib" ] && continue; \
-        case "$lib" in /root/.local/*) continue ;; esac; \
-        mkdir -p "/rootfs$(dirname $lib)" && cp -L "$lib" "/rootfs$lib"; \
+RUN apk add --root /pkgroot --initdb --no-cache --no-scripts \
+      --keys-dir /etc/apk/keys --repositories-file /etc/apk/repositories \
+      ${RUNTIME_APK_PACKAGES} \
+ && cd /pkgroot \
+ && find . \( -type f -o -type l \) ! -path './lib/apk/*' ! -path './etc/apk/*' ! -path './var/*' \
+    | while read f; do \
+        { [ -e "/runtime-base/$f" ] || [ -L "/runtime-base/$f" ]; } && continue; \
+        mkdir -p "/rootfs/$(dirname "$f")" && cp -a "$f" "/rootfs/$f"; \
       done \
- && rm -rf /runtime-base
+ && mkdir -p /rootfs/lib/apk/db \
+ && awk 'NR == FNR { if (/^P:/) have[substr($0, 3)] = 1; next } \
+         /^C:/ { block = $0; next } \
+         /^P:/ { keep = !(substr($0, 3) in have); if (keep) print block } \
+         keep { print }' \
+      /runtime-base/lib/apk/db/installed /pkgroot/lib/apk/db/installed > /tmp/new-apk-entries \
+ && cat /runtime-base/lib/apk/db/installed /tmp/new-apk-entries > /rootfs/lib/apk/db/installed \
+ && for app in sh basename cat chmod cp date dirname env find grep head id ls mkdir mv ps rm sed sleep tail timeout tr wc; do ln -sf /bin/busybox /rootfs/bin/$app; done \
+ && ln -sf /bin/busybox /rootfs/usr/bin/env \
+ && cd / && rm -rf /runtime-base /pkgroot /tmp/new-apk-entries
 
 # OpenShift support: the user's primary group is root (0), runtime files are owned by ${USER_ID}:0
 # with group permissions matching the user's, so the image also runs under a random assigned UID
