@@ -377,7 +377,7 @@ class InputReuploadFilename(TestCase):
                 patch('src.model_execution_worker.distributed_tasks.filestore', LocalStorage(root_dir=tmp_dir)):
             self.assertEqual(input_reupload_filename('abc123.tar.gz'), 'abc123.tar.gz')
 
-            
+
 class WriteInputFiles(TestCase):
     """ The collected keys must reach oasislmf under the parameter names it reads,
         otherwise 'GenerateFiles' silently re-runs the full keys lookup on the
