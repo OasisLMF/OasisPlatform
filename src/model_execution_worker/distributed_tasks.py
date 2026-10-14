@@ -749,8 +749,8 @@ def collect_keys(
 def write_input_files(self, params, run_data_uuid=None, analysis_id=None, initiator_id=None, slug=None, **kwargs):
     # Load Collected keys data
     filestore.extract(params['keys_data'], params['target_dir'], params['storage_subdir'])
-    params['keys_data_csv'] = os.path.join(params['target_dir'], 'keys.csv')
-    params['keys_errors_csv'] = os.path.join(params['target_dir'], 'keys-errors.csv')
+    params['keys_data_path'] = os.path.join(params['target_dir'], 'keys.csv')
+    params['keys_errors_path'] = os.path.join(params['target_dir'], 'keys-errors.csv')
     params['oasis_files_dir'] = params['target_dir']
     from oasislmf.manager import OasisManager
     try:
