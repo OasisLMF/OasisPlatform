@@ -85,3 +85,13 @@ class AzureWorkerFilestore(TestCase):
         self.assertIs(filestore.overwrite_files, False)
         self.assertIs(filestore.shared_container, False)
         self.assertEqual(filestore.azure_protocol, 'http')
+
+    def test_azure_log_level___read_from_azure_option(self):
+        with patch.object(AzureABFSStorage, '__init__', return_value=None) as init:
+            get_filestore(self._settings(AZURE_LOG_LEVEL='DEBUG', AWS_LOG_LEVEL='WARNING'))
+            self.assertEqual(init.call_args.kwargs['azure_log_level'], 'DEBUG')
+
+    def test_azure_log_level_unset___falls_back_to_aws_option(self):
+        with patch.object(AzureABFSStorage, '__init__', return_value=None) as init:
+            get_filestore(self._settings(AWS_LOG_LEVEL='WARNING'))
+            self.assertEqual(init.call_args.kwargs['azure_log_level'], 'WARNING')

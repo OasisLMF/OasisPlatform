@@ -85,7 +85,7 @@ def get_filestore(settings, section='worker', raise_error=True) -> Union[BaseSto
             sas_token=settings.get(section, 'AZURE_SAS_TOKEN', fallback=None),
             custom_domain=settings.get(section, 'AZURE_CUSTOM_DOMAIN', fallback=None),
             token_credential=settings.get(section, 'AZURE_TOKEN_CREDENTIAL', fallback=None),
-            azure_log_level=settings.get(section, 'AWS_LOG_LEVEL', fallback=logging.ERROR),
+            azure_log_level=settings.get(section, 'AZURE_LOG_LEVEL', fallback=settings.get(section, 'AWS_LOG_LEVEL', fallback=logging.ERROR)),
             cache_dir=settings.get(section, 'CACHE_DIR', fallback='/tmp/data-cache'),
             endpoint_url=settings.get(section, 'ENDPOINT_URL', fallback=None),
         )
