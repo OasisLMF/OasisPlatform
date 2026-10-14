@@ -1122,7 +1122,13 @@ def generate_losses_output(self, params, analysis_id=None, slug=None, **kwargs):
         input_files_added = True
 
     if input_files_added:
-        filestore.put(res['oasis_files_dir'], filename=input_reupload_filename(res['input_location_storage']))
+        if res.get('input-location_generate-and-run'):
+            # generate_and_run: 'input_location_storage' is this worker's own inputs tarball, which
+            # record_input_files has already copied into analysis.input_file, so overwriting it changes
+            # nothing the server reads. Upload a fresh tarball for record_losses_files to store instead.
+            res['updated_input_location'] = filestore.put(res['oasis_files_dir'])
+        else:
+            filestore.put(res['oasis_files_dir'], filename=input_reupload_filename(res['input_location_storage']))
 
     output_dir = os.path.join(res['model_run_dir'], 'output')
     logs_dir = os.path.join(res['model_run_dir'], 'log')
