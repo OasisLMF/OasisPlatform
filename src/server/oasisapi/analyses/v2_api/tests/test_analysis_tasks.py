@@ -17,6 +17,7 @@ from pathlib2 import Path
 from .fakes import fake_analysis, fake_analysis_task_status
 from ...models import Analysis, AnalysisTaskStatus
 from ....auth.tests.fakes import fake_user
+from ....files.models import RelatedFile
 from ....files.v2_api.tests.fakes import fake_related_file
 from ...v2_api.tasks import (
     chord_error_callback, handle_task_failure, record_losses_files, record_sub_task_failure, record_sub_task_success, record_sub_task_start,
@@ -226,6 +227,31 @@ class RecordLossesFiles(TestCase):
                 store_file_mock.assert_any_call('fresh-inputs.tar.gz', 'application/gzip', initiator,
                                                 filename=f'analysis_{analysis.pk}_inputs.tar.gz')
                 self.assertEqual(analysis.input_file, stored)
+
+    def test_updated_input_location___replaced_input_file_is_deleted(self):
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d):
+                analysis, original_input_file, _, _, _ = self._record_losses_files(
+                    {'output_location': 'output.tar.gz', 'updated_input_location': 'fresh-inputs.tar.gz'})
+
+                self.assertTrue(Analysis.objects.filter(pk=analysis.pk).exists())
+                self.assertFalse(RelatedFile.objects.filter(pk=original_input_file.pk).exists())
+
+    def test_replaced_input_file_shared_with_another_analysis___not_deleted(self):
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d):
+                shared_input_file = fake_related_file()
+                other = fake_analysis(input_file=shared_input_file)
+                initiator = fake_user()
+                analysis = fake_analysis(input_file=shared_input_file)
+                with patch('src.server.oasisapi.analyses.v2_api.tasks.store_file', side_effect=lambda *a, **kw: fake_related_file()), \
+                        patch('src.server.oasisapi.analyses.v2_api.tasks.record_sub_task_start'):
+                    record_losses_files({'output_location': 'output.tar.gz', 'updated_input_location': 'fresh-inputs.tar.gz'},
+                                        analysis_id=analysis.pk, initiator_id=initiator.pk, slug='record-losses-files')
+
+                other.refresh_from_db()
+                self.assertEqual(other.input_file, shared_input_file)
+                self.assertTrue(RelatedFile.objects.filter(pk=shared_input_file.pk).exists())
 
     def test_no_updated_input_location___input_file_is_unchanged(self):
         with TemporaryDirectory() as d:
