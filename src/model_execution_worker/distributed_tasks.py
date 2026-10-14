@@ -8,7 +8,6 @@ import pathlib
 import tempfile
 import shutil
 from datetime import datetime
-from urllib.parse import urlparse
 
 import filelock
 import numpy as np
@@ -24,7 +23,7 @@ from oasislmf.utils.exceptions import OasisExceptionNoKeys
 from oasislmf.utils.status import OASIS_TASK_STATUS
 from pathlib2 import Path
 
-from ..common.filestore.filestore import get_filestore, strip_storage_location
+from ..common.filestore.filestore import get_filestore
 from ..conf import celeryconf_v2 as celery_conf
 from ..conf.iniconf import settings, settings_local
 from .celery_error_handler import OasisWorkerTask
@@ -884,7 +883,6 @@ def loss_generation_task(fn):
         if params.get('input-location_generate-and-run'):
             kwargs['input_location'] = params.get('input-location_generate-and-run')
         input_location = kwargs.get('input_location')
-        params['input_location_storage'] = input_location
 
         if input_location:
             maybe_extract_tar(
@@ -1067,18 +1065,6 @@ def generate_losses_chunk(self, params, chunk_idx, num_chunks, analysis_id=None,
         }
 
 
-def input_reupload_filename(input_ref):
-    """ Filename to pass to `filestore.put()` so it overwrites the stored inputs tarball in place.
-
-    `input_ref` is either a download URL (non-shared bucket) or a storage key that may
-    already carry the storage location prefix, which `put()` would otherwise apply a
-    second time (e.g. 'oasis/files/oasis/files/<name>').
-    """
-    if filestore._is_valid_url(input_ref):
-        input_ref = os.path.basename(urlparse(input_ref).path)
-    return strip_storage_location(filestore, input_ref)
-
-
 @app.task(bind=True, name='generate_losses_output', **celery_conf.worker_task_kwargs)
 @loss_generation_task
 def generate_losses_output(self, params, analysis_id=None, slug=None, **kwargs):
@@ -1122,13 +1108,11 @@ def generate_losses_output(self, params, analysis_id=None, slug=None, **kwargs):
         input_files_added = True
 
     if input_files_added:
-        if res.get('input-location_generate-and-run'):
-            # generate_and_run: 'input_location_storage' is this worker's own inputs tarball, which
-            # record_input_files has already copied into analysis.input_file, so overwriting it changes
-            # nothing the server reads. Upload a fresh tarball for record_losses_files to store instead.
-            res['updated_input_location'] = filestore.put(res['oasis_files_dir'])
-        else:
-            filestore.put(res['oasis_files_dir'], filename=input_reupload_filename(res['input_location_storage']))
+        # Upload a fresh tarball for record_losses_files to store as analysis.input_file. The input reference
+        # can't be overwritten in place: in generate_and_run it is this worker's own tarball (already copied by
+        # record_input_files), and otherwise it is a server key or URL that may sit under a different bucket or
+        # location than this worker's filestore.
+        res['updated_input_location'] = filestore.put(res['oasis_files_dir'])
 
     output_dir = os.path.join(res['model_run_dir'], 'output')
     logs_dir = os.path.join(res['model_run_dir'], 'log')

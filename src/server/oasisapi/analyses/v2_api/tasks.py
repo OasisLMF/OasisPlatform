@@ -402,7 +402,7 @@ def record_losses_files(self, result, analysis_id=None, initiator_id=None, slug=
 
     analysis.output_file = store_file(result['output_location'], 'application/gzip', initiator, filename=f'analysis_{analysis_id}_output.tar.gz')
 
-    # generate_and_run: inputs gained files during the loss run (e.g. occurrence.bin) after record_input_files stored them
+    # Inputs gained files during the loss run (e.g. occurrence.bin)
     if result.get('updated_input_location', None):
         analysis.input_file = store_file(result['updated_input_location'], 'application/gzip', initiator,
                                          filename=f'analysis_{analysis_id}_inputs.tar.gz')
