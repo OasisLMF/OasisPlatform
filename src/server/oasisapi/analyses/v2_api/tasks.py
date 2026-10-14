@@ -413,6 +413,11 @@ def record_losses_files(self, result, analysis_id=None, initiator_id=None, slug=
 
     # Only delete once nothing points at it, `input_file` cascades deletes to the analysis
     if replaced_input_file and not replaced_input_file.input_file_analyses.exists():
+        if replaced_input_file.file.name == analysis.input_file.file.name:
+            # Both were stored as 'analysis_<id>_inputs.tar.gz', so on S3/Azure the new copy overwrote the
+            # same object. Clear the name without signals so django_cleanup doesn't delete the new file.
+            RelatedFile.objects.filter(pk=replaced_input_file.pk).update(file='')
+            replaced_input_file = RelatedFile.objects.get(pk=replaced_input_file.pk)
         replaced_input_file.delete()
     return result
 

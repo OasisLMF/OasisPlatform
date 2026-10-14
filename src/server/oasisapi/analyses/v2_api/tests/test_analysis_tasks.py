@@ -237,6 +237,46 @@ class RecordLossesFiles(TestCase):
                 self.assertTrue(Analysis.objects.filter(pk=analysis.pk).exists())
                 self.assertFalse(RelatedFile.objects.filter(pk=original_input_file.pk).exists())
 
+    def test_replaced_input_file_has_a_different_name___its_stored_file_is_deleted(self):
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d):
+                initiator = fake_user()
+                analysis = fake_analysis(input_file=fake_related_file())
+                old_path = analysis.input_file.file.path
+                with self.captureOnCommitCallbacks(execute=True), \
+                        patch('src.server.oasisapi.analyses.v2_api.tasks.store_file', side_effect=lambda *a, **kw: fake_related_file()), \
+                        patch('src.server.oasisapi.analyses.v2_api.tasks.record_sub_task_start'):
+                    record_losses_files({'output_location': 'output.tar.gz', 'updated_input_location': 'fresh-inputs.tar.gz'},
+                                        analysis_id=analysis.pk, initiator_id=initiator.pk, slug='record-losses-files')
+
+                self.assertFalse(os.path.exists(old_path))
+
+    def test_replaced_input_file_has_the_same_storage_name___new_file_is_kept(self):
+        """ record_input_files and record_losses_files both store 'analysis_<id>_inputs.tar.gz', so on
+            S3/Azure the new copy overwrites the old object. Deleting the old row must not delete that object.
+        """
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d):
+                initiator = fake_user()
+                name = 'analysis_inputs.tar.gz'
+                Path(d, name).write_bytes(b'new inputs')
+                old_input_file = RelatedFile.objects.create(file=name, filename=name, content_type='application/gzip', creator=initiator)
+                analysis = fake_analysis(input_file=old_input_file)
+
+                def overwrite_in_place(*args, **kwargs):
+                    return RelatedFile.objects.create(file=name, filename=name, content_type='application/gzip', creator=initiator)
+
+                with self.captureOnCommitCallbacks(execute=True), \
+                        patch('src.server.oasisapi.analyses.v2_api.tasks.store_file', side_effect=overwrite_in_place), \
+                        patch('src.server.oasisapi.analyses.v2_api.tasks.record_sub_task_start'):
+                    record_losses_files({'output_location': 'output.tar.gz', 'updated_input_location': 'fresh-inputs.tar.gz'},
+                                        analysis_id=analysis.pk, initiator_id=initiator.pk, slug='record-losses-files')
+
+                analysis.refresh_from_db()
+                self.assertFalse(RelatedFile.objects.filter(pk=old_input_file.pk).exists())
+                self.assertEqual(analysis.input_file.file.name, name)
+                self.assertEqual(Path(d, name).read_bytes(), b'new inputs')
+
     def test_replaced_input_file_shared_with_another_analysis___not_deleted(self):
         with TemporaryDirectory() as d:
             with override_settings(MEDIA_ROOT=d):
