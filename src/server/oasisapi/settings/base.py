@@ -465,7 +465,7 @@ AZURE_ACCOUNT_KEY = iniconf.settings.get('server', 'AZURE_ACCOUNT_KEY', fallback
 AZURE_CUSTOM_DOMAIN = f'{AZURE_ACCOUNT_NAME}.blob.core.windows.net'
 AZURE_CONTAINER = iniconf.settings.get('server', 'AZURE_CONTAINER', fallback=None)
 AZURE_LOCATION = iniconf.settings.get('server', 'AZURE_LOCATION', fallback='')
-AZURE_SHARED_CONTAINER = iniconf.settings.get('server', 'AZURE_SHARED_CONTAINER', fallback=True)
+AZURE_SHARED_CONTAINER = iniconf.settings.getboolean('server', 'AZURE_SHARED_CONTAINER', fallback=True)
 AZURE_OVERWRITE_FILES = iniconf.settings.get('server', 'AZURE_OVERWRITE_FILES', fallback=True)
 
 # Optional Blob storage settings

@@ -66,7 +66,7 @@ def get_filestore(settings, section='worker', raise_error=True) -> Union[BaseSto
             azure_container=settings.get(section, 'AZURE_CONTAINER'),
             location=settings.get(section, 'AZURE_LOCATION', fallback=''),
             connection_string=settings.get(section, 'AZURE_CONNECTION_STRING', fallback=None),
-            shared_container=settings.get(section, 'AZURE_SHARED_CONTAINER', fallback=True),
+            shared_container=settings.getboolean(section, 'AZURE_SHARED_CONTAINER', fallback=True),
             azure_ssl=settings.get(section, 'AZURE_SSL', fallback=True),
             upload_max_conn=settings.get(section, 'AZURE_UPLOAD_MAX_CONN', fallback=2),
             timeout=settings.get(section, 'AZURE_CONNECTION_TIMEOUT_SECS', fallback=20),
