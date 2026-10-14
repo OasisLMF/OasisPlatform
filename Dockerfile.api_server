@@ -1,20 +1,20 @@
 # Docker Hardened Images (Alpine)
 #   build:   '-dev' variant, has a shell + apk for compiling packages
-#   runtime: no shell or package manager, so everything is staged in the build image
-#            and copied across (no RUN steps are possible in the final stage)
+#   runtime: no shell or package manager, so everything is staged in /rootfs in the build image
+#            and copied across (no RUN steps are possible in the final stage). Nothing is added
+#            to the runtime image's system packages: the entrypoint / run scripts are python and
+#            MySQL uses the pure python PyMySQL driver.
 ARG PYTHON_BUILD_IMAGE=dhi.io/python:3-alpine-dev
 ARG PYTHON_RUNTIME_IMAGE=dhi.io/python:3-alpine
-
-FROM ${PYTHON_RUNTIME_IMAGE} AS runtime-base
 
 # ---- STAGE 1 -----
 FROM ${PYTHON_BUILD_IMAGE} AS build-packages
 
 ENV PIP_BREAK_SYSTEM_PACKAGES=1
-RUN apk add --no-cache gcc g++ make musl-dev linux-headers pkgconf python3-dev mariadb-connector-c-dev git
+RUN apk add --no-cache gcc g++ make musl-dev linux-headers python3-dev git
 
 COPY ./requirements-server.txt ./requirements-server.txt
-RUN pip install --user --no-warn-script-location -r ./requirements-server.txt && pip install --no-warn-script-location --user mysqlclient
+RUN pip install --user --no-warn-script-location -r ./requirements-server.txt
 
 # Install ODS-Tools from git branch (Optional) 'docker build --build-arg ods_tools_branch=develop'
 ARG ods_tools_branch
@@ -37,38 +37,10 @@ RUN if [ ! -z "$odm_branch" ] ; then \
 RUN find /root/.local -type d -name tests -prune -exec rm -rf {} + \
  && find /root/.local -type f \( -name '*.so' -o -name '*.so.[0-9]*' \) -exec strip --strip-unneeded {} +
 
-# Stage the runtime packages in /rootfs, apk resolves their dependencies into a separate root
-#  - bash (startup scripts), curl (wait-for-server), busybox (applets linked below)
-#  - mariadb-connector-c: libmariadb + auth plugins for mysqlclient (the only package built from source,
-#    python wheels bundle their own libs). Add the package here if another source build needs a system lib.
-# Files already in the runtime image are skipped (keeping its own musl, libcrypto etc.) and the new
-# packages are merged into its apk database so security scanners can see them.
-ARG RUNTIME_APK_PACKAGES="bash curl busybox mariadb-connector-c"
-COPY --from=runtime-base / /runtime-base
-RUN apk add --root /pkgroot --initdb --no-cache --no-scripts \
-      --keys-dir /etc/apk/keys --repositories-file /etc/apk/repositories \
-      ${RUNTIME_APK_PACKAGES} \
- && cd /pkgroot \
- && find . \( -type f -o -type l \) ! -path './lib/apk/*' ! -path './etc/apk/*' ! -path './var/*' \
-    | while read f; do \
-        { [ -e "/runtime-base/$f" ] || [ -L "/runtime-base/$f" ]; } && continue; \
-        mkdir -p "/rootfs/$(dirname "$f")" && cp -a "$f" "/rootfs/$f"; \
-      done \
- && mkdir -p /rootfs/lib/apk/db \
- && awk 'NR == FNR { if (/^P:/) have[substr($0, 3)] = 1; next } \
-         /^C:/ { block = $0; next } \
-         /^P:/ { keep = !(substr($0, 3) in have); if (keep) print block } \
-         keep { print }' \
-      /runtime-base/lib/apk/db/installed /pkgroot/lib/apk/db/installed > /tmp/new-apk-entries \
- && cat /runtime-base/lib/apk/db/installed /tmp/new-apk-entries > /rootfs/lib/apk/db/installed \
- && for app in sh basename cat chmod cp date dirname env find grep head id ls mkdir mv ps rm sed sleep tail timeout tr wc; do ln -sf /bin/busybox /rootfs/bin/$app; done \
- && ln -sf /bin/busybox /rootfs/usr/bin/env \
- && cd / && rm -rf /runtime-base /pkgroot /tmp/new-apk-entries
-
 # OpenShift support: the user's primary group is root (0), runtime files are owned by ${USER_ID}:0
 # with group permissions matching the user's, so the image also runs under a random assigned UID
 ARG USER_ID=1000
-RUN adduser -D -u ${USER_ID} -G root -h /home/server -s /bin/bash server \
+RUN adduser -D -u ${USER_ID} -G root -h /home/server -s /sbin/nologin server \
  && mkdir -p /rootfs/etc \
  && cp /etc/passwd /etc/group /rootfs/etc/
 
@@ -87,15 +59,11 @@ COPY ./VERSION ./VERSION
 RUN chmod +x ./asgi/run-asgi.sh ./wsgi/run-wsgi.sh \
  && OASIS_API_SECRET_KEY=supersecret python3 manage.py collectstatic --noinput
 
-COPY --chmod=755 ./src/startup_server.sh /rootfs/usr/local/bin/startup
-COPY --chmod=755 ./src/utils/wait-for-it.sh /rootfs/usr/local/bin/wait-for-it
-COPY --chmod=755 ./src/utils/wait-for-server.sh /rootfs/usr/local/bin/wait-for-server
-COPY --chmod=755 ./src/utils/plat2-migration-helper.sh /rootfs/usr/local/bin/migration-helper.sh
-COPY ./src/utils/server_bashrc /rootfs/home/server/.bashrc
+COPY --chmod=755 ./src/startup_server.py /rootfs/usr/local/bin/startup
 
 # Stage the writable paths into /rootfs owned by ${USER_ID}:0 with group perms = user perms (g=u).
 # They're copied as part of /rootfs (not as COPY destinations) so the ownership and modes are kept.
-RUN mkdir -p /rootfs/var/www /rootfs/var/log/oasis /rootfs/shared-fs \
+RUN mkdir -p /rootfs/home/server /rootfs/var/www /rootfs/var/log/oasis /rootfs/shared-fs \
  && mv /root/.local /rootfs/home/server/.local \
  && cp -a /var/www/oasis /rootfs/var/www/oasis \
  && chown -R ${USER_ID}:0 /rootfs/home/server /rootfs/var/www/oasis /rootfs/var/log/oasis /rootfs/shared-fs \
@@ -104,8 +72,37 @@ RUN mkdir -p /rootfs/var/www /rootfs/var/log/oasis /rootfs/shared-fs \
  && chmod 777 /rootfs/var/log/oasis \
  && chmod 755 /rootfs /rootfs/home /rootfs/var /rootfs/var/www /rootfs/var/log
 
-# ---- STAGE 2 ----
-FROM runtime-base
+# ---- STAGE 2a: dev flavour ----
+# '-dev' base with a shell + apk for debugging, build with: docker build --target server-dev
+FROM ${PYTHON_BUILD_IMAGE} AS server-dev
+
+COPY --from=build-packages /rootfs /
+RUN apk add --no-cache bash busybox curl mariadb-connector-c
+# The dev image uses the original bash startup scripts (overriding the python 'startup' from /rootfs)
+COPY --chmod=755 ./src/startup_server.sh /usr/local/bin/startup
+COPY --chmod=755 ./src/utils/wait-for-it.sh /usr/local/bin/wait-for-it
+COPY --chmod=755 ./src/utils/plat2-migration-helper.sh /usr/local/bin/migration-helper.sh
+
+WORKDIR /var/www/oasis
+USER 1000
+ENV HOME=/home/server
+ENV PIP_BREAK_SYSTEM_PACKAGES=1
+ENV OASIS_SERVER_DB_ENGINE=django.db.backends.mysql
+ENV OASIS_MEDIA_ROOT=/shared-fs
+ENV OASIS_DEBUG=false
+ENV PATH=/home/server/.local/bin:$PATH
+
+EXPOSE 8000
+EXPOSE 8001
+EXPOSE 51970
+
+ENTRYPOINT ["startup"]
+CMD ["./wsgi/run-wsgi.sh"]
+
+
+# ---- STAGE 2b: hardened flavour (default, must stay the last stage) ----
+# Runtime base, no shell or package manager
+FROM ${PYTHON_RUNTIME_IMAGE} AS server
 
 COPY --from=build-packages /rootfs /
 

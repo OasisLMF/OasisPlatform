@@ -1,13 +1,15 @@
-#!/usr/bin/env bash
+#!/usr/bin/python3
+# Python, not bash, as the api_server image has no shell. The '.sh' name is kept so the
+# existing compose / helm commands ("./wsgi/run-wsgi.sh") keep working.
 
 # Gateway Config options
 # https://docs.gunicorn.org/en/stable/settings.html
+import os
 
-BIND_ADDR='0.0.0.0:8000'
-WORKERS=$(python3 -c "import os; print(len(os.sched_getaffinity(0)))" 2>/dev/null)
-WORKERS=${WORKERS:-1}
-TIMEOUT=600
-LOG_LEVEL='info'
+BIND_ADDR = '0.0.0.0:8000'
+WORKERS = len(os.sched_getaffinity(0)) or 1
+TIMEOUT = 600
+LOG_LEVEL = 'info'
 
-export GUNICORN_CMD_ARGS="--bind=$BIND_ADDR --workers=$WORKERS --timeout $TIMEOUT --log-level=$LOG_LEVEL"
-gunicorn src.server.oasisapi.wsgi
+os.environ['GUNICORN_CMD_ARGS'] = f'--bind={BIND_ADDR} --workers={WORKERS} --timeout {TIMEOUT} --log-level={LOG_LEVEL}'
+os.execvp('gunicorn', ['gunicorn', 'src.server.oasisapi.wsgi'])
