@@ -420,7 +420,12 @@ def keys_generation_task(fn):
 
         # Complex model lookup files
         if settings_file:
-            maybe_fetch_file(settings_file, params['lookup_complex_config_json'])
+            # Fetch to both paths - they can differ when set by the model config, and on a
+            # retry (e.g. after a worker crash) this task may start from an empty run dir,
+            # so it can't rely on an earlier task having left 'analysis_settings_json' here.
+            for settings_fp in {params.get('analysis_settings_json'), params.get('lookup_complex_config_json')}:
+                if settings_fp:
+                    maybe_fetch_file(settings_file, settings_fp)
         else:
             params['lookup_complex_config_json'] = None
             params['analysis_settings_json'] = None
@@ -750,8 +755,8 @@ def collect_keys(
 def write_input_files(self, params, run_data_uuid=None, analysis_id=None, initiator_id=None, slug=None, **kwargs):
     # Load Collected keys data
     filestore.extract(params['keys_data'], params['target_dir'], params['storage_subdir'])
-    params['keys_data_csv'] = os.path.join(params['target_dir'], 'keys.csv')
-    params['keys_errors_csv'] = os.path.join(params['target_dir'], 'keys-errors.csv')
+    params['keys_data_path'] = os.path.join(params['target_dir'], 'keys.csv')
+    params['keys_errors_path'] = os.path.join(params['target_dir'], 'keys-errors.csv')
     params['oasis_files_dir'] = params['target_dir']
     from oasislmf.manager import OasisManager
     try:

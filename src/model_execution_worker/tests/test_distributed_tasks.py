@@ -5,6 +5,7 @@ import pandas as pd
 import polars as pl
 from backports.tempfile import TemporaryDirectory
 from mock import patch
+from oasislmf.computation.generate.files import GenerateFiles
 from pathlib2 import Path
 
 from src.model_execution_worker.distributed_tasks import (
@@ -17,6 +18,7 @@ from src.model_execution_worker.distributed_tasks import (
     take_first,
     handle_task_failure,
     input_reupload_filename,
+    write_input_files,
 )
 from oasis_data_manager.filestore.backends.aws import AwsS3Storage
 from oasis_data_manager.filestore.backends.local import LocalStorage
@@ -374,3 +376,50 @@ class InputReuploadFilename(TestCase):
         with TemporaryDirectory() as tmp_dir, \
                 patch('src.model_execution_worker.distributed_tasks.filestore', LocalStorage(root_dir=tmp_dir)):
             self.assertEqual(input_reupload_filename('abc123.tar.gz'), 'abc123.tar.gz')
+
+            
+class WriteInputFiles(TestCase):
+    """ The collected keys must reach oasislmf under the parameter names it reads,
+        otherwise 'GenerateFiles' silently re-runs the full keys lookup on the
+        whole portfolio in a single task.
+    """
+
+    def _run_write_input_files(self, run_dir):
+        def extract_keys(archive, target_dir, subdir):
+            Path(target_dir).mkdir(parents=True, exist_ok=True)
+            Path(target_dir, 'keys.csv').write_text('LocID,PerilID,CoverageTypeID,AreaPerilID,VulnerabilityID\n')
+            Path(target_dir, 'keys-errors.csv').write_text('LocID,PerilID,CoverageTypeID,Status,Message\n')
+
+        def settings_get(section, option, fallback=None):
+            return run_dir if option == 'base_run_dir' else fallback
+
+        params = {'keys_data': 'keys-data.tar.gz', 'log_storage': {}}
+        with patch('src.model_execution_worker.distributed_tasks.TASK_LOG_DIR', run_dir), \
+                patch('src.model_execution_worker.distributed_tasks.settings.get', side_effect=settings_get), \
+                patch('src.model_execution_worker.distributed_tasks.notify_api_task_started'), \
+                patch('src.model_execution_worker.distributed_tasks.filestore') as filestore_mock, \
+                patch('oasislmf.manager.OasisManager') as manager_mock:
+            filestore_mock.extract.side_effect = extract_keys
+            write_input_files.run(params, analysis_id=1, run_data_uuid='run-uuid', slug='write-input-files')
+
+        manager_mock.return_value.generate_files.assert_called_once()
+        return manager_mock.return_value.generate_files.call_args.kwargs
+
+    def test_collected_keys_are_passed_to_generate_files(self):
+        with TemporaryDirectory() as run_dir:
+            generate_kwargs = self._run_write_input_files(run_dir)
+
+            target_dir = generate_kwargs['target_dir']
+            self.assertEqual(generate_kwargs['keys_data_path'], os.path.join(target_dir, 'keys.csv'))
+            self.assertEqual(generate_kwargs['keys_errors_path'], os.path.join(target_dir, 'keys-errors.csv'))
+
+    def test_generate_files_receives_pre_generated_keys___lookup_is_skipped(self):
+        # Build the real oasislmf step from the kwargs the worker passes, so a future
+        # rename of the keys parameters in oasislmf also fails this test
+        with TemporaryDirectory() as run_dir:
+            generate_kwargs = self._run_write_input_files(run_dir)
+            generate_files = GenerateFiles(**generate_kwargs)
+
+            target_dir = generate_kwargs['target_dir']
+            self.assertEqual(generate_files.keys_data_path, os.path.join(target_dir, 'keys.csv'))
+            self.assertEqual(generate_files.keys_errors_path, os.path.join(target_dir, 'keys-errors.csv'))
