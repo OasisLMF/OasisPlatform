@@ -82,6 +82,7 @@ RUN apk add --no-cache bash busybox curl mariadb-connector-c
 COPY --chmod=755 ./src/startup_server.sh /usr/local/bin/startup
 COPY --chmod=755 ./src/utils/wait-for-it.sh /usr/local/bin/wait-for-it
 COPY --chmod=755 ./src/utils/plat2-migration-helper.sh /usr/local/bin/migration-helper.sh
+COPY --chown=1000:0 ./src/utils/server_bashrc /home/server/.bashrc
 
 WORKDIR /var/www/oasis
 USER 1000
