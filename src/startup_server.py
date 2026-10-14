@@ -44,10 +44,18 @@ def log(msg):
 
 
 def wait_for(address, timeout=WAIT_TIMEOUT):
-    """Wait for 'host:port' to accept a TCP connection (same behaviour as wait-for-it.sh)"""
+    """
+    Wait for 'host:port' to accept a TCP connection (same behaviour as wait-for-it.sh).
+    Also accepts a URL, e.g. 'amqp://user:pass@broker:5672/vhost' waits for 'broker:5672'
+    """
+    if '://' in address:
+        address = address.split('://', 1)[1]
+        _, at, hostportpath = address.partition('@')
+        address = hostportpath if at else address
+        address = address.split('/', 1)[0]
     parts = address.split(':')
     host, port = parts[0], parts[1] if len(parts) > 1 else ''
-    if not host or not port:
+    if not host or not port.isdigit():
         log(f'wait-for-it: Error: you need to provide a host and port to test, got "{address}"')
         sys.exit(1)
 
