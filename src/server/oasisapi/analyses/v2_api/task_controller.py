@@ -341,6 +341,27 @@ class Controller:
         )
 
     @classmethod
+    def _join_stage_chains(cls, *stage_chains: chain) -> chain:
+        """
+        Joins stage chains into a single chain, keeping each stage's error callback
+
+        Each stage chain carries its 'handle_task_failure' errback on the chain itself, and
+        when a chord's header fails celery only calls the errbacks linked to the chord body.
+        Joining with chain(stage_a, stage_b) or stage_a | stage_b merges the next stage into
+        the body of stage_a's chord and drops the body's errbacks, so a failed lookup chunk
+        in generate_and_run never marks the analysis as failed.
+
+        Instead, unchain_tasks() copies each stage's errback onto its own tasks (and chord
+        bodies), and passing app= stops chain() merging the tasks into the chord body.
+
+        :param stage_chains: The stage chains to run in order
+        :return: The joined chain
+        """
+        from ...celery_app_v2 import v2 as celery_app_v2
+        tasks = [task for stage_chain in stage_chains for task in stage_chain.unchain_tasks()]
+        return chain(*tasks, app=celery_app_v2)
+
+    @classmethod
     def get_generate_inputs_queue(cls, analysis: 'Analysis', initiator: User) -> str:
         """
         Gets the name of the queue to send the input generation tasks to.
@@ -659,7 +680,7 @@ class Controller:
         analysis.analysis_chunks = losses.num_chunks
         cls._replace_subtask_statuses(analysis, inputs.statuses + losses.statuses)
 
-        task = chain(
+        task = cls._join_stage_chains(
             cls._create_stage_chain(analysis, initiator, inputs),
             cls._create_stage_chain(analysis, initiator, losses),
         ).delay({}, priority=analysis.priority, ignore_result=True)
