@@ -1,9 +1,11 @@
+import io
 import json
 import string
 import sys
 from importlib import reload
 from unittest.mock import MagicMock
 
+import pandas as pd
 from backports.tempfile import TemporaryDirectory
 from django.contrib.auth.models import Group
 from django.test import override_settings
@@ -1785,6 +1787,54 @@ class AnalysisLookupErrorsFile(WebTestMixin, TestCase):
 
                 self.assertEqual(response.body, file_content)
                 self.assertEqual(response.content_type, content_type)
+
+    def _get_lookup_errors_file(self, analysis, query=''):
+        return self.app.get(
+            analysis.get_absolute_lookup_errors_file_url(namespace=NAMESPACE) + query,
+            headers={
+                'Authorization': 'Bearer {}'.format(AccessToken.for_user(fake_user()))
+            },
+        )
+
+    def test_lookup_errors_file_stored_as_parquet___can_be_retrieved_as_csv(self):
+        errors_df = pd.DataFrame({'LocID': [1, 2], 'PerilID': ['WTC', 'WSS'], 'Message': ['no match', 'no match']})
+        buffer = io.BytesIO()
+        errors_df.to_parquet(buffer, index=False)
+
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d):
+                analysis = fake_analysis(lookup_errors_file=fake_related_file(
+                    file=buffer.getvalue(), content_type='application/octet-stream', filename='analysis_1_keys-errors.parquet'))
+
+                response = self._get_lookup_errors_file(analysis, '?file_format=csv')
+
+                self.assertEqual(response.content_type, 'text/csv')
+                self.assertIn('filename="analysis_1_keys-errors.csv"', response.headers['Content-Disposition'])
+                pd.testing.assert_frame_equal(pd.read_csv(io.StringIO(response.text)), errors_df)
+
+    def test_lookup_errors_file_stored_as_csv___can_be_retrieved_as_parquet(self):
+        errors_df = pd.DataFrame({'LocID': [1, 2], 'PerilID': ['WTC', 'WSS'], 'Message': ['no match', 'no match']})
+
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d):
+                analysis = fake_analysis(lookup_errors_file=fake_related_file(
+                    file=errors_df.to_csv(index=False), content_type='text/csv', filename='analysis_1_keys-errors.csv'))
+
+                response = self._get_lookup_errors_file(analysis, '?file_format=parquet')
+
+                self.assertEqual(response.content_type, 'application/octet-stream')
+                self.assertIn('filename="analysis_1_keys-errors.parquet"', response.headers['Content-Disposition'])
+                pd.testing.assert_frame_equal(pd.read_parquet(io.BytesIO(response.body)), errors_df)
+
+    def test_lookup_errors_file_requested_in_stored_format___is_returned_as_is(self):
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d):
+                analysis = fake_analysis(lookup_errors_file=fake_related_file(file=b'LocID\n1\n', content_type='text/csv'))
+
+                response = self._get_lookup_errors_file(analysis, '?file_format=csv')
+
+                self.assertEqual(response.body, b'LocID\n1\n')
+                self.assertEqual(response.content_type, 'text/csv')
 
 
 class AnalysisLookupSuccessFile(WebTestMixin, TestCase):

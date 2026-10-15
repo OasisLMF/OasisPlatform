@@ -9,6 +9,7 @@ from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
 
 from ..models import RelatedFile, list_tar_file, extract_file_from_tar
+from ..v1_api.views import convert_tabular_file
 from .serializers import RelatedFileSerializer, EXPOSURE_ARGS
 from ...permissions.group_auth import verify_user_is_in_obj_groups, resolve_user
 
@@ -55,6 +56,12 @@ def _handle_get_related_file(parent, field, request):
     else:
         download_name = f.filename if f.filename else f.file.name
         file_obj = f.file
+
+    # Non OED files (e.g. analysis lookup files) are converted without OED validation
+    if field not in EXPOSURE_ARGS:
+        response = convert_tabular_file(f.content_type, file_obj, download_name, file_format)
+        if response:
+            return response
 
     # Parquet format requested and data stored as csv
     if file_format == 'parquet' and f.content_type == 'text/csv':
