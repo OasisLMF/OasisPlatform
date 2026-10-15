@@ -484,7 +484,8 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         delete:
         Disassociates the portfolios `lookup_errors_file` contents
         """
-        return handle_related_file(self.get_object(), 'lookup_errors_file', request, ['text/csv', 'application/octet-stream'])
+        return handle_related_file(self.get_object(), 'lookup_errors_file', request, ['text/csv', 'application/octet-stream'],
+                                   default_file_format='csv')
 
     @extend_schema(responses={200: FILE_RESPONSE}, parameters=[FILE_FORMAT_PARAM])
     @action(methods=['get'], detail=True)
@@ -499,7 +500,8 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         delete:
         Disassociates the portfolios `lookup_success_file` contents
         """
-        return handle_related_file(self.get_object(), 'lookup_success_file', request, ['text/csv', 'application/octet-stream'])
+        return handle_related_file(self.get_object(), 'lookup_success_file', request, ['text/csv', 'application/octet-stream'],
+                                   default_file_format='csv')
 
     @extend_schema(responses={200: FILE_RESPONSE})
     @action(methods=['get'], detail=True)

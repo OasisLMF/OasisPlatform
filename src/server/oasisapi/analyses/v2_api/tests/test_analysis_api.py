@@ -1812,6 +1812,41 @@ class AnalysisLookupErrorsFile(WebTestMixin, TestCase):
                 self.assertIn('filename="analysis_1_keys-errors.csv"', response.headers['Content-Disposition'])
                 pd.testing.assert_frame_equal(pd.read_csv(io.StringIO(response.text)), errors_df)
 
+    def test_lookup_errors_file_stored_as_parquet___no_file_format___is_returned_as_csv(self):
+        errors_df = pd.DataFrame({'LocID': [1, 2], 'PerilID': ['WTC', 'WSS'], 'Message': ['no match', 'no match']})
+        buffer = io.BytesIO()
+        errors_df.to_parquet(buffer, index=False)
+
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d):
+                analysis = fake_analysis(lookup_errors_file=fake_related_file(
+                    file=buffer.getvalue(), content_type='application/octet-stream', filename='analysis_1_keys-errors.parquet'))
+
+                response = self._get_lookup_errors_file(analysis)
+
+                self.assertEqual(response.content_type, 'text/csv')
+                pd.testing.assert_frame_equal(pd.read_csv(io.StringIO(response.text)), errors_df)
+
+    def test_lookup_success_file_stored_as_parquet___no_file_format___is_returned_as_csv(self):
+        success_df = pd.DataFrame({'loc_id': [1, 2], 'peril_id': ['WTC', 'WSS']})
+        buffer = io.BytesIO()
+        success_df.to_parquet(buffer, index=False)
+
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d):
+                analysis = fake_analysis(lookup_success_file=fake_related_file(
+                    file=buffer.getvalue(), content_type='application/octet-stream', filename='gul_summary_map.parquet'))
+
+                response = self.app.get(
+                    analysis.get_absolute_lookup_success_file_url(namespace=NAMESPACE),
+                    headers={
+                        'Authorization': 'Bearer {}'.format(AccessToken.for_user(fake_user()))
+                    },
+                )
+
+                self.assertEqual(response.content_type, 'text/csv')
+                pd.testing.assert_frame_equal(pd.read_csv(io.StringIO(response.text)), success_df)
+
     def test_lookup_errors_file_stored_as_csv___can_be_retrieved_as_parquet(self):
         errors_df = pd.DataFrame({'LocID': [1, 2], 'PerilID': ['WTC', 'WSS'], 'Message': ['no match', 'no match']})
 

@@ -62,7 +62,7 @@ def convert_tabular_file(content_type, file_obj, download_name, file_format):
     return response
 
 
-def _handle_get_related_file(parent, field, request):
+def _handle_get_related_file(parent, field, request, default_file_format=None):
 
     # fetch file
     f = getattr(parent, field)
@@ -70,7 +70,7 @@ def _handle_get_related_file(parent, field, request):
         raise Http404()
 
     verify_user_is_in_obj_groups(request.user, f, 'You do not have permission to read this file')
-    file_format = request.GET.get('file_format', None)
+    file_format = request.GET.get('file_format', default_file_format)
 
     if 'converted' in request.GET:
         if not (f.converted_file and f.conversion_state == RelatedFile.ConversionState.DONE):
@@ -188,11 +188,12 @@ def _json_read_from_file(parent, field):
         return Response(json.load(f))
 
 
-def handle_related_file(parent, field, request, content_types, parquet_storage=False, serializer_class=RelatedFileSerializer):
+def handle_related_file(parent, field, request, content_types, parquet_storage=False, serializer_class=RelatedFileSerializer,
+                        default_file_format=None):
     method = request.method.lower()
 
     if method == 'get':
-        return _handle_get_related_file(parent, field, request)
+        return _handle_get_related_file(parent, field, request, default_file_format)
     elif method == 'post':
         return _handle_post_related_file(parent, field, request, content_types, parquet_storage, serializer_class)
     elif method == 'delete':
