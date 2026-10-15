@@ -5,7 +5,7 @@ __all__ = [
 from rest_framework import serializers
 from ..schemas.serializers import JsonSettingsSerializer
 
-from ods_tools.combine.combine import CombineSettingsSchema
+from ods_tools.combine.settings import CombineSettingsSchema
 
 
 class CombineSettingSerializer(JsonSettingsSerializer):
