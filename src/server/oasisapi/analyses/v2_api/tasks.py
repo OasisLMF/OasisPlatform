@@ -315,7 +315,7 @@ def record_input_files(self, result, analysis_id=None, initiator_id=None, run_da
 
     analysis.status = Analysis.status_choices.READY
     analysis.input_file = store_file(input_location, 'application/gzip', initiator, filename=f'analysis_{analysis_id}_inputs.tar.gz')
-    analysis.lookup_errors_file = store_file(lookup_error_fp, 'text/csv', initiator, filename=f'analysis_{analysis_id}_keys-errors.csv')
+    analysis.lookup_errors_file = store_lookup_errors_file(lookup_error_fp, initiator, analysis_id)
     analysis.lookup_success_file = store_file(lookup_success_fp, 'text/csv', initiator, filename=f'analysis_{analysis_id}_gul_summary_map.csv')
     analysis.lookup_validation_file = store_file(lookup_validation_fp, 'application/json', initiator,
                                                  filename=f'analysis_{analysis_id}_exposure_summary_report.json')
@@ -350,6 +350,14 @@ def record_input_files(self, result, analysis_id=None, initiator_id=None, run_da
     return result
 
 
+def store_lookup_errors_file(reference, initiator, analysis_id):
+    """ The worker writes keys errors as csv or parquet, depending on the model's 'keys_format'
+    """
+    if str(reference).endswith('.parquet'):
+        return store_file(reference, 'application/octet-stream', initiator, filename=f'analysis_{analysis_id}_keys-errors.parquet')
+    return store_file(reference, 'text/csv', initiator, filename=f'analysis_{analysis_id}_keys-errors.csv')
+
+
 @celery_app_v2.task(name='record_input_error_files')
 def record_input_error_files(analysis_id, initiator_id, output_location=None, lookup_error_location=None, **kwargs):
     """ If a V2 worker fails during oasis input file generate,
@@ -360,7 +368,7 @@ def record_input_error_files(analysis_id, initiator_id, output_location=None, lo
     if output_location:
         analysis.input_file = store_file(output_location, 'application/gzip', initiator, filename=f'analysis_{analysis_id}_inputs.tar.gz')
     if lookup_error_location:
-        analysis.lookup_errors_file = store_file(lookup_error_location, 'text/csv', initiator, filename=f'analysis_{analysis_id}_keys-errors.csv')
+        analysis.lookup_errors_file = store_lookup_errors_file(lookup_error_location, initiator, analysis_id)
 
     analysis.save(update_fields=["input_file", "lookup_errors_file"])
 

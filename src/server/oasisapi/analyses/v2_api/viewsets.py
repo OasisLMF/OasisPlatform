@@ -35,6 +35,7 @@ from ...schemas.custom_swagger import (
     SUBTASK_SLUG_PARAM,
     FILENAME_PARAM,
     FILE_LIST_RESPONSE,
+    FILE_FORMAT_PARAM,
 )
 
 
@@ -470,7 +471,7 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         """
         return handle_get_related_file_tar(self.get_object(), 'input_file', request, ['application/x-gzip', 'application/gzip', 'application/x-tar', 'application/tar'])
 
-    @extend_schema(responses={200: FILE_RESPONSE})
+    @extend_schema(responses={200: FILE_RESPONSE}, parameters=[FILE_FORMAT_PARAM])
     @action(methods=['get'], detail=True)
     def lookup_errors_file(self, request, pk=None, version=None):
         """
@@ -483,9 +484,10 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         delete:
         Disassociates the portfolios `lookup_errors_file` contents
         """
-        return handle_related_file(self.get_object(), 'lookup_errors_file', request, ['text/csv'])
+        return handle_related_file(self.get_object(), 'lookup_errors_file', request, ['text/csv', 'application/octet-stream'],
+                                   default_file_format='csv')
 
-    @extend_schema(responses={200: FILE_RESPONSE})
+    @extend_schema(responses={200: FILE_RESPONSE}, parameters=[FILE_FORMAT_PARAM])
     @action(methods=['get'], detail=True)
     def lookup_success_file(self, request, pk=None, version=None):
         """
@@ -498,7 +500,8 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         delete:
         Disassociates the portfolios `lookup_success_file` contents
         """
-        return handle_related_file(self.get_object(), 'lookup_success_file', request, ['text/csv'])
+        return handle_related_file(self.get_object(), 'lookup_success_file', request, ['text/csv', 'application/octet-stream'],
+                                   default_file_format='csv')
 
     @extend_schema(responses={200: FILE_RESPONSE})
     @action(methods=['get'], detail=True)
