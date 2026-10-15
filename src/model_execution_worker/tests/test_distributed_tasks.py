@@ -19,6 +19,7 @@ from src.model_execution_worker.distributed_tasks import (
     handle_task_failure,
     generate_losses_output,
     write_input_files,
+    get_keys_format,
 )
 
 
@@ -410,16 +411,24 @@ class WriteInputFiles(TestCase):
         whole portfolio in a single task.
     """
 
-    def _run_write_input_files(self, run_dir):
+    def _run_write_input_files(self, run_dir, keys_format=None):
         def extract_keys(archive, target_dir, subdir):
             Path(target_dir).mkdir(parents=True, exist_ok=True)
-            Path(target_dir, 'keys.csv').write_text('LocID,PerilID,CoverageTypeID,AreaPerilID,VulnerabilityID\n')
-            Path(target_dir, 'keys-errors.csv').write_text('LocID,PerilID,CoverageTypeID,Status,Message\n')
+            keys = pl.DataFrame(schema=['LocID', 'PerilID', 'CoverageTypeID', 'AreaPerilID', 'VulnerabilityID'])
+            errors = pl.DataFrame(schema=['LocID', 'PerilID', 'CoverageTypeID', 'Status', 'Message'])
+            if keys_format == 'oasis':
+                keys.write_csv(str(Path(target_dir, 'keys.csv')))
+                errors.write_csv(str(Path(target_dir, 'keys-errors.csv')))
+            else:
+                keys.write_parquet(str(Path(target_dir, 'keys.parquet')))
+                errors.write_parquet(str(Path(target_dir, 'keys-errors.parquet')))
 
         def settings_get(section, option, fallback=None):
             return run_dir if option == 'base_run_dir' else fallback
 
         params = {'keys_data': 'keys-data.tar.gz', 'log_storage': {}}
+        if keys_format:
+            params['keys_format'] = keys_format
         with patch('src.model_execution_worker.distributed_tasks.TASK_LOG_DIR', run_dir), \
                 patch('src.model_execution_worker.distributed_tasks.settings.get', side_effect=settings_get), \
                 patch('src.model_execution_worker.distributed_tasks.notify_api_task_started'), \
@@ -436,6 +445,14 @@ class WriteInputFiles(TestCase):
             generate_kwargs = self._run_write_input_files(run_dir)
 
             target_dir = generate_kwargs['target_dir']
+            self.assertEqual(generate_kwargs['keys_data_path'], os.path.join(target_dir, 'keys.parquet'))
+            self.assertEqual(generate_kwargs['keys_errors_path'], os.path.join(target_dir, 'keys-errors.parquet'))
+
+    def test_oasis_keys_format___csv_keys_are_passed_to_generate_files(self):
+        with TemporaryDirectory() as run_dir:
+            generate_kwargs = self._run_write_input_files(run_dir, keys_format='oasis')
+
+            target_dir = generate_kwargs['target_dir']
             self.assertEqual(generate_kwargs['keys_data_path'], os.path.join(target_dir, 'keys.csv'))
             self.assertEqual(generate_kwargs['keys_errors_path'], os.path.join(target_dir, 'keys-errors.csv'))
 
@@ -447,5 +464,20 @@ class WriteInputFiles(TestCase):
             generate_files = GenerateFiles(**generate_kwargs)
 
             target_dir = generate_kwargs['target_dir']
-            self.assertEqual(generate_files.keys_data_path, os.path.join(target_dir, 'keys.csv'))
-            self.assertEqual(generate_files.keys_errors_path, os.path.join(target_dir, 'keys-errors.csv'))
+            self.assertEqual(generate_files.keys_data_path, os.path.join(target_dir, 'keys.parquet'))
+            self.assertEqual(generate_files.keys_errors_path, os.path.join(target_dir, 'keys-errors.parquet'))
+
+
+class GetKeysFormat(TestCase):
+    def test_missing_keys_format___defaults_to_parquet(self):
+        self.assertEqual(get_keys_format({}), ('parquet', 'parquet'))
+
+    def test_oasis_keys_format___uses_csv(self):
+        self.assertEqual(get_keys_format({'keys_format': 'oasis'}), ('oasis', 'csv'))
+
+    def test_keys_format_is_case_insensitive(self):
+        self.assertEqual(get_keys_format({'keys_format': 'Parquet'}), ('parquet', 'parquet'))
+
+    def test_json_keys_format___falls_back_to_csv(self):
+        # chunk merging only handles tabular formats
+        self.assertEqual(get_keys_format({'keys_format': 'json'}), ('oasis', 'csv'))

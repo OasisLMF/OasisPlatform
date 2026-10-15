@@ -1,7 +1,9 @@
 import json
 import io
+import os
 from tempfile import TemporaryFile
 
+import pandas as pd
 from django.core.files import File
 from django.http import StreamingHttpResponse, Http404
 from rest_framework.response import Response
@@ -34,7 +36,33 @@ def _get_chunked_content(f, chunk_size=1024):
         content = f.read(chunk_size)
 
 
-def _handle_get_related_file(parent, field, request):
+def convert_tabular_file(content_type, file_obj, download_name, file_format):
+    """ Return a response with a csv file as parquet or a parquet file as csv,
+        or None when no conversion is needed.
+    """
+    if file_format == 'parquet' and content_type == 'text/csv':
+        df, ext, out_content_type = pd.read_csv(file_obj), '.parquet', 'application/octet-stream'
+    elif file_format == 'csv' and content_type == 'application/octet-stream':
+        df, ext, out_content_type = pd.read_parquet(file_obj), '.csv', 'text/csv'
+    else:
+        return None
+
+    output_buffer = io.BytesIO()
+    if ext == '.parquet':
+        df.to_parquet(output_buffer, index=False)
+    else:
+        df.to_csv(output_buffer, index=False)
+    output_buffer.seek(0)
+
+    name, current_ext = os.path.splitext(os.path.basename(download_name))
+    if current_ext not in ('.csv', '.parquet'):
+        name += current_ext
+    response = StreamingHttpResponse(output_buffer, content_type=out_content_type)
+    response['Content-Disposition'] = 'attachment; filename="{}{}"'.format(name, ext)
+    return response
+
+
+def _handle_get_related_file(parent, field, request, default_file_format=None):
 
     # fetch file
     f = getattr(parent, field)
@@ -42,7 +70,7 @@ def _handle_get_related_file(parent, field, request):
         raise Http404()
 
     verify_user_is_in_obj_groups(request.user, f, 'You do not have permission to read this file')
-    file_format = request.GET.get('file_format', None)
+    file_format = request.GET.get('file_format', default_file_format)
 
     if 'converted' in request.GET:
         if not (f.converted_file and f.conversion_state == RelatedFile.ConversionState.DONE):
@@ -53,6 +81,12 @@ def _handle_get_related_file(parent, field, request):
     else:
         download_name = f.filename if f.filename else f.file.name
         file_obj = f.file
+
+    # Non OED files (e.g. analysis lookup files) are converted without OED validation
+    if field not in EXPOSURE_ARGS:
+        response = convert_tabular_file(f.content_type, file_obj, download_name, file_format)
+        if response:
+            return response
 
     # Parquet format requested and data stored as csv
     if file_format == 'parquet' and f.content_type == 'text/csv':
@@ -154,11 +188,12 @@ def _json_read_from_file(parent, field):
         return Response(json.load(f))
 
 
-def handle_related_file(parent, field, request, content_types, parquet_storage=False, serializer_class=RelatedFileSerializer):
+def handle_related_file(parent, field, request, content_types, parquet_storage=False, serializer_class=RelatedFileSerializer,
+                        default_file_format=None):
     method = request.method.lower()
 
     if method == 'get':
-        return _handle_get_related_file(parent, field, request)
+        return _handle_get_related_file(parent, field, request, default_file_format)
     elif method == 'post':
         return _handle_post_related_file(parent, field, request, content_types, parquet_storage, serializer_class)
     elif method == 'delete':
