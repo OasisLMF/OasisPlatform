@@ -451,7 +451,7 @@ AWS_QUERYSTRING_AUTH = iniconf.settings.getboolean('server', 'AWS_QUERYSTRING_AU
 AWS_QUERYSTRING_EXPIRE = iniconf.settings.get('server', 'AWS_QUERYSTRING_EXPIRE', fallback=604800)
 
 # When 'True' return the bucket object key instead of URL, this assumes a shared bucket between workers and server
-AWS_SHARED_BUCKET = iniconf.settings.getboolean('server', 'AWS_SHARED_BUCKET', fallback=False)
+AWS_SHARED_BUCKET = iniconf.settings.getboolean('server', 'AWS_SHARED_BUCKET', fallback=True)
 
 # General optimization for faster delivery
 AWS_IS_GZIPPED = True
