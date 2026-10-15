@@ -199,9 +199,9 @@ oasis-data-manager==0.2.3
     #   -r requirements-worker.in
     #   oasislmf
     #   ods-tools
-oasislmf[extra]==2.5.8
+oasislmf[extra] @ git+https://github.com/OasisLMF/OasisLMF.git@testing/saas-2.5.9-rc 
     # via -r requirements-worker.in
-ods-tools==5.0.9
+ods-tools[extra] @ git+https://github.com/OasisLMF/ODS_Tools.git@main
     # via oasislmf
 packaging==25.0
     # via
