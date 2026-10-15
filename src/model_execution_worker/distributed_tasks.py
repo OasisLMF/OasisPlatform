@@ -23,7 +23,7 @@ from oasislmf.utils.exceptions import OasisExceptionNoKeys
 from oasislmf.utils.status import OASIS_TASK_STATUS
 from pathlib2 import Path
 
-from ..common.filestore.filestore import get_filestore
+from ..common.filestore.filestore import get_filestore, remote_subdir
 from ..conf import celeryconf_v2 as celery_conf
 from ..conf.iniconf import settings, settings_local
 from .celery_error_handler import OasisWorkerTask
@@ -805,7 +805,7 @@ def cleanup_input_generation(self, params, analysis_id=None, initiator_id=None, 
         shutil.rmtree(params['target_dir'], ignore_errors=True)
     if not settings.getboolean('worker', 'KEEP_REMOTE_DATA', fallback=False):
         # Delete remote copy of run data
-        filestore.delete_dir(params['storage_subdir'])
+        filestore.delete_dir(remote_subdir(filestore, params['storage_subdir']))
         # Delete pre-analysis files
         if params.get('pre_loc_file'):
             filestore.delete_file(params.get('pre_loc_file'))
@@ -883,7 +883,6 @@ def loss_generation_task(fn):
         if params.get('input-location_generate-and-run'):
             kwargs['input_location'] = params.get('input-location_generate-and-run')
         input_location = kwargs.get('input_location')
-        params['input_location_storage'] = input_location
 
         if input_location:
             maybe_extract_tar(
@@ -1109,7 +1108,11 @@ def generate_losses_output(self, params, analysis_id=None, slug=None, **kwargs):
         input_files_added = True
 
     if input_files_added:
-        filestore.put(res['oasis_files_dir'], filename=res['input_location_storage'])
+        # Upload a fresh tarball for record_losses_files to store as analysis.input_file. The input reference
+        # can't be overwritten in place: in generate_and_run it is this worker's own tarball (already copied by
+        # record_input_files), and otherwise it is a server key or URL that may sit under a different bucket or
+        # location than this worker's filestore.
+        res['updated_input_location'] = filestore.put(res['oasis_files_dir'])
 
     output_dir = os.path.join(res['model_run_dir'], 'output')
     logs_dir = os.path.join(res['model_run_dir'], 'log')
@@ -1129,7 +1132,7 @@ def cleanup_losses_generation(self, params, analysis_id=None, slug=None, **kwarg
         shutil.rmtree(params['root_run_dir'], ignore_errors=True)
     if not settings.getboolean('worker', 'KEEP_REMOTE_DATA', fallback=False):
         # Delete remote copy of run data
-        filestore.delete_dir(params['storage_subdir'])
+        filestore.delete_dir(remote_subdir(filestore, params['storage_subdir']))
     params['log_location'] = filestore.put(kwargs.get('log_filename'))
     return params
 
@@ -1188,4 +1191,4 @@ def handle_task_failure(*args, sender=None, task_id=None, **kwargs):
     dir_remote_data = task_params.get('storage_subdir')
     if not keep_remote_data:
         logger.info(f"deleting remote data, {dir_remote_data}")
-        filestore.delete_dir(dir_remote_data)
+        filestore.delete_dir(remote_subdir(filestore, dir_remote_data))

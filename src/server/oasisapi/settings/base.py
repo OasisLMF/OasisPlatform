@@ -443,7 +443,7 @@ AWS_QUERYSTRING_AUTH = iniconf.settings.getboolean('server', 'AWS_QUERYSTRING_AU
 AWS_QUERYSTRING_EXPIRE = iniconf.settings.get('server', 'AWS_QUERYSTRING_EXPIRE', fallback=604800)
 
 # When 'True' return the bucket object key instead of URL, this assumes a shared bucket between workers and server
-AWS_SHARED_BUCKET = iniconf.settings.getboolean('server', 'AWS_SHARED_BUCKET', fallback=False)
+AWS_SHARED_BUCKET = iniconf.settings.getboolean('server', 'AWS_SHARED_BUCKET', fallback=True)
 
 # General optimization for faster delivery
 AWS_IS_GZIPPED = True
@@ -465,12 +465,12 @@ AZURE_ACCOUNT_KEY = iniconf.settings.get('server', 'AZURE_ACCOUNT_KEY', fallback
 AZURE_CUSTOM_DOMAIN = f'{AZURE_ACCOUNT_NAME}.blob.core.windows.net'
 AZURE_CONTAINER = iniconf.settings.get('server', 'AZURE_CONTAINER', fallback=None)
 AZURE_LOCATION = iniconf.settings.get('server', 'AZURE_LOCATION', fallback='')
-AZURE_SHARED_CONTAINER = iniconf.settings.get('server', 'AZURE_SHARED_CONTAINER', fallback=True)
-AZURE_OVERWRITE_FILES = iniconf.settings.get('server', 'AZURE_OVERWRITE_FILES', fallback=True)
+AZURE_SHARED_CONTAINER = iniconf.settings.getboolean('server', 'AZURE_SHARED_CONTAINER', fallback=True)
+AZURE_OVERWRITE_FILES = iniconf.settings.getboolean('server', 'AZURE_OVERWRITE_FILES', fallback=True)
 
 # Optional Blob storage settings
 AZURE_LOG_LEVEL = iniconf.settings.get('server', 'AZURE_LOG_LEVEL', fallback="")
-AZURE_SSL = iniconf.settings.get('server', 'AZURE_SSL', fallback=True)
+AZURE_SSL = iniconf.settings.getboolean('server', 'AZURE_SSL', fallback=True)
 
 # WARNING, adding default settings with 'None' casues storage adapter to break
 # AZURE_UPLOAD_MAX_CONN = iniconf.settings.get('server', 'AZURE_UPLOAD_MAX_CONN', fallback=2)
