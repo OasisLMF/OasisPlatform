@@ -515,7 +515,12 @@ class ExposureRunParamsSerializer(serializers.Serializer):
     extra_summary_cols = serializers.ListField(child=serializers.CharField(), default=[], help_text="Extra columns to include in the summary")
     kernel_alloc_rule_ri = serializers.IntegerField(default=3, help_text="Set the fmcalc allocation rule used in reinsurance")
     check_oed = serializers.BooleanField(default=True, help_text="If True, check input OED files")
-    do_disaggregation = serializers.BooleanField(default=True, help_text="If True, run the Oasis disaggregation")
+    disaggregation = serializers.ChoiceField(
+        choices=['none', 'items', 'samples'],
+        default='none',
+        help_text="How a location's NumberOfBuildings is represented: 'none' (one item per location), "
+                  "'items' (one item per building) or 'samples' (buildings multiplexed into the sample dimension)"
+    )
     verbose = serializers.BooleanField(default=False, help_text="Use verbose logging")
 
 

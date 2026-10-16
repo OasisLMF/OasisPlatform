@@ -15,6 +15,7 @@ from ods_tools.oed import OdsException
 from src.server.oasisapi.portfolios.models import Portfolio
 from src.server.oasisapi.files.models import RelatedFile
 from src.model_execution_worker.server_tasks import run_oed_validation, run_exposure_run, run_exposure_transform, run_combine
+from src.model_execution_worker.utils import update_params
 from src.server.oasisapi.portfolios.v2_api.tasks import record_validation_output, record_exposure_output, record_transform_output
 from src.server.oasisapi.auth.tests.fakes import fake_user
 
@@ -400,7 +401,7 @@ def test_exposure_run_params(currency_conversion_json, reporting_currency):
         'extra_summary_cols': 13,
         'kernel_alloc_rule_ri': 17,
         'check_oed': 19,
-        'do_disaggregation': 23,
+        'disaggregation': 23,
         'verbose': 29
     }
     disallowed_params = {
@@ -421,7 +422,7 @@ def test_exposure_run_params(currency_conversion_json, reporting_currency):
             'extra_summary_cols': "W",
             'kernel_alloc_rule_ri': "o",
             'check_oed': "r",
-            'do_disaggregation': "l",
+            'disaggregation': "l",
             'verbose': "d",
             'log_level': "!",
             'reporting_currency': None,
@@ -445,6 +446,24 @@ def test_exposure_run_params(currency_conversion_json, reporting_currency):
         else:
             assert kwargs['reporting_currency'] == reporting_currency
             assert 'currency_conversion_json' in kwargs and kwargs['currency_conversion_json'] is not None  # will be a weird filepath
+
+
+@pytest.mark.parametrize(
+    "given_params, expected",
+    [
+        ({}, 'default'),
+        ({'disaggregation': 'samples'}, 'samples'),
+        ({'do_disaggregation': True}, 'items'),
+        ({'do_disaggregation': False}, 'none'),
+        ({'do_disaggregation': None}, 'default'),
+        ({'disaggregation': 'samples', 'do_disaggregation': True}, 'samples'),
+    ]
+)
+def test_update_params_disaggregation(given_params, expected):
+    params = {'disaggregation': 'default', 'supported_oed_coverage_types': None}
+    update_params(params, given_params)
+    assert params['disaggregation'] == expected
+    assert 'do_disaggregation' not in params
 
 
 class Transform(TestCase):
