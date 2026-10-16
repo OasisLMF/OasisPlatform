@@ -383,6 +383,15 @@ def record_run_analysis_result(res, analysis_pk, initiator_pk):
     analysis.save()
 
 
+def store_lookup_errors_file(reference, initiator, analysis_pk):
+    """ The worker writes keys errors as csv or parquet, depending on the model's 'keys_format'
+    """
+    if str(reference).endswith('.parquet'):
+        return store_file(reference, 'application/octet-stream', initiator, required=False,
+                          filename=f'analysis_{analysis_pk}_keys-errors.parquet')
+    return store_file(reference, 'text/csv', initiator, required=False, filename=f'analysis_{analysis_pk}_keys-errors.csv')
+
+
 @celery_app_v1.task(name='record_generate_input_result', base=LogTaskError)
 def record_generate_input_result(result, analysis_pk, initiator_pk):
     logger.info('result: {}, analysis_pk: {}, initiator_pk: {}'.format(
@@ -433,8 +442,7 @@ def record_generate_input_result(result, analysis_pk, initiator_pk):
                                      filename=f'analysis_{analysis_pk}_inputs.tar.gz') if input_location else None
     analysis.lookup_success_file = store_file(lookup_success_fp, 'text/csv', initiator,
                                               filename=f'analysis_{analysis_pk}_gul_summary_map.csv') if lookup_success_fp else None
-    analysis.lookup_errors_file = store_file(lookup_error_fp, 'text/csv', initiator, required=False,
-                                             filename=f'analysis_{analysis_pk}_keys-errors.csv') if lookup_error_fp else None
+    analysis.lookup_errors_file = store_lookup_errors_file(lookup_error_fp, initiator, analysis_pk) if lookup_error_fp else None
     analysis.lookup_validation_file = store_file(lookup_validation_fp, 'application/json', initiator, required=False,
                                                  filename=f'analysis_{analysis_pk}_exposure_summary_report.json') if lookup_validation_fp else None
     analysis.summary_levels_file = store_file(summary_levels_fp, 'application/json', initiator, required=False,
