@@ -1,3 +1,4 @@
+import json
 import os
 from unittest import TestCase
 
@@ -5,6 +6,7 @@ import pandas as pd
 import polars as pl
 from backports.tempfile import TemporaryDirectory
 from mock import patch
+from oasis_data_manager.filestore.backends.local import LocalStorage
 from oasislmf.computation.generate.files import GenerateFiles
 from pathlib2 import Path
 
@@ -18,6 +20,8 @@ from src.model_execution_worker.distributed_tasks import (
     take_first,
     handle_task_failure,
     generate_losses_output,
+    prepare_losses_generation_directory,
+    store_combine_occurrence_file,
     write_input_files,
 )
 
@@ -339,22 +343,18 @@ class HandleTaskFailureSignal(TestCase):
                 self.assertNotIn('subtask_error_log', dispatched_names)
 
 
-class GenerateLossesOutputInputReupload(TestCase):
-    """ Input files produced during the loss run (occurrence.bin) must reach analysis.input_file.
-        The input reference is never overwritten in place: it may be this worker's own tarball
-        (generate_and_run) or a server key/URL under a different bucket or location. A fresh
-        tarball is returned for record_losses_files to store instead.
+class GenerateLossesOutputInputs(TestCase):
+    """ occurrence.bin ships with the inputs archive from input generation, so the loss run
+        must not re-archive and re-upload the (potentially very large) inputs directory.
     """
 
-    def _run_generate_losses_output(self, run_dir, occurrence_in_inputs=False, **chunk_params):
+    def _run_generate_losses_output(self, run_dir, **chunk_params):
         root_dir = Path(run_dir, 'analysis-1_losses-run-uuid')
         oasis_files_dir = Path(root_dir, 'input-data')
         model_run_dir = Path(root_dir, 'run-data')
         oasis_files_dir.mkdir(parents=True)
         Path(model_run_dir, 'input').mkdir(parents=True)
         Path(model_run_dir, 'input', 'occurrence.bin').write_bytes(b'')
-        if occurrence_in_inputs:
-            Path(oasis_files_dir, 'occurrence.bin').write_bytes(b'')
 
         def settings_get(section, option, fallback=None):
             return run_dir if option == 'base_run_dir' else fallback
@@ -373,35 +373,71 @@ class GenerateLossesOutputInputReupload(TestCase):
             result = generate_losses_output.run(params, analysis_id=1, run_data_uuid='run-uuid', slug='generate-losses-output')
 
         input_puts = [c for c in filestore_mock.put.call_args_list if c.args[0] == str(oasis_files_dir)]
-        return result, input_puts
+        return result, input_puts, oasis_files_dir
 
-    def _assert_fresh_tarball_returned(self, result, input_puts):
-        self.assertEqual(len(input_puts), 1)
-        self.assertIsNone(input_puts[0].kwargs.get('filename'))
-        self.assertEqual(result['updated_input_location'], 'fresh-inputs.tar.gz')
+    def _assert_inputs_untouched(self, result, input_puts, oasis_files_dir):
+        self.assertEqual(input_puts, [])
+        self.assertNotIn('updated_input_location', result)
+        self.assertFalse(Path(oasis_files_dir, 'occurrence.bin').exists())
 
-    def test_run_analysis_with_server_key___fresh_inputs_tarball_is_returned(self):
+    def test_run_analysis___inputs_are_not_reuploaded(self):
         with TemporaryDirectory() as run_dir:
-            self._assert_fresh_tarball_returned(*self._run_generate_losses_output(
+            self._assert_inputs_untouched(*self._run_generate_losses_output(
                 run_dir, input_location='oasis/server/stored-inputs.tar.gz'))
 
-    def test_run_analysis_with_presigned_url___fresh_inputs_tarball_is_returned(self):
+    def test_generate_and_run___inputs_are_not_reuploaded(self):
         with TemporaryDirectory() as run_dir:
-            self._assert_fresh_tarball_returned(*self._run_generate_losses_output(
-                run_dir, input_location='https://server-bucket.s3.amazonaws.com/oasis/server/inputs.tar.gz?X-Amz-Signature=abc'))
-
-    def test_generate_and_run___fresh_inputs_tarball_is_returned(self):
-        with TemporaryDirectory() as run_dir:
-            self._assert_fresh_tarball_returned(*self._run_generate_losses_output(
+            self._assert_inputs_untouched(*self._run_generate_losses_output(
                 run_dir, **{'input-location_generate-and-run': 'oasis/worker/worker-inputs.tar.gz'}))
 
-    def test_no_input_files_added___inputs_are_not_reuploaded(self):
-        with TemporaryDirectory() as run_dir:
-            result, input_puts = self._run_generate_losses_output(
-                run_dir, occurrence_in_inputs=True, input_location='stored-inputs.tar.gz')
 
-            self.assertEqual(input_puts, [])
-            self.assertNotIn('updated_input_location', result)
+class StoreCombineOccurrenceFile(TestCase):
+    """ The occurrence file selected by the analysis settings is stored with the inputs under
+        'combine/', never at the inputs root where it would override the loss run's own selection.
+    """
+
+    def _store(self, tmp_dir, model_settings, model_files):
+        model_data = Path(tmp_dir, 'model_data')
+        model_data.mkdir()
+        for name, content in model_files.items():
+            Path(model_data, name).write_bytes(content)
+        settings_fp = Path(tmp_dir, 'analysis_settings.json')
+        settings_fp.write_text(json.dumps({'model_settings': model_settings}))
+        target_dir = Path(tmp_dir, 'inputs')
+        target_dir.mkdir()
+
+        with patch('src.model_execution_worker.distributed_tasks.get_model_data_storage',
+                   return_value=LocalStorage(root_dir=str(model_data))):
+            result = store_combine_occurrence_file(str(settings_fp), str(target_dir))
+        return result, target_dir
+
+    def test_event_occurrence_id___selected_file_is_stored_under_combine(self):
+        with TemporaryDirectory() as tmp_dir:
+            result, target_dir = self._store(tmp_dir, {'event_occurrence_id': 'Long Term'}, {
+                'occurrence_long_term.bin': b'long-term',
+                'occurrence.bin': b'default',
+            })
+
+            self.assertEqual(result, str(Path(target_dir, 'combine', 'occurrence.bin')))
+            self.assertEqual(Path(result).read_bytes(), b'long-term')
+            self.assertFalse(Path(target_dir, 'occurrence.bin').exists())
+
+    def test_no_event_occurrence_id___default_occurrence_file_is_stored(self):
+        with TemporaryDirectory() as tmp_dir:
+            result, _ = self._store(tmp_dir, {}, {'occurrence.bin': b'default'})
+
+            self.assertEqual(Path(result).read_bytes(), b'default')
+
+    def test_model_has_no_occurrence_file___nothing_is_stored(self):
+        with TemporaryDirectory() as tmp_dir:
+            result, target_dir = self._store(tmp_dir, {'event_occurrence_id': 'missing'}, {})
+
+            self.assertIsNone(result)
+            self.assertFalse(Path(target_dir, 'combine').exists())
+
+    def test_no_analysis_settings___nothing_is_stored(self):
+        with TemporaryDirectory() as tmp_dir:
+            self.assertIsNone(store_combine_occurrence_file(None, tmp_dir))
 
 
 class WriteInputFiles(TestCase):
@@ -449,3 +485,27 @@ class WriteInputFiles(TestCase):
             target_dir = generate_kwargs['target_dir']
             self.assertEqual(generate_files.keys_data_path, os.path.join(target_dir, 'keys.csv'))
             self.assertEqual(generate_files.keys_errors_path, os.path.join(target_dir, 'keys-errors.csv'))
+
+
+class InternalArchiveCompression(TestCase):
+    """ Archives only passed between worker tasks follow INTERNAL_ARCHIVE_COMPRESSION """
+
+    def test_zst___run_directory_is_stored_as_zstd(self):
+        def settings_get(section, option, fallback=None):
+            return run_dir if option == 'base_run_dir' else fallback
+
+        with TemporaryDirectory() as run_dir, \
+                patch('src.model_execution_worker.distributed_tasks.TASK_LOG_DIR', run_dir), \
+                patch('src.model_execution_worker.distributed_tasks.INTERNAL_ARCHIVE_COMPRESSION', 'zst'), \
+                patch('src.model_execution_worker.distributed_tasks.settings.get', side_effect=settings_get), \
+                patch('src.model_execution_worker.distributed_tasks.notify_api_task_started'), \
+                patch('src.model_execution_worker.distributed_tasks.filestore') as filestore_mock, \
+                patch('oasislmf.manager.OasisManager'):
+            filestore_mock.archive_suffix.side_effect = lambda compression: {'gz': 'tar.gz', 'zst': 'tar.zst'}[compression]
+            prepare_losses_generation_directory.run(
+                {}, analysis_id=1, run_data_uuid='run-uuid', slug='prepare-losses-generation-directory')
+
+        run_dir_puts = [c for c in filestore_mock.put.call_args_list if c.kwargs.get('filename', '').startswith('run_directory')]
+        self.assertEqual(len(run_dir_puts), 1)
+        self.assertEqual(run_dir_puts[0].kwargs['filename'], 'run_directory.tar.zst')
+        self.assertEqual(run_dir_puts[0].kwargs['compression'], 'zst')

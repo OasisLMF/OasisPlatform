@@ -6,6 +6,7 @@ from ..common.filestore.filestore import get_filestore
 from oasislmf.manager import OasisManager
 from src.model_execution_worker.utils import TemporaryDir, update_params, get_destination_file, copy_or_download, get_all_exposure_files
 import os
+import shutil
 from pathlib import Path
 from celery import Celery
 from ods_tools.oed.exposure import OedExposure
@@ -156,7 +157,17 @@ def run_combine(input_tar_paths, output_tar_paths, config):
             if not Path(dst).exists():
                 out = filestore.get(filestore_ref, dst, storage_subdir)
 
-    required_input_files = ['occurrence.bin']
+    # Inputs store it under 'combine/', older analyses had it added to the inputs root by the loss run
+    occurrence_members = ['combine/occurrence.bin', 'occurrence.bin']
+
+    def extract_occurrence(input_tar, input_dir):
+        with tarfile.open(input_tar, 'r:gz') as f:
+            names = {m.name.removeprefix('./'): m for m in f.getmembers()}
+            member = next((names[m] for m in occurrence_members if m in names), None)
+            if member is None:
+                raise KeyError(f'occurrence.bin not found, tried {occurrence_members}')
+            with f.extractfile(member) as src, open(os.path.join(input_dir, 'occurrence.bin'), 'wb') as dst:
+                shutil.copyfileobj(src, dst)
 
     with TemporaryDir() as tmpdir:
         analysis_dirs = []
@@ -175,8 +186,7 @@ def run_combine(input_tar_paths, output_tar_paths, config):
 
             # extract necessary files and place in correct dirs
             try:
-                with tarfile.open(_tmp_input_tar, 'r:gz') as f:
-                    f.extractall(path=os.path.join(_curr_tmp_dir, 'input'), members=required_input_files)
+                extract_occurrence(_tmp_input_tar, os.path.join(_curr_tmp_dir, 'input'))
             except KeyError as e:
                 logging.error('Combine input files missing: ' + str(e))
                 return (False, 'Input files missing: ' + str(e))

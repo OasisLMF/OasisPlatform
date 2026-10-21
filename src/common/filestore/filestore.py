@@ -7,12 +7,26 @@ from oasis_data_manager.filestore.backends.local import LocalStorage
 from oasis_data_manager.filestore.backends.base import BaseStorage
 
 
+def get_archive_options(settings, section='worker'):
+    """ How the filestore archives directories on `put`
+
+    ARCHIVE_COMPRESSION_LEVEL: compression level, unset uses the format default (gzip 1, zstd 3)
+    ARCHIVE_COMPRESSION_THREADS: zstd worker threads, -1 for every core
+    """
+    level = settings.get(section, 'ARCHIVE_COMPRESSION_LEVEL', fallback=None)
+    return {
+        'archive_compresslevel': int(level) if level not in (None, '') else None,
+        'archive_threads': settings.getint(section, 'ARCHIVE_COMPRESSION_THREADS', fallback=-1),
+    }
+
+
 def get_filestore(settings, section='worker', raise_error=True) -> Union[BaseStorage | None]:
     selected_storage = settings.get(section, 'STORAGE_TYPE', fallback="shared-fs").lower()
     if selected_storage in ['local-fs', 'shared-fs']:
         return LocalStorage(
             root_dir=settings.get(section, "MEDIA_ROOT"),
             cache_dir=settings.get(section, 'CACHE_DIR', fallback='/tmp/data-cache'),
+            **get_archive_options(settings, section),
         )
     elif selected_storage in ['aws-s3', 'aws', 's3']:
 
@@ -57,6 +71,7 @@ def get_filestore(settings, section='worker', raise_error=True) -> Union[BaseSto
                 'image/svg+xml',
             )),
             cache_dir=settings.get(section, 'CACHE_DIR', fallback='/tmp/data-cache'),
+            **get_archive_options(settings, section),
         )
     elif selected_storage in ['azure']:
         from oasis_data_manager.filestore.backends.azure_abfs import AzureABFSStorage
@@ -88,6 +103,7 @@ def get_filestore(settings, section='worker', raise_error=True) -> Union[BaseSto
             azure_log_level=settings.get(section, 'AZURE_LOG_LEVEL', fallback=settings.get(section, 'AWS_LOG_LEVEL', fallback=logging.ERROR)),
             cache_dir=settings.get(section, 'CACHE_DIR', fallback='/tmp/data-cache'),
             endpoint_url=settings.get(section, 'ENDPOINT_URL', fallback=None),
+            **get_archive_options(settings, section),
         )
     else:
         if raise_error:

@@ -17,6 +17,7 @@ from celery import Celery, signature
 from celery.utils.log import get_task_logger
 from celery.signals import (task_failure, task_revoked, worker_ready)
 from natsort import natsorted
+from oasis_data_manager.filestore.backends.local import LocalStorage
 from oasislmf.preparation.lookup import OasisLookupFactory
 from oasislmf.utils.data import get_json
 from oasislmf.utils.exceptions import OasisExceptionNoKeys
@@ -56,6 +57,10 @@ Celery task wrapper for Oasis calculation.
 logger = get_task_logger(__name__)
 LOG_FILE_SUFFIX = 'txt'
 ARCHIVE_FILE_SUFFIX = 'tar.gz'
+COMBINE_INPUT_DIR = 'combine'
+# Compression for archives only passed between worker tasks (lookup/keys chunks, run directory, loss chunks)
+# 'zst' is much faster than gzip on large runs, archives the server stores for users stay gzip
+INTERNAL_ARCHIVE_COMPRESSION = settings.get('worker', 'INTERNAL_ARCHIVE_COMPRESSION', fallback='gz').lower()
 RUNNING_TASK_STATUS = OASIS_TASK_STATUS["running"]["id"]
 TASK_LOG_DIR = settings.get('worker', 'TASK_LOG_DIR', fallback='/var/log/oasis/tasks')
 FAIL_ON_REDELIVERY = settings.getboolean('worker', 'FAIL_ON_REDELIVERY', fallback=True)
@@ -606,8 +611,9 @@ def prepare_keys_file_chunk(
         # Store chunks
         params['chunk_keys'] = filestore.put(
             chunk_target_dir,
-            filename=f'lookup-{chunk_idx + 1}.tar.gz',
-            subdir=params['storage_subdir']
+            filename=f'lookup-{chunk_idx + 1}.{filestore.archive_suffix(INTERNAL_ARCHIVE_COMPRESSION)}',
+            subdir=params['storage_subdir'],
+            compression=INTERNAL_ARCHIVE_COMPRESSION,
         )
 
     params['log_location'] = filestore.put(kwargs.get('log_filename'))
@@ -740,13 +746,62 @@ def collect_keys(
             # store keys data
             chunk_params['keys_data'] = filestore.put(
                 merge_dir.as_posix(),
-                filename='keys-data.tar.gz',
-                subdir=chunk_params['storage_subdir']
+                filename=f'keys-data.{filestore.archive_suffix(INTERNAL_ARCHIVE_COMPRESSION)}',
+                subdir=chunk_params['storage_subdir'],
+                compression=INTERNAL_ARCHIVE_COMPRESSION,
             )
 
     chunk_params['log_location'] = filestore.put(kwargs.get('log_filename'))
     chunk_params['log_storage'][slug] = chunk_params['log_location']
     return chunk_params
+
+
+def get_model_data_storage():
+    """ Storage holding the model data files (event sets, occurrence files, ...)
+        'worker.model_data' storage when configured, otherwise the oasislmf config's 'model_data_dir'
+    """
+    if model_storage:
+        return model_storage
+    config_path = get_oasislmf_config_path(settings, settings.get('worker', 'model_id'))
+    model_data_dir = get_json(config_path).get('model_data_dir')
+    if not model_data_dir:
+        return None
+    return LocalStorage(root_dir=os.path.join(os.path.dirname(config_path), model_data_dir))
+
+
+def store_combine_occurrence_file(analysis_settings_fp, target_dir):
+    """ Copy the model occurrence file selected by the analysis settings into `<target_dir>/combine/`
+
+    Kept out of the inputs root on purpose: oasislmf copies every input file into the run
+    directory and skips preparing any bin file already there, so a root level 'occurrence.bin'
+    would override the one selected by the loss run's own analysis settings.
+
+    The file selection mirrors `oasislmf.execution.bin._prepare_input_bin`.
+    """
+    if not analysis_settings_fp or not os.path.isfile(analysis_settings_fp):
+        return None
+
+    model_settings = get_json(analysis_settings_fp).get('model_settings', {})
+    setting_val = model_settings.get('event_occurrence_id')
+    if setting_val:
+        targets = [f'occurrence_{setting_val}.bin', f"occurrence_{str(setting_val).replace(' ', '_').lower()}.bin"]
+    else:
+        targets = ['occurrence.bin']
+
+    try:
+        storage = get_model_data_storage()
+    except Exception as e:
+        logger.warning(f'Model data storage unavailable ({e}), combine will not be available for this analysis')
+        return None
+    source = next((fname for fname in targets if storage and storage.exists(fname)), None)
+    if not source:
+        logger.warning(f'No model occurrence file found {targets}, combine will not be available for this analysis')
+        return None
+
+    occurrence_fp = os.path.join(target_dir, COMBINE_INPUT_DIR, 'occurrence.bin')
+    Path(occurrence_fp).parent.mkdir(parents=True, exist_ok=True)
+    storage.get(source, occurrence_fp)
+    return occurrence_fp
 
 
 @app.task(bind=True, name='write_input_files', **celery_conf.worker_task_kwargs)
@@ -768,6 +823,10 @@ def write_input_files(self, params, run_data_uuid=None, analysis_id=None, initia
     if params.get('post_file_gen_module', None):
         logger.info(f"post_generation_hook: running {params.get('post_file_gen_module')}")
         OasisManager().post_file_gen(**params)
+
+    # Ship the occurrence file 'combine' needs with the inputs archive, so the loss run
+    # doesn't have to re-archive the whole inputs directory to add it
+    store_combine_occurrence_file(params.get('analysis_settings_json'), params['target_dir'])
 
     # clear out user-data,
     # these files should not be sorted in the generated inputs tar
@@ -991,8 +1050,9 @@ def prepare_losses_generation_directory(self, params, analysis_id=None, slug=Non
 
         params['run_location'] = filestore.put(
             params['model_run_dir'],
-            filename='run_directory.tar.gz',
-            subdir=params['storage_subdir']
+            filename=f'run_directory.{filestore.archive_suffix(INTERNAL_ARCHIVE_COMPRESSION)}',
+            subdir=params['storage_subdir'],
+            compression=INTERNAL_ARCHIVE_COMPRESSION,
         )
         params['log_location'] = filestore.put(kwargs.get('log_filename'))
         return params
@@ -1050,13 +1110,15 @@ def generate_losses_chunk(self, params, chunk_idx, num_chunks, analysis_id=None,
             **params,
             'chunk_work_location': filestore.put(
                 chunk_params['kernel_work_dir'],
-                filename=f'work-{chunk_idx + 1}.tar.gz',
-                subdir=params['storage_subdir']
+                filename=f'work-{chunk_idx + 1}.{filestore.archive_suffix(INTERNAL_ARCHIVE_COMPRESSION)}',
+                subdir=params['storage_subdir'],
+                compression=INTERNAL_ARCHIVE_COMPRESSION,
             ),
             'chunk_log_location': filestore.put(
                 chunk_params['kernel_log_dir'],
-                filename=f'log-{chunk_idx + 1}.tar.gz',
-                subdir=params['storage_subdir']
+                filename=f'log-{chunk_idx + 1}.{filestore.archive_suffix(INTERNAL_ARCHIVE_COMPRESSION)}',
+                subdir=params['storage_subdir'],
+                compression=INTERNAL_ARCHIVE_COMPRESSION,
             ),
             'kernel_work_dir': chunk_params['kernel_work_dir'],
             'process_number': chunk_idx + 1,
@@ -1093,26 +1155,6 @@ def generate_losses_output(self, params, analysis_id=None, slug=None, **kwargs):
     if res.get('post_analysis_module', None):
         logger.info(f"post_losses_hook: running {res.get('post_analysis_module')}")
         OasisManager().post_analysis(**res)
-
-    # store additional input files
-    additional_input_files = ['occurrence.bin']
-    curr_input_files = list(os.listdir(res['oasis_files_dir']))
-
-    input_files_added = False
-    for fname in additional_input_files:
-        if fname in curr_input_files:
-            continue
-
-        fpath = os.path.join(res['model_run_dir'], 'input', fname)
-        shutil.copy2(fpath, res['oasis_files_dir'])
-        input_files_added = True
-
-    if input_files_added:
-        # Upload a fresh tarball for record_losses_files to store as analysis.input_file. The input reference
-        # can't be overwritten in place: in generate_and_run it is this worker's own tarball (already copied by
-        # record_input_files), and otherwise it is a server key or URL that may sit under a different bucket or
-        # location than this worker's filestore.
-        res['updated_input_location'] = filestore.put(res['oasis_files_dir'])
 
     output_dir = os.path.join(res['model_run_dir'], 'output')
     logs_dir = os.path.join(res['model_run_dir'], 'log')

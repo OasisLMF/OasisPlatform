@@ -95,3 +95,25 @@ class AzureWorkerFilestore(TestCase):
         with patch.object(AzureABFSStorage, '__init__', return_value=None) as init:
             get_filestore(self._settings(AWS_LOG_LEVEL='WARNING'))
             self.assertEqual(init.call_args.kwargs['azure_log_level'], 'WARNING')
+
+
+class ArchiveOptions(TestCase):
+    """ Directory archives default to fast gzip; level and zstd threads are tunable per deployment """
+
+    def _settings(self, **options):
+        config = ConfigParser()
+        config['worker'] = {'STORAGE_TYPE': 'local-fs', 'MEDIA_ROOT': '/tmp', **options}
+        return config
+
+    def test_no_archive_settings___format_defaults_are_used(self):
+        filestore = get_filestore(self._settings())
+
+        self.assertEqual(filestore.archive_compression, 'gz')
+        self.assertIsNone(filestore.archive_compresslevel)
+        self.assertEqual(filestore.archive_threads, -1)
+
+    def test_archive_settings___passed_to_filestore(self):
+        filestore = get_filestore(self._settings(ARCHIVE_COMPRESSION_LEVEL='6', ARCHIVE_COMPRESSION_THREADS='4'))
+
+        self.assertEqual(filestore.archive_compresslevel, 6)
+        self.assertEqual(filestore.archive_threads, 4)
