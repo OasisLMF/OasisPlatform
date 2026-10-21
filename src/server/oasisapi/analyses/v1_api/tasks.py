@@ -27,7 +27,7 @@ from tempfile import TemporaryFile
 from urllib.request import urlopen
 from urllib.parse import urlparse
 
-from src.server.oasisapi.files.models import RelatedFile
+from src.server.oasisapi.files.models import RelatedFile, tabular_file_type
 from src.server.oasisapi.files.v1_api.views import handle_json_data
 from src.server.oasisapi.schemas.serializers import ModelParametersSerializer
 from src.server.oasisapi.files.upload import wait_for_blob_copy
@@ -431,8 +431,9 @@ def record_generate_input_result(result, analysis_pk, initiator_pk):
     # Add current Output
     analysis.input_file = store_file(input_location, 'application/gzip', initiator,
                                      filename=f'analysis_{analysis_pk}_inputs.tar.gz') if input_location else None
-    analysis.lookup_success_file = store_file(lookup_success_fp, 'text/csv', initiator,
-                                              filename=f'analysis_{analysis_pk}_gul_summary_map.csv') if lookup_success_fp else None
+    lookup_success_type, lookup_success_ext = tabular_file_type(lookup_success_fp)
+    analysis.lookup_success_file = store_file(lookup_success_fp, lookup_success_type, initiator,
+                                              filename=f'analysis_{analysis_pk}_gul_summary_map.{lookup_success_ext}') if lookup_success_fp else None
     analysis.lookup_errors_file = store_file(lookup_error_fp, 'text/csv', initiator, required=False,
                                              filename=f'analysis_{analysis_pk}_keys-errors.csv') if lookup_error_fp else None
     analysis.lookup_validation_file = store_file(lookup_validation_fp, 'application/json', initiator, required=False,

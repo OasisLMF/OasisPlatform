@@ -25,7 +25,7 @@ from ...data_files.v1_api.serializers import DataFileSerializer
 from ...filters import TimeStampedFilter, CsvMultipleChoiceFilter, CsvModelMultipleChoiceFilter
 from ...files.v1_api.views import handle_related_file, handle_json_data
 from ...files.v1_api.serializers import RelatedFileSerializer
-from ...schemas.custom_swagger import FILE_RESPONSE
+from ...schemas.custom_swagger import FILE_RESPONSE, FILE_FORMAT_PARAM
 from ...schemas.serializers import AnalysisSettingsSerializer
 
 
@@ -337,7 +337,7 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         """
         return handle_related_file(self.get_object(), 'lookup_errors_file', request, ['text/csv'])
 
-    @extend_schema(responses={200: FILE_RESPONSE})
+    @extend_schema(responses={200: FILE_RESPONSE}, parameters=[FILE_FORMAT_PARAM])
     @action(methods=['get'], detail=True)
     def lookup_success_file(self, request, pk=None, version=None):
         """
@@ -350,7 +350,8 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         delete:
         Disassociates the portfolios `lookup_success_file` contents
         """
-        return handle_related_file(self.get_object(), 'lookup_success_file', request, ['text/csv'])
+        # Stored as parquet by newer workers, returned as csv unless `file_format=parquet` is requested
+        return handle_related_file(self.get_object(), 'lookup_success_file', request, ['text/csv'], default_file_format='csv')
 
     @extend_schema(responses={200: FILE_RESPONSE})
     @action(methods=['get'], detail=True)
