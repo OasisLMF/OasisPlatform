@@ -1132,7 +1132,6 @@ class AnalysisLookupSuccessFile(WebTestMixin, TestCase):
                 self.assertEqual(response.body, file_content)
                 self.assertEqual(response.content_type, content_type)
 
-
     def test_lookup_success_file_is_parquet___csv_returned_by_default(self):
         df = pd.DataFrame({'loc_id': [1, 2], 'item_id': [1, 2], 'peril_id': ['WTC', 'WSS']})
         buf = io.BytesIO()
