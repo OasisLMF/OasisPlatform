@@ -4,8 +4,8 @@
 #            and copied across (no RUN steps are possible in the final stage). Nothing is added
 #            to the runtime image's system packages: the entrypoint / run scripts are python and
 #            MySQL uses the pure python PyMySQL driver.
-ARG PYTHON_BUILD_IMAGE=dhi.io/python:3-alpine-dev
-ARG PYTHON_RUNTIME_IMAGE=dhi.io/python:3-alpine
+ARG PYTHON_BUILD_IMAGE=dhi.io/python:3.14-alpine-dev
+ARG PYTHON_RUNTIME_IMAGE=dhi.io/python:3.14-alpine
 
 # ---- STAGE 1 -----
 FROM ${PYTHON_BUILD_IMAGE} AS build-packages
