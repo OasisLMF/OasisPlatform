@@ -54,7 +54,7 @@ botocore==1.39.11
     #   s3transfer
 celery==5.5.3
     # via -r requirements-worker.in
-certifi==2025.8.3
+certifi==2026.10.19
     # via
     #   pyogrio
     #   pyproj
@@ -149,7 +149,9 @@ kiwisolver==1.5.0
 kombu==5.5.4
     # via celery
 lark==1.2.2
-    # via -r requirements-worker.in
+    # via
+    #   -r requirements-worker.in
+    #   ods-tools
 llvmlite==0.50.0
     # via numba
 matplotlib==3.10.8
@@ -201,8 +203,10 @@ oasis-data-manager==0.2.3
     #   ods-tools
 oasislmf[extra]==2.5.8
     # via -r requirements-worker.in
-ods-tools==5.0.9
-    # via oasislmf
+ods-tools[extra]==5.0.9
+    # via
+    #   -r requirements-worker.in
+    #   oasislmf
 packaging==25.0
     # via
     #   fastparquet
@@ -213,7 +217,6 @@ packaging==25.0
     #   pyogrio
 pandas==2.3.3
     # via
-    #   -c /c.txt
     #   fastparquet
     #   geopandas
     #   oasis-data-manager
@@ -221,7 +224,7 @@ pandas==2.3.3
     #   ods-tools
 pathlib2==2.3.7.post1
     # via -r requirements-worker.in
-pillow==12.3.0
+pillow==13.0.0
     # via matplotlib
 polars==1.40.1
     # via -r requirements-worker.in
@@ -241,6 +244,8 @@ psycopg-binary==3.3.5
     # via psycopg
 psycopg-pool==3.2.6
     # via psycopg
+psycopg2==2.9.13
+    # via ods-tools
 psycopg2-binary==2.9.13
     # via -r requirements-worker.in
 pyarrow==23.0.1
@@ -256,7 +261,9 @@ pyjwt[crypto]==2.14.0
 pymysql==1.1.1
     # via -r requirements-worker.in
 pyodbc==5.3.0
-    # via -r requirements-worker.in
+    # via
+    #   -r requirements-worker.in
+    #   ods-tools
 pyogrio==0.13.0
     # via geopandas
 pyparsing==3.3.2
@@ -275,7 +282,9 @@ pytz==2025.2
     #   oasislmf
     #   pandas
 pyyaml==6.0.3
-    # via -r requirements-worker.in
+    # via
+    #   -r requirements-worker.in
+    #   ods-tools
 redis==5.3.1
     # via -r requirements-worker.in
 referencing==0.36.2
@@ -322,9 +331,13 @@ six==1.17.0
 sqlalchemy==2.0.43
     # via -r requirements-worker.in
 sqlparams==6.2.0
-    # via -r requirements-worker.in
+    # via
+    #   -r requirements-worker.in
+    #   ods-tools
 sqlparse==0.6.0
-    # via -r requirements-worker.in
+    # via
+    #   -r requirements-worker.in
+    #   ods-tools
 tabulate==0.9.0
     # via oasislmf
 tblib==3.1.0
