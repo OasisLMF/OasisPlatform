@@ -200,7 +200,7 @@ oasis-data-manager==0.2.3
     # via
     #   -r requirements-server.in
     #   ods-tools
-ods-tools==5.0.9
+ods-tools @ git+https://github.com/OasisLMF/ODS_Tools.git@main
     # via -r requirements-server.in
 packaging==25.0
     # via

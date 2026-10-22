@@ -203,7 +203,7 @@ oasis-data-manager==0.2.3
     #   ods-tools
 oasislmf[extra]==2.5.8
     # via -r requirements-worker.in
-ods-tools[extra]==5.0.9
+ods-tools @ git+https://github.com/OasisLMF/ODS_Tools.git@main
     # via
     #   -r requirements-worker.in
     #   oasislmf
