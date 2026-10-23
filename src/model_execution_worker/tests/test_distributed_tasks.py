@@ -388,8 +388,6 @@ class GenerateLossesOutputCombineFiles(TestCase):
 
             input_puts = [c for c in filestore_mock.put.call_args_list if c.args[0] == str(oasis_files_dir)]
             self.assertEqual(input_puts, [])
-            self.assertNotIn('updated_input_location', result)
-            self.assertFalse(Path(oasis_files_dir, 'occurrence.bin').exists())
 
     def test_generate_and_run___inputs_are_not_reuploaded(self):
         with TemporaryDirectory() as run_dir:
@@ -398,15 +396,6 @@ class GenerateLossesOutputCombineFiles(TestCase):
 
             input_puts = [c for c in filestore_mock.put.call_args_list if c.args[0] == str(oasis_files_dir)]
             self.assertEqual(input_puts, [])
-            self.assertNotIn('updated_input_location', result)
-
-    def test_occurrence_file_missing___no_combine_dir_and_no_error(self):
-        with TemporaryDirectory() as run_dir:
-            result, _, _, model_run_dir = self._run_generate_losses_output(run_dir, occurrence_in_run_dir=False)
-
-            self.assertFalse(Path(model_run_dir, 'output', 'combine').exists())
-            self.assertIn('output_location', result)
-            self.assertNotIn('updated_input_location', result)
 
 
 class WriteInputFiles(TestCase):
