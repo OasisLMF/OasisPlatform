@@ -1070,6 +1070,7 @@ def generate_losses_chunk(self, params, chunk_idx, num_chunks, analysis_id=None,
 def generate_losses_output(self, params, analysis_id=None, slug=None, **kwargs):
     res = {**params[0]}
     res['model_storage_json'] = None
+    res['analysis_pk'] = analysis_id
 
     # collect run results
     abs_work_dir = os.path.join(res['model_run_dir'], 'work')
