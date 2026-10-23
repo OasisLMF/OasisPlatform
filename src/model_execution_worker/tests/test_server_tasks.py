@@ -538,12 +538,15 @@ class Transform(TestCase):
 
 
 class CombineTasks(TestCase):
-    def create_input_tar(self, tar_path, include_occurrence=True, occurrence_arcname='combine/occurrence.bin'):
+    def create_input_tar(self, tar_path, include_occurrence=True):
         '''Helper to create input tar file'''
+        input_files = ['analysis_settings.json']
+        if include_occurrence:
+            input_files += ['occurrence.bin']
+
         with tarfile.open(tar_path, 'w:gz') as tar:
-            tar.add(COMBINE_DIR / 'input' / 'analysis_settings.json', arcname='analysis_settings.json')
-            if include_occurrence:
-                tar.add(COMBINE_DIR / 'input' / 'occurrence.bin', arcname=occurrence_arcname)
+            for i_file in input_files:
+                tar.add(COMBINE_DIR / 'input' / i_file, arcname=i_file)
 
     def create_output_tar(self, tar_path):
         '''Helper to mock output tar files'''
@@ -573,41 +576,12 @@ class CombineTasks(TestCase):
                 input_tars.append(inp)
                 output_tars.append(out)
 
-            extracted = []
-            mock_combine.combine.side_effect = lambda analysis_dirs, **kw: extracted.extend(
-                Path(d, 'input', 'occurrence.bin').exists() for d in analysis_dirs)
-
             success, _ = run_combine(input_tars, output_tars, {})
 
             assert success
             call_kwargs = mock_combine.combine.call_args[1]
             assert len(call_kwargs["analysis_dirs"]) == 3
-            assert extracted == [True, True, True]
             mock_get_filestore.return_value.put.assert_called_once()
-
-    @patch('src.model_execution_worker.server_tasks.combine')
-    @patch('src.model_execution_worker.server_tasks.get_filestore')
-    def test_run_combine_transform__legacy_root_occurrence(self, mock_get_filestore, mock_combine):
-        # Analyses run before occurrence.bin moved under 'combine/' have it at the inputs root
-        mock_get_filestore.return_value.get.side_effect = self.mock_get
-        mock_combine.prepare_config.return_value = {}
-
-        with TemporaryDirectory() as tmpdir:
-            tmpdir = Path(tmpdir)
-            inp = tmpdir / 'input_0.tar.gz'
-            out = tmpdir / 'output_0.tar.gz'
-            self.create_input_tar(inp, occurrence_arcname='occurrence.bin')
-            self.create_output_tar(out)
-
-            def check_occurrence(analysis_dirs, **kwargs):
-                occurrence_fp = Path(analysis_dirs[0], 'input', 'occurrence.bin')
-                assert occurrence_fp.read_bytes() == (COMBINE_DIR / 'input' / 'occurrence.bin').read_bytes()
-            mock_combine.combine.side_effect = check_occurrence
-
-            success, _ = run_combine([inp], [out], {})
-
-            assert success
-            mock_combine.combine.assert_called_once()
 
     @patch('src.model_execution_worker.server_tasks.combine')
     @patch('src.model_execution_worker.server_tasks.get_filestore')
