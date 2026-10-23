@@ -186,7 +186,10 @@ class AnalysisApi(WebTestMixin, TestCase):
                     'lookup_chunks': None,
                     'priority': 4,
                     'num_events_total': 0,
-                    'num_events_complete': 0
+                    'num_events_complete': 0,
+                    'num_gul_ready': 0,
+                    'num_outputs_total': 0,
+                    'num_outputs_complete': 0
                 }, response.json)
 
     @given(
@@ -268,7 +271,10 @@ class AnalysisApi(WebTestMixin, TestCase):
                     'lookup_chunks': None,
                     'priority': 4,
                     'num_events_total': 0,
-                    'num_events_complete': 0
+                    'num_events_complete': 0,
+                    'num_gul_ready': 0,
+                    'num_outputs_total': 0,
+                    'num_outputs_complete': 0
                 }, response.json)
 
     def test_model_does_not_exist___response_is_400(self):

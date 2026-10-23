@@ -145,7 +145,10 @@ class AnalysisApi(WebTestMixin, TestCase):
                     'task_started': None,
                     'task_finished': None,
                     'num_events_complete': 0,
-                    'num_events_total': 0
+                    'num_events_total': 0,
+                    'num_gul_ready': 0,
+                    'num_outputs_total': 0,
+                    'num_outputs_complete': 0
                 }, response.json)
 
     @given(name=text(alphabet=string.ascii_letters, max_size=10, min_size=1))
@@ -207,7 +210,10 @@ class AnalysisApi(WebTestMixin, TestCase):
                     'task_started': None,
                     'task_finished': None,
                     'num_events_complete': 0,
-                    'num_events_total': 0
+                    'num_events_total': 0,
+                    'num_gul_ready': 0,
+                    'num_outputs_total': 0,
+                    'num_outputs_complete': 0
                 }, response.json)
 
     def test_model_does_not_exist___response_is_400(self):

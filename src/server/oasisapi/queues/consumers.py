@@ -6,11 +6,12 @@ from channels.generic.websocket import AsyncJsonWebsocketConsumer
 from channels.layers import get_channel_layer
 from django.conf import settings
 from django.utils.timezone import now
-from django.db.models import F
 from rest_framework.serializers import DateTimeField
 
 from celery.utils.log import get_task_logger
 import json
+
+from src.server.oasisapi.queues.progress import analysis_progress_updates
 
 logger = get_task_logger(__name__)
 
@@ -241,14 +242,8 @@ class AnalysisStatusConsumer(GuardedAsyncJsonWebsocketConsumer):
         analysis = await get_analysis(pk=pk)
         logger.info(f"New update received on run {pk}")
 
-        if "events_total" in content:
-            # num_events_complete is reset once at run-start (Analysis.run()), not here -
-            # events_total is reported once per chunk, so resetting on every ping would
-            # wipe out progress already reported by other chunks of the same run.
-            analysis.num_events_total = int(float(content["events_total"]))
-
-        if "events_complete" in content:
-            analysis.num_events_complete = F('num_events_complete') + int(content["events_complete"])
+        for field, value in analysis_progress_updates(content).items():
+            setattr(analysis, field, value)
 
         await sync_to_async(analysis.save)()
 

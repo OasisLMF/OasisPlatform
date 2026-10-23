@@ -1,4 +1,3 @@
-from django.db.models import F
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.permissions import AllowAny
@@ -6,6 +5,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .serializers import AnalysisStatusSerializer
+from .progress import analysis_progress_updates
 
 
 class AnalysisStatusView(APIView):
@@ -22,9 +22,10 @@ class AnalysisStatusView(APIView):
     def post(self, request, *args, **kwargs):
         """
         Record progress for a running analysis. Safe to call concurrently from
-        multiple worker processes for the same `analysis_pk` - `events_complete`
-        is applied as an atomic SQL increment rather than a read/modify/write, so
-        updates from different processes can't clobber one another.
+        multiple worker processes for the same `analysis_pk` - the counts
+        (`events_complete`, `gul_ready`, `outputs_complete`) are applied as atomic
+        SQL increments rather than a read/modify/write, so updates from different
+        processes can't clobber one another.
         """
         from src.server.oasisapi.analyses.models import Analysis
 
@@ -32,15 +33,7 @@ class AnalysisStatusView(APIView):
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
 
-        update_fields = {}
-        if 'events_total' in data:
-            # num_events_complete is reset once at run-start (Analysis.run()), not here -
-            # events_total is reported once per chunk, so resetting on every ping would
-            # wipe out progress already reported by other chunks of the same run.
-            update_fields['num_events_total'] = data['events_total']
-        if 'events_complete' in data:
-            update_fields['num_events_complete'] = F('num_events_complete') + data['events_complete']
-
+        update_fields = analysis_progress_updates(data)
         if update_fields:
             Analysis.objects.filter(pk=data['analysis_pk']).update(**update_fields)
 
