@@ -1094,25 +1094,14 @@ def generate_losses_output(self, params, analysis_id=None, slug=None, **kwargs):
         logger.info(f"post_losses_hook: running {res.get('post_analysis_module')}")
         OasisManager().post_analysis(**res)
 
-    # store additional input files
-    additional_input_files = ['occurrence.bin']
-    curr_input_files = list(os.listdir(res['oasis_files_dir']))
-
-    input_files_added = False
-    for fname in additional_input_files:
-        if fname in curr_input_files:
-            continue
-
-        fpath = os.path.join(res['model_run_dir'], 'input', fname)
-        shutil.copy2(fpath, res['oasis_files_dir'])
-        input_files_added = True
-
-    if input_files_added:
-        # Upload a fresh tarball for record_losses_files to store as analysis.input_file. The input reference
-        # can't be overwritten in place: in generate_and_run it is this worker's own tarball (already copied by
-        # record_input_files), and otherwise it is a server key or URL that may sit under a different bucket or
-        # location than this worker's filestore.
-        res['updated_input_location'] = filestore.put(res['oasis_files_dir'])
+    # store additional files needed for combine run
+    occ_path = os.path.join(res['model_run_dir'], 'input', 'occurrence.bin')
+    if os.path.exists(occ_path):
+        combine_folder = os.path.join(res['model_run_dir'], 'output', 'combine')
+        os.makedirs(combine_folder, exist_ok=True)
+        shutil.copy2(occ_path, os.path.join(combine_folder, 'occurrence.bin'))
+    else:
+        logger.info('Occurrence file not found. This analysis will not support the combine endpoint.')
 
     output_dir = os.path.join(res['model_run_dir'], 'output')
     logs_dir = os.path.join(res['model_run_dir'], 'log')
