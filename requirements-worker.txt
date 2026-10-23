@@ -151,9 +151,7 @@ kiwisolver==1.5.1
 kombu==5.6.2
     # via celery
 lark==1.3.1
-    # via
-    #   -r requirements-worker.in
-    #   ods-tools
+    # via -r requirements-worker.in
 llvmlite==0.50.0
     # via numba
 matplotlib==3.11.2
@@ -179,9 +177,7 @@ natsort==8.4.0
 networkx==3.7
     # via -r requirements-worker.in
 numba==0.68.0
-    # via
-    #   oasislmf
-    #   ods-tools
+    # via oasislmf
 numexpr==2.14.2
     # via oasislmf
 numpy==2.5.4
@@ -205,7 +201,7 @@ oasis-data-manager==0.2.3
     #   ods-tools
 oasislmf[extra]==2.5.8
     # via -r requirements-worker.in
-ods-tools[extra] @ git+https://github.com/OasisLMF/ODS_Tools.git@6a28c8280ff904c02ede6dfc0e7938dffd960a83
+ods-tools @ git+https://github.com/OasisLMF/ODS_Tools.git@6a28c8280ff904c02ede6dfc0e7938dffd960a83
     # via
     #   -r requirements-worker.in
     #   oasislmf
@@ -246,8 +242,6 @@ psycopg-binary==3.3.6
     # via psycopg
 psycopg-pool==3.3.3
     # via psycopg
-psycopg2==2.9.13
-    # via ods-tools
 psycopg2-binary==2.9.13
     # via -r requirements-worker.in
 pyarrow==26.0.0
@@ -263,9 +257,7 @@ pyjwt[crypto]==2.15.1
 pymysql==1.2.3
     # via -r requirements-worker.in
 pyodbc==5.3.0
-    # via
-    #   -r requirements-worker.in
-    #   ods-tools
+    # via -r requirements-worker.in
 pyogrio==0.13.0
     # via geopandas
 pyparsing==3.3.3
@@ -282,9 +274,7 @@ python-dateutil==2.9.0.post0
 pytz==2026.5
     # via oasislmf
 pyyaml==6.0.3
-    # via
-    #   -r requirements-worker.in
-    #   ods-tools
+    # via -r requirements-worker.in
 redis==5.3.1
     # via -r requirements-worker.in
 referencing==0.37.0
@@ -316,7 +306,6 @@ scikit-learn==1.9.1
 scipy==1.18.1
     # via
     #   oasislmf
-    #   ods-tools
     #   scikit-learn
 shapely==2.2.0
     # via
@@ -331,13 +320,9 @@ six==1.17.0
 sqlalchemy==2.1.6
     # via -r requirements-worker.in
 sqlparams==6.2.0
-    # via
-    #   -r requirements-worker.in
-    #   ods-tools
+    # via -r requirements-worker.in
 sqlparse==0.6.0
-    # via
-    #   -r requirements-worker.in
-    #   ods-tools
+    # via -r requirements-worker.in
 tabulate==0.10.0
     # via oasislmf
 tblib==3.2.2
