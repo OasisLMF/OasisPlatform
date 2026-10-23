@@ -665,7 +665,7 @@ class CombineTasks(TestCase):
 
     @patch('src.model_execution_worker.server_tasks.combine')
     @patch('src.model_execution_worker.server_tasks.get_filestore')
-    def test_run_comine_transform__missing_occurrence(self, mock_get_filestore, mock_combine):
+    def test_run_combine__missing_occurrence(self, mock_get_filestore, mock_combine):
         mock_get_filestore.return_value.get.side_effect = self.mock_get
         mock_combine.prepare_config.return_value = {}
 
@@ -684,6 +684,7 @@ class CombineTasks(TestCase):
 
             self.assertEqual(success, False)
             self.assertIn('occurrence.bin missing', result)
+            mock_combine.combine.assert_not_called
 
     @patch('src.model_execution_worker.server_tasks.combine')
     @patch('src.model_execution_worker.server_tasks.get_filestore')
