@@ -188,7 +188,7 @@ def run_combine(input_tar_paths, output_tar_paths, config):
             # extract necessary files and place in correct dirs
             try:
                 with tarfile.open(_tmp_input_tar, 'r:gz') as f:
-                    f.extractall(path=os.path.join(_curr_tmp_dir, 'input'), members=combine_file_locations['input'])
+                    f.extractall(path=os.path.join(_curr_tmp_dir, 'input'), members=[combine_file_locations['input']])
                 analysis_dirs.append(_curr_tmp_dir)
             except KeyError as _:
                 occ_ps = ', '.join([os.path.join(k, v) for k, v in combine_file_locations.items()])
