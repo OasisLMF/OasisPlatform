@@ -23,7 +23,7 @@ from oasislmf.utils.exceptions import OasisExceptionNoKeys
 from oasislmf.utils.status import OASIS_TASK_STATUS
 from pathlib2 import Path
 
-from ..common.filestore.filestore import get_filestore, remote_subdir
+from ..common.filestore.filestore import get_archive_compression, get_filestore, remote_subdir
 from ..conf import celeryconf_v2 as celery_conf
 from ..conf.iniconf import settings, settings_local
 from .celery_error_handler import OasisWorkerTask
@@ -55,10 +55,8 @@ Celery task wrapper for Oasis calculation.
 
 logger = get_task_logger(__name__)
 LOG_FILE_SUFFIX = 'txt'
-ARCHIVE_FILE_SUFFIX = 'tar.gz'
-# Compression for archives only passed between worker tasks (lookup/keys chunks, run directory, loss chunks)
-# 'zst' is much faster than gzip on large runs, archives the server stores for users stay gzip
-INTERNAL_ARCHIVE_COMPRESSION = settings.get('worker', 'INTERNAL_ARCHIVE_COMPRESSION', fallback='gz').lower()
+# Compression for every directory archive the worker stores, 'zst' is much faster than gzip on large runs
+ARCHIVE_COMPRESSION_TYPE = get_archive_compression(settings)
 RUNNING_TASK_STATUS = OASIS_TASK_STATUS["running"]["id"]
 TASK_LOG_DIR = settings.get('worker', 'TASK_LOG_DIR', fallback='/var/log/oasis/tasks')
 FAIL_ON_REDELIVERY = settings.getboolean('worker', 'FAIL_ON_REDELIVERY', fallback=True)
@@ -609,9 +607,9 @@ def prepare_keys_file_chunk(
         # Store chunks
         params['chunk_keys'] = filestore.put(
             chunk_target_dir,
-            filename=f'lookup-{chunk_idx + 1}.{filestore.archive_suffix(INTERNAL_ARCHIVE_COMPRESSION)}',
+            filename=f'lookup-{chunk_idx + 1}.{filestore.archive_suffix(ARCHIVE_COMPRESSION_TYPE)}',
             subdir=params['storage_subdir'],
-            compression=INTERNAL_ARCHIVE_COMPRESSION,
+            compression=ARCHIVE_COMPRESSION_TYPE,
         )
 
     params['log_location'] = filestore.put(kwargs.get('log_filename'))
@@ -744,9 +742,9 @@ def collect_keys(
             # store keys data
             chunk_params['keys_data'] = filestore.put(
                 merge_dir.as_posix(),
-                filename=f'keys-data.{filestore.archive_suffix(INTERNAL_ARCHIVE_COMPRESSION)}',
+                filename=f'keys-data.{filestore.archive_suffix(ARCHIVE_COMPRESSION_TYPE)}',
                 subdir=chunk_params['storage_subdir'],
-                compression=INTERNAL_ARCHIVE_COMPRESSION,
+                compression=ARCHIVE_COMPRESSION_TYPE,
             )
 
     chunk_params['log_location'] = filestore.put(kwargs.get('log_filename'))
@@ -794,7 +792,7 @@ def write_input_files(self, params, run_data_uuid=None, analysis_id=None, initia
         'lookup_success_location': filestore.put(os.path.join(params['target_dir'], 'gul_summary_map.csv')),
         'lookup_validation_location': filestore.put(os.path.join(params['target_dir'], 'exposure_summary_report.json')),
         'summary_levels_location': filestore.put(os.path.join(params['target_dir'], 'exposure_summary_levels.json')),
-        'output_location': filestore.put(params['target_dir']),
+        'output_location': filestore.put(params['target_dir'], compression=ARCHIVE_COMPRESSION_TYPE),
         'analysis_settings_location': filestore.put(params['analysis_settings_json']),
         'log_location': params['log_location'],
     }
@@ -996,9 +994,9 @@ def prepare_losses_generation_directory(self, params, analysis_id=None, slug=Non
 
         params['run_location'] = filestore.put(
             params['model_run_dir'],
-            filename=f'run_directory.{filestore.archive_suffix(INTERNAL_ARCHIVE_COMPRESSION)}',
+            filename=f'run_directory.{filestore.archive_suffix(ARCHIVE_COMPRESSION_TYPE)}',
             subdir=params['storage_subdir'],
-            compression=INTERNAL_ARCHIVE_COMPRESSION,
+            compression=ARCHIVE_COMPRESSION_TYPE,
         )
         params['log_location'] = filestore.put(kwargs.get('log_filename'))
         return params
@@ -1056,15 +1054,15 @@ def generate_losses_chunk(self, params, chunk_idx, num_chunks, analysis_id=None,
             **params,
             'chunk_work_location': filestore.put(
                 chunk_params['kernel_work_dir'],
-                filename=f'work-{chunk_idx + 1}.{filestore.archive_suffix(INTERNAL_ARCHIVE_COMPRESSION)}',
+                filename=f'work-{chunk_idx + 1}.{filestore.archive_suffix(ARCHIVE_COMPRESSION_TYPE)}',
                 subdir=params['storage_subdir'],
-                compression=INTERNAL_ARCHIVE_COMPRESSION,
+                compression=ARCHIVE_COMPRESSION_TYPE,
             ),
             'chunk_log_location': filestore.put(
                 chunk_params['kernel_log_dir'],
-                filename=f'log-{chunk_idx + 1}.{filestore.archive_suffix(INTERNAL_ARCHIVE_COMPRESSION)}',
+                filename=f'log-{chunk_idx + 1}.{filestore.archive_suffix(ARCHIVE_COMPRESSION_TYPE)}',
                 subdir=params['storage_subdir'],
-                compression=INTERNAL_ARCHIVE_COMPRESSION,
+                compression=ARCHIVE_COMPRESSION_TYPE,
             ),
             'kernel_work_dir': chunk_params['kernel_work_dir'],
             'process_number': chunk_idx + 1,
@@ -1120,14 +1118,14 @@ def generate_losses_output(self, params, analysis_id=None, slug=None, **kwargs):
         # can't be overwritten in place: in generate_and_run it is this worker's own tarball (already copied by
         # record_input_files), and otherwise it is a server key or URL that may sit under a different bucket or
         # location than this worker's filestore.
-        res['updated_input_location'] = filestore.put(res['oasis_files_dir'])
+        res['updated_input_location'] = filestore.put(res['oasis_files_dir'], compression=ARCHIVE_COMPRESSION_TYPE)
 
     output_dir = os.path.join(res['model_run_dir'], 'output')
     logs_dir = os.path.join(res['model_run_dir'], 'log')
     return {
         **res,
-        'output_location': filestore.put(output_dir, arcname='output'),
-        'run_logs': filestore.put(logs_dir),
+        'output_location': filestore.put(output_dir, arcname='output', compression=ARCHIVE_COMPRESSION_TYPE),
+        'run_logs': filestore.put(logs_dir, compression=ARCHIVE_COMPRESSION_TYPE),
         'log_location': filestore.put(kwargs.get('log_filename')),
     }
 
@@ -1173,7 +1171,7 @@ def handle_task_failure(*args, sender=None, task_id=None, **kwargs):
         signature('record_input_error_files').delay(
             task_args.get('analysis_id'),
             task_args.get('initiator_id'),
-            filestore.put(task_params.get('target_dir'))
+            filestore.put(task_params.get('target_dir'), compression=ARCHIVE_COMPRESSION_TYPE)
         )
 
     # Store failed input gen files
@@ -1181,7 +1179,7 @@ def handle_task_failure(*args, sender=None, task_id=None, **kwargs):
         signature('record_input_error_files').delay(
             task_args.get('analysis_id'),
             task_args.get('initiator_id'),
-            filestore.put(task_params.get('target_dir')),
+            filestore.put(task_params.get('target_dir'), compression=ARCHIVE_COMPRESSION_TYPE),
             filestore.put(os.path.join(task_params.get('target_dir'), 'keys-errors.csv'))
         )
 
@@ -1190,8 +1188,8 @@ def handle_task_failure(*args, sender=None, task_id=None, **kwargs):
         signature('record_losses_error_files').delay(
             task_args.get('analysis_id'),
             task_args.get('initiator_id'),
-            filestore.put(os.path.join(task_params.get('model_run_dir'), 'output')),
-            filestore.put(os.path.join(task_params.get('model_run_dir'), 'log')),
+            filestore.put(os.path.join(task_params.get('model_run_dir'), 'output'), compression=ARCHIVE_COMPRESSION_TYPE),
+            filestore.put(os.path.join(task_params.get('model_run_dir'), 'log'), compression=ARCHIVE_COMPRESSION_TYPE),
         )
 
     # Wipe worker's remote data storage

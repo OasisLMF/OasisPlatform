@@ -452,8 +452,8 @@ class WriteInputFiles(TestCase):
             self.assertEqual(generate_files.keys_errors_path, os.path.join(target_dir, 'keys-errors.csv'))
 
 
-class InternalArchiveCompression(TestCase):
-    """ Archives only passed between worker tasks follow INTERNAL_ARCHIVE_COMPRESSION """
+class ArchiveCompressionType(TestCase):
+    """ Every directory archive the worker stores follows ARCHIVE_COMPRESSION_TYPE """
 
     def test_zst___run_directory_is_stored_as_zstd(self):
         def settings_get(section, option, fallback=None):
@@ -461,7 +461,7 @@ class InternalArchiveCompression(TestCase):
 
         with TemporaryDirectory() as run_dir, \
                 patch('src.model_execution_worker.distributed_tasks.TASK_LOG_DIR', run_dir), \
-                patch('src.model_execution_worker.distributed_tasks.INTERNAL_ARCHIVE_COMPRESSION', 'zst'), \
+                patch('src.model_execution_worker.distributed_tasks.ARCHIVE_COMPRESSION_TYPE', 'zst'), \
                 patch('src.model_execution_worker.distributed_tasks.settings.get', side_effect=settings_get), \
                 patch('src.model_execution_worker.distributed_tasks.notify_api_task_started'), \
                 patch('src.model_execution_worker.distributed_tasks.filestore') as filestore_mock, \
@@ -474,3 +474,30 @@ class InternalArchiveCompression(TestCase):
         self.assertEqual(len(run_dir_puts), 1)
         self.assertEqual(run_dir_puts[0].kwargs['filename'], 'run_directory.tar.zst')
         self.assertEqual(run_dir_puts[0].kwargs['compression'], 'zst')
+
+    def test_zst___outputs_and_logs_are_stored_as_zstd(self):
+        with TemporaryDirectory() as run_dir:
+            root_dir = Path(run_dir, 'analysis-1_losses-run-uuid')
+            model_run_dir = Path(root_dir, 'run-data')
+            Path(root_dir, 'input-data').mkdir(parents=True)
+            Path(model_run_dir, 'input').mkdir(parents=True)
+            Path(model_run_dir, 'input', 'occurrence.bin').write_bytes(b'')
+
+            def settings_get(section, option, fallback=None):
+                return run_dir if option == 'base_run_dir' else fallback
+
+            with patch('src.model_execution_worker.distributed_tasks.TASK_LOG_DIR', run_dir), \
+                    patch('src.model_execution_worker.distributed_tasks.ARCHIVE_COMPRESSION_TYPE', 'zst'), \
+                    patch('src.model_execution_worker.distributed_tasks.settings.get', side_effect=settings_get), \
+                    patch('src.model_execution_worker.distributed_tasks.notify_api_task_started'), \
+                    patch('src.model_execution_worker.distributed_tasks.filestore') as filestore_mock, \
+                    patch('oasislmf.manager.OasisManager'):
+                filestore_mock.put.side_effect = lambda ref, filename=None, **kw: filename or 'stored.tar.zst'
+                params = [{'chunk_work_location': 'work-1.tar.zst', 'chunk_log_location': 'log-1.tar.zst',
+                           'input_location': 'stored-inputs.tar.zst'}]
+                generate_losses_output.run(params, analysis_id=1, run_data_uuid='run-uuid', slug='generate-losses-output')
+
+            dir_puts = {c.args[0]: c.kwargs.get('compression') for c in filestore_mock.put.call_args_list}
+            for name in ['output', 'log']:
+                self.assertEqual(dir_puts[str(Path(model_run_dir, name))], 'zst')
+            self.assertEqual(dir_puts[str(Path(root_dir, 'input-data'))], 'zst')

@@ -3,6 +3,7 @@ import os
 from typing import Union
 
 from oasis_data_manager.errors import OasisException
+from oasis_data_manager.filestore.archive import ARCHIVE_SUFFIXES, GZIP
 from oasis_data_manager.filestore.backends.local import LocalStorage
 from oasis_data_manager.filestore.backends.base import BaseStorage
 
@@ -18,6 +19,20 @@ def get_archive_options(settings, section='worker'):
         'archive_compresslevel': int(level) if level not in (None, '') else None,
         'archive_threads': settings.getint(section, 'ARCHIVE_COMPRESSION_THREADS', fallback=-1),
     }
+
+
+def get_archive_compression(settings, section='worker'):
+    """ ARCHIVE_COMPRESSION_TYPE: compression for directory archives the worker stores, 'gz' (default) or 'zst'
+
+    Passed to each directory `put` rather than set as the filestore default.
+    Unknown values fall back to 'gz' with a warning, so a typo can't fail every store
+    """
+    value = settings.get(section, 'ARCHIVE_COMPRESSION_TYPE', fallback=GZIP) or GZIP
+    compression = value.strip().lower()
+    if compression not in ARCHIVE_SUFFIXES:
+        logging.warning(f"Unknown ARCHIVE_COMPRESSION_TYPE '{value}', expected one of {list(ARCHIVE_SUFFIXES)}, using '{GZIP}'")
+        return GZIP
+    return compression
 
 
 def get_filestore(settings, section='worker', raise_error=True) -> Union[BaseStorage | None]:
