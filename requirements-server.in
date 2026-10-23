@@ -12,7 +12,7 @@ django-model-utils>=4.0.0
 django-request-logging>=0.0,<1.0
 django-storages[azure]>=1.12.3
 django_celery_results
-djangorestframework>=3.0,<3.15.0
+djangorestframework>=3.0,<4.0
 djangorestframework_simplejwt
 drf-nested-routers>=0.0,<1.0
 drf-spectacular>=0.27.0
@@ -22,8 +22,8 @@ jsonpickle>=3.0,<4.0
 jsonschema>=4.0,<5.0
 markdown>=3.0,<4.0
 mozilla_django_oidc
-ods_tools
 oasis-data-manager[zstd]>=0.0,<1.0
+ods-tools @ git+https://github.com/OasisLMF/ODS_Tools.git@main
 pandas
 pathlib2>=2.0,<3.0
 psycopg[binary, pool]
@@ -33,7 +33,6 @@ pyasn1>=0.6.2,<1.0
 pymysql>=1.0,<2.0
 redis>=5.0,<6.0
 sqlalchemy>=2.0,<3.0
-mysqlclient>=2.0,<3.0
 whitenoise>=6.0,<7.0
 azure-identity>=1.0,<2.0
 urllib3 >=2.6.3,<3.0
