@@ -4,6 +4,7 @@ from io import BytesIO
 
 import pandas as pd
 import tarfile
+from urllib.parse import urlparse
 from uuid import uuid4
 
 from django.conf import settings
@@ -13,6 +14,7 @@ from django.db import models
 from django.db.models import TextChoices
 from django.utils.translation import gettext_lazy as _
 from model_utils.models import TimeStampedModel
+from oasis_data_manager.filestore.archive import ZSTD_MAGIC
 from rest_framework.reverse import reverse
 
 
@@ -26,11 +28,38 @@ def related_file_to_df(RelatedFile):
         return pd.read_csv(BytesIO(RelatedFile.read()))
 
 
+# Workers store directory archives as gzip or zstd (ARCHIVE_COMPRESSION_TYPE)
+ARCHIVE_CONTENT_TYPES = {'tar.gz': 'application/gzip', 'tar.zst': 'application/zstd'}
+
+
+def archive_suffix(reference):
+    """ Suffix of a worker archive from its storage reference (key, path or URL), 'tar.gz' unless it's 'tar.zst' """
+    return 'tar.zst' if urlparse(str(reference)).path.endswith('.tar.zst') else 'tar.gz'
+
+
+def _zstd_decompress(data):
+    try:
+        from compression import zstd
+        return zstd.decompress(data)
+    except ImportError:
+        import zstandard
+        with zstandard.ZstdDecompressor().stream_reader(BytesIO(data)) as reader:
+            return reader.read()
+
+
+def open_tar_file(RelatedFile):
+    """ Open a stored gzip, zstd or uncompressed tar for random access """
+    data = RelatedFile.read()
+    if data[:len(ZSTD_MAGIC)] == ZSTD_MAGIC:
+        data = _zstd_decompress(data)
+    return tarfile.open(fileobj=BytesIO(data), mode='r')
+
+
 def list_tar_file(RelatedFile):
     if not RelatedFile:
         return None
 
-    tarf = tarfile.open(fileobj=BytesIO(RelatedFile.read()), mode='r')
+    tarf = open_tar_file(RelatedFile)
 
     files = [m.name for m in tarf.getmembers() if m.isfile()]
     return files
@@ -40,7 +69,7 @@ def extract_file_from_tar(RelatedFile, fname):
     if not RelatedFile:
         return None
 
-    tarf = tarfile.open(fileobj=BytesIO(RelatedFile.read()), mode='r')
+    tarf = open_tar_file(RelatedFile)
 
     return tarf.extractfile(fname)
 
@@ -50,8 +79,8 @@ def random_file_name(instance, filename):
         return filename
 
     # Work around: S3 objects pushed as '<hash>.gz' should be '<hash>.tar.gz'
-    if filename.endswith('.tar.gz'):
-        ext = '.tar.gz'
+    if filename.endswith(('.tar.gz', '.tar.zst')):
+        ext = '.tar.' + filename.rsplit('.', 1)[-1]
     else:
         ext = os.path.splitext(filename)[-1]
     return '{}{}'.format(uuid4().hex, ext)

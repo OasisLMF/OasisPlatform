@@ -27,7 +27,7 @@ from tempfile import TemporaryFile
 from urllib.request import urlopen
 from urllib.parse import urlparse
 
-from src.server.oasisapi.files.models import RelatedFile
+from src.server.oasisapi.files.models import ARCHIVE_CONTENT_TYPES, RelatedFile, archive_suffix
 from src.server.oasisapi.files.v1_api.views import handle_json_data
 from src.server.oasisapi.schemas.serializers import ModelParametersSerializer
 from src.server.oasisapi.files.upload import wait_for_blob_copy
@@ -174,6 +174,12 @@ def store_file(reference, content_type, creator, required=True, filename=None):
             return None
         else:
             raise e
+
+
+def store_archive(reference, creator, name, required=True):
+    """ `store_file` for a worker directory archive, stored as '<name>.tar.gz' or '<name>.tar.zst' to match its compression """
+    suffix = archive_suffix(reference)
+    return store_file(reference, ARCHIVE_CONTENT_TYPES[suffix], creator, required=required, filename=f'{name}.{suffix}')
 
 
 def delete_prev_output(object_model, field_list=[]):
@@ -373,10 +379,10 @@ def record_run_analysis_result(res, analysis_pk, initiator_pk):
 
     # Store results
     if return_code == 0:
-        analysis.output_file = store_file(output_location, 'application/gzip', initiator, filename=f'analysis_{analysis_pk}_output.tar.gz')
+        analysis.output_file = store_archive(output_location, initiator, f'analysis_{analysis_pk}_output')
     # Store Ktools logs
     if log_location:
-        analysis.run_log_file = store_file(log_location, 'application/gzip', initiator, filename=f'analysis_{analysis_pk}_logs.tar.gz')
+        analysis.run_log_file = store_archive(log_location, initiator, f'analysis_{analysis_pk}_logs')
     # record the error file
     if traceback_location:
         analysis.run_traceback_file = store_file(traceback_location, 'text/plain', initiator, filename=f'analysis_{analysis_pk}_run_traceback.txt')
@@ -429,8 +435,7 @@ def record_generate_input_result(result, analysis_pk, initiator_pk):
         analysis.status = Analysis.status_choices.INPUTS_GENERATION_ERROR
 
     # Add current Output
-    analysis.input_file = store_file(input_location, 'application/gzip', initiator,
-                                     filename=f'analysis_{analysis_pk}_inputs.tar.gz') if input_location else None
+    analysis.input_file = store_archive(input_location, initiator, f'analysis_{analysis_pk}_inputs') if input_location else None
     analysis.lookup_success_file = store_file(lookup_success_fp, 'text/csv', initiator,
                                               filename=f'analysis_{analysis_pk}_gul_summary_map.csv') if lookup_success_fp else None
     analysis.lookup_errors_file = store_file(lookup_error_fp, 'text/csv', initiator, required=False,
