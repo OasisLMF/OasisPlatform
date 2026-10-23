@@ -190,7 +190,7 @@ def run_combine(input_tar_paths, output_tar_paths, config):
                 with tarfile.open(_tmp_input_tar, 'r:gz') as f:
                     f.extractall(path=os.path.join(_curr_tmp_dir, 'input'), members=[combine_file_locations['input']])
                 analysis_dirs.append(_curr_tmp_dir)
-            except KeyError as _:
+            except KeyError:
                 occ_ps = ', '.join([os.path.join(k, v) for k, v in combine_file_locations.items()])
                 logging.error(f'Combine Required file: occurrence.bin missing from {occ_ps}')
                 return (False, 'Combine Required file: occurrence.bin missing.')

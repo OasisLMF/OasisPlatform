@@ -1101,7 +1101,7 @@ def generate_losses_output(self, params, analysis_id=None, slug=None, **kwargs):
         os.makedirs(combine_folder, exist_ok=True)
         shutil.copy2(occ_path, os.path.join(combine_folder, 'occurrence.bin'))
     else:
-        logger.info('Occurence file not found. This analysis will not support the combine endpoint.')
+        logger.info('Occurrence file not found. This analysis will not support the combine endpoint.')
 
     output_dir = os.path.join(res['model_run_dir'], 'output')
     logs_dir = os.path.join(res['model_run_dir'], 'log')
