@@ -146,6 +146,7 @@ class AnalysisApi(WebTestMixin, TestCase):
                     'task_finished': None,
                     'num_events_complete': 0,
                     'num_events_total': 0,
+                    'num_gul_processes': 0,
                     'num_gul_ready': 0,
                     'num_outputs_total': 0,
                     'num_outputs_complete': 0
@@ -211,6 +212,7 @@ class AnalysisApi(WebTestMixin, TestCase):
                     'task_finished': None,
                     'num_events_complete': 0,
                     'num_events_total': 0,
+                    'num_gul_processes': 0,
                     'num_gul_ready': 0,
                     'num_outputs_total': 0,
                     'num_outputs_complete': 0

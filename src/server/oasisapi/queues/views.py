@@ -23,7 +23,7 @@ class AnalysisStatusView(APIView):
         """
         Record progress for a running analysis. Safe to call concurrently from
         multiple worker processes for the same `analysis_pk` - the counts
-        (`events_complete`, `gul_ready`, `outputs_complete`) are applied as atomic
+        (`events_complete`, `gul_processes`, `gul_ready`, `outputs_complete`) are applied as atomic
         SQL increments rather than a read/modify/write, so updates from different
         processes can't clobber one another.
         """

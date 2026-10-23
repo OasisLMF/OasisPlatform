@@ -187,6 +187,7 @@ class AnalysisApi(WebTestMixin, TestCase):
                     'priority': 4,
                     'num_events_total': 0,
                     'num_events_complete': 0,
+                    'num_gul_processes': 0,
                     'num_gul_ready': 0,
                     'num_outputs_total': 0,
                     'num_outputs_complete': 0
@@ -272,6 +273,7 @@ class AnalysisApi(WebTestMixin, TestCase):
                     'priority': 4,
                     'num_events_total': 0,
                     'num_events_complete': 0,
+                    'num_gul_processes': 0,
                     'num_gul_ready': 0,
                     'num_outputs_total': 0,
                     'num_outputs_complete': 0
@@ -2107,3 +2109,23 @@ class ResetUrlMixin:
         if django_settings.ROOT_URLCONF in sys.modules:
             reload(sys.modules[django_settings.ROOT_URLCONF])
         clear_url_caches()
+
+
+class AnalysisRunProgress(WebTestMixin, TestCase):
+    def test_progress_counts_are_set___run_progress_reports_them(self):
+        user = fake_user()
+        analysis = fake_analysis(
+            num_events_total=1447, num_events_complete=700, num_gul_processes=12, num_gul_ready=12,
+            num_outputs_total=24, num_outputs_complete=5,
+        )
+
+        response = self.app.get(
+            reverse(f'{NAMESPACE}:analysis-run-progress', kwargs={'pk': analysis.pk}),
+            headers={'Authorization': 'Bearer {}'.format(AccessToken.for_user(user))},
+        )
+
+        self.assertEqual({
+            'Status': '700/1447 gul stages complete',
+            'GulReady': '12/12 gul processes ready',
+            'Outputs': '5/24 outputs complete',
+        }, response.json)

@@ -143,6 +143,8 @@ class TestAnalysisStatusConsumer(TestCase):
 
         for ping in [
             {'analysis_pk': analysis.pk, 'events_total': '10'},
+            {'analysis_pk': analysis.pk, 'gul_processes': 1},
+            {'analysis_pk': analysis.pk, 'gul_processes': 1},
             {'analysis_pk': analysis.pk, 'gul_ready': 1},
             {'analysis_pk': analysis.pk, 'gul_ready': 1},
             {'analysis_pk': analysis.pk, 'events_complete': 10},
@@ -154,7 +156,7 @@ class TestAnalysisStatusConsumer(TestCase):
 
         await sync_to_async(analysis.refresh_from_db)()
         self.assertEqual(
-            (10, 10, 2, 3, 2),
-            (analysis.num_events_total, analysis.num_events_complete, analysis.num_gul_ready,
+            (10, 10, 2, 2, 3, 2),
+            (analysis.num_events_total, analysis.num_events_complete, analysis.num_gul_processes, analysis.num_gul_ready,
              analysis.num_outputs_total, analysis.num_outputs_complete),
         )

@@ -54,12 +54,14 @@ class AnalysisStatusSerializer(serializers.Serializer):
     should be set for the call to have any effect:
 
     - `events_total`, `outputs_total`: totals for the GUL events and the output reports, set as sent.
-    - `events_complete`, `gul_ready`, `outputs_complete`: counts of GUL events processed, GUL
-      processes that have loaded the model, and output reports written, added to the stored count.
+    - `events_complete`, `gul_processes`, `gul_ready`, `outputs_complete`: counts of GUL events
+      processed, GUL processes started (sent once per analysis chunk), GUL processes that have
+      loaded the model, and output reports written, added to the stored count.
     """
     analysis_pk = serializers.IntegerField()
     events_total = serializers.IntegerField(required=False, min_value=0)
     events_complete = serializers.IntegerField(required=False, min_value=0)
+    gul_processes = serializers.IntegerField(required=False, min_value=0)
     gul_ready = serializers.IntegerField(required=False, min_value=0)
     outputs_total = serializers.IntegerField(required=False, min_value=0)
     outputs_complete = serializers.IntegerField(required=False, min_value=0)

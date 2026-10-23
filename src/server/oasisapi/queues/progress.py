@@ -8,6 +8,7 @@ PROGRESS_TOTALS = {
 }
 PROGRESS_COUNTS = {
     'events_complete': 'num_events_complete',
+    'gul_processes': 'num_gul_processes',
     'gul_ready': 'num_gul_ready',
     'outputs_complete': 'num_outputs_complete',
 }

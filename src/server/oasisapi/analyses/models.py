@@ -301,6 +301,7 @@ class Analysis(TimeStampedModel):
     chunking_options = models.OneToOneField(ModelChunkingOptions, on_delete=models.CASCADE, auto_created=True, default=None, null=True)
     num_events_total = models.IntegerField(null=False, default=0, blank=True)
     num_events_complete = models.IntegerField(null=False, default=0, blank=True)
+    num_gul_processes = models.IntegerField(null=False, default=0, blank=True)
     num_gul_ready = models.IntegerField(null=False, default=0, blank=True)
     num_outputs_total = models.IntegerField(null=False, default=0, blank=True)
     num_outputs_complete = models.IntegerField(null=False, default=0, blank=True)
@@ -630,6 +631,7 @@ class Analysis(TimeStampedModel):
     def _reset_loss_progress(self):
         self.num_events_total = 0
         self.num_events_complete = 0
+        self.num_gul_processes = 0
         self.num_gul_ready = 0
         self.num_outputs_total = 0
         self.num_outputs_complete = 0

@@ -95,6 +95,7 @@ class AnalysisListSerializer(serializers.Serializer):
     priority = serializers.IntegerField(read_only=True)
     num_events_total = serializers.IntegerField(read_only=True)
     num_events_complete = serializers.IntegerField(read_only=True)
+    num_gul_processes = serializers.IntegerField(read_only=True)
     num_gul_ready = serializers.IntegerField(read_only=True)
     num_outputs_total = serializers.IntegerField(read_only=True)
     num_outputs_complete = serializers.IntegerField(read_only=True)
@@ -292,6 +293,7 @@ class AnalysisSerializer(serializers.ModelSerializer):
             'priority',
             'num_events_complete',
             'num_events_total',
+            'num_gul_processes',
             'num_gul_ready',
             'num_outputs_total',
             'num_outputs_complete',

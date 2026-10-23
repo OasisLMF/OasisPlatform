@@ -12,6 +12,11 @@ class Migration(migrations.Migration):
     operations = [
         migrations.AddField(
             model_name='analysis',
+            name='num_gul_processes',
+            field=models.IntegerField(blank=True, default=0),
+        ),
+        migrations.AddField(
+            model_name='analysis',
             name='num_gul_ready',
             field=models.IntegerField(blank=True, default=0),
         ),

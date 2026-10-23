@@ -61,6 +61,19 @@ class AnalysisStatusViewTestCase(WebTestMixin, TestCase):
         analysis.refresh_from_db()
         self.assertEqual(2, analysis.num_gul_ready)
 
+    def test_gul_processes_is_provided_per_chunk___num_gul_processes_accumulates(self):
+        analysis = fake_analysis()
+
+        for _ in range(3):
+            self.app.post(
+                reverse('analysis-status'),
+                params=json.dumps({'analysis_pk': analysis.pk, 'gul_processes': 1}),
+                content_type='application/json',
+            )
+
+        analysis.refresh_from_db()
+        self.assertEqual(3, analysis.num_gul_processes)
+
     def test_outputs_total_is_provided___num_outputs_total_is_set(self):
         analysis = fake_analysis(num_outputs_total=10, num_outputs_complete=4)
 

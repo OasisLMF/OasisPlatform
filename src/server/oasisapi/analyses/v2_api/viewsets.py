@@ -656,7 +656,7 @@ class AnalysisViewSet(VerifyGroupAccessModelViewSet):
         analysis = Analysis.objects.get(pk=pk)
         return Response({
             "Status": f"{analysis.num_events_complete}/{analysis.num_events_total} gul stages complete",
-            "GulReady": f"{analysis.num_gul_ready} gul processes ready",
+            "GulReady": f"{analysis.num_gul_ready}/{analysis.num_gul_processes} gul processes ready",
             "Outputs": f"{analysis.num_outputs_complete}/{analysis.num_outputs_total} outputs complete",
         })
 

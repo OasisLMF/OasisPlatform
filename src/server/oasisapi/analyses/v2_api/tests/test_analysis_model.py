@@ -613,14 +613,14 @@ class AnalysisGenerateInputs(WebTestMixin, TestCase):
 class ResetLossProgress(TestCase):
     def test_progress_counts_are_set___reset_loss_progress_zeroes_them(self):
         analysis = fake_analysis(
-            num_events_total=10, num_events_complete=10, num_gul_ready=4,
+            num_events_total=10, num_events_complete=10, num_gul_processes=4, num_gul_ready=4,
             num_outputs_total=51, num_outputs_complete=51,
         )
 
         analysis._reset_loss_progress()
 
         self.assertEqual(
-            (0, 0, 0, 0, 0),
-            (analysis.num_events_total, analysis.num_events_complete, analysis.num_gul_ready,
+            (0, 0, 0, 0, 0, 0),
+            (analysis.num_events_total, analysis.num_events_complete, analysis.num_gul_processes, analysis.num_gul_ready,
              analysis.num_outputs_total, analysis.num_outputs_complete),
         )
