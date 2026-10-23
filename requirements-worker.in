@@ -1,5 +1,5 @@
 oasislmf[extra]
-ods-tools[extra]
+ods-tools[extra] @ git+https://github.com/OasisLMF/ODS_Tools.git@main
 oasis-data-manager>=0.0,<1.0
 adlfs>=2024.0,<2025.0
 s3fs
