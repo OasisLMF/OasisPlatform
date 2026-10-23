@@ -1,4 +1,4 @@
-from unittest.mock import AsyncMock, Mock, patch
+from unittest.mock import AsyncMock, patch
 from asgiref.sync import sync_to_async
 from django.db.models.expressions import CombinedExpression
 from django.test import TestCase
@@ -9,6 +9,7 @@ from rest_framework_simplejwt.tokens import AccessToken
 
 from src.server.oasisapi.routing import application
 from src.server.oasisapi.queues.consumers import AnalysisStatusConsumer
+from src.server.oasisapi.analyses.models import Analysis
 from src.server.oasisapi.analyses.v2_api.tests.fakes import fake_analysis
 
 
@@ -79,72 +80,62 @@ class TestAnalysisStatusConsumer(TestCase):
     async def test_analysis_pk_missing___save_is_not_called(self):
         consumer = AnalysisStatusConsumer()
 
-        with patch('src.server.oasisapi.queues.consumers.get_analysis', new_callable=AsyncMock) as mock_get_analysis:
+        with patch('src.server.oasisapi.queues.consumers.update_analysis_progress', new_callable=AsyncMock) as mock_update:
             await consumer.handle_content({})
 
-            mock_get_analysis.assert_not_called()
+            mock_update.assert_not_called()
 
-    async def test_events_total_is_provided___num_events_total_is_set_and_saved(self):
+    async def test_events_total_is_provided___num_events_total_is_set(self):
         consumer = AnalysisStatusConsumer()
-        analysis = Mock(save=AsyncMock())
 
-        with patch('src.server.oasisapi.queues.consumers.get_analysis', new_callable=AsyncMock) as mock_get_analysis, \
-                patch('src.server.oasisapi.queues.consumers.sync_to_async', side_effect=lambda fn: fn):
-            mock_get_analysis.return_value = analysis
-
+        with patch('src.server.oasisapi.queues.consumers.update_analysis_progress', new_callable=AsyncMock) as mock_update:
             await consumer.handle_content({'analysis_pk': '1', 'events_total': '42'})
 
-            mock_get_analysis.assert_awaited_once_with(pk='1')
-            self.assertEqual(42, analysis.num_events_total)
-            analysis.save.assert_awaited_once()
+            mock_update.assert_awaited_once_with('1', {'num_events_total': 42})
 
-    async def test_events_complete_is_provided___num_events_complete_is_incremented_and_saved(self):
+    async def test_outputs_total_is_provided___num_outputs_total_is_set(self):
         consumer = AnalysisStatusConsumer()
-        analysis = Mock(save=AsyncMock())
 
-        with patch('src.server.oasisapi.queues.consumers.get_analysis', new_callable=AsyncMock) as mock_get_analysis, \
-                patch('src.server.oasisapi.queues.consumers.sync_to_async', side_effect=lambda fn: fn):
-            mock_get_analysis.return_value = analysis
-
-            await consumer.handle_content({'analysis_pk': '1', 'events_complete': '3'})
-
-            expr = analysis.num_events_complete
-            self.assertIsInstance(expr, CombinedExpression)
-            self.assertEqual('+', expr.connector)
-            self.assertEqual('num_events_complete', expr.lhs.name)
-            self.assertEqual(3, expr.rhs.value)
-            analysis.save.assert_awaited_once()
-
-    async def test_outputs_total_is_provided___num_outputs_total_is_set_and_saved(self):
-        consumer = AnalysisStatusConsumer()
-        analysis = Mock(save=AsyncMock())
-
-        with patch('src.server.oasisapi.queues.consumers.get_analysis', new_callable=AsyncMock) as mock_get_analysis, \
-                patch('src.server.oasisapi.queues.consumers.sync_to_async', side_effect=lambda fn: fn):
-            mock_get_analysis.return_value = analysis
-
+        with patch('src.server.oasisapi.queues.consumers.update_analysis_progress', new_callable=AsyncMock) as mock_update:
             await consumer.handle_content({'analysis_pk': '1', 'outputs_total': '51'})
 
-            self.assertEqual(51, analysis.num_outputs_total)
-            analysis.save.assert_awaited_once()
+            mock_update.assert_awaited_once_with('1', {'num_outputs_total': 51})
 
-    async def test_gul_ready_and_outputs_complete_are_provided___counts_are_incremented_and_saved(self):
+    async def test_counts_are_provided___counts_are_incremented(self):
         consumer = AnalysisStatusConsumer()
-        analysis = Mock(save=AsyncMock())
 
-        with patch('src.server.oasisapi.queues.consumers.get_analysis', new_callable=AsyncMock) as mock_get_analysis, \
-                patch('src.server.oasisapi.queues.consumers.sync_to_async', side_effect=lambda fn: fn):
-            mock_get_analysis.return_value = analysis
+        with patch('src.server.oasisapi.queues.consumers.update_analysis_progress', new_callable=AsyncMock) as mock_update:
+            await consumer.handle_content({'analysis_pk': '1', 'events_complete': '3', 'gul_ready': 1, 'outputs_complete': '2'})
 
-            await consumer.handle_content({'analysis_pk': '1', 'gul_ready': 1, 'outputs_complete': '2'})
-
-            for field, value in [('num_gul_ready', 1), ('num_outputs_complete', 2)]:
-                expr = getattr(analysis, field)
+            pk, updates = mock_update.await_args.args
+            self.assertEqual('1', pk)
+            self.assertEqual({'num_events_complete', 'num_gul_ready', 'num_outputs_complete'}, set(updates))
+            for field, value in [('num_events_complete', 3), ('num_gul_ready', 1), ('num_outputs_complete', 2)]:
+                expr = updates[field]
                 self.assertIsInstance(expr, CombinedExpression)
                 self.assertEqual('+', expr.connector)
                 self.assertEqual(field, expr.lhs.name)
                 self.assertEqual(value, expr.rhs.value)
-            analysis.save.assert_awaited_once()
+
+    async def test_ping_has_no_progress_keys___analysis_is_not_updated(self):
+        consumer = AnalysisStatusConsumer()
+
+        with patch('src.server.oasisapi.queues.consumers.update_analysis_progress', new_callable=AsyncMock) as mock_update:
+            await consumer.handle_content({'analysis_pk': '1', 'outputs_done': 1})
+
+            mock_update.assert_not_called()
+
+    async def test_ping_is_received___only_progress_columns_are_written(self):
+        """The ping is applied without saving the instance, so it can't write back a stale status over the run's completion."""
+        analysis = await sync_to_async(fake_analysis)(status=Analysis.status_choices.RUN_STARTED)
+        await sync_to_async(Analysis.objects.filter(pk=analysis.pk).update)(status=Analysis.status_choices.RUN_COMPLETED)
+
+        with patch.object(Analysis, 'save') as mock_save:
+            await AnalysisStatusConsumer().handle_content({'analysis_pk': analysis.pk, 'outputs_complete': 1})
+
+        mock_save.assert_not_called()
+        await sync_to_async(analysis.refresh_from_db)()
+        self.assertEqual((Analysis.status_choices.RUN_COMPLETED, 1), (analysis.status, analysis.num_outputs_complete))
 
     async def test_run_progress_pings_are_received___analysis_counts_are_updated(self):
         analysis = await sync_to_async(fake_analysis)()

@@ -239,16 +239,23 @@ class AnalysisStatusConsumer(GuardedAsyncJsonWebsocketConsumer):
         if "analysis_pk" not in content:
             return
         pk = content["analysis_pk"]
-        analysis = await get_analysis(pk=pk)
         logger.info(f"New update received on run {pk}")
 
-        for field, value in analysis_progress_updates(content).items():
-            setattr(analysis, field, value)
-
-        await sync_to_async(analysis.save)()
+        updates = analysis_progress_updates(content)
+        if updates:
+            await update_analysis_progress(pk, updates)
 
 
 @sync_to_async
-def get_analysis(pk):
+def update_analysis_progress(pk, updates):
+    """Applies run progress updates to an analysis with one UPDATE of just those columns.
+
+    Saving a loaded instance instead would write back every other field as it was read, which can undo
+    a change made meanwhile, such as the run being marked complete as its last output pings arrive.
+
+    Args:
+        pk (int or str): the analysis to update
+        updates (dict): field updates from `analysis_progress_updates`
+    """
     from src.server.oasisapi.analyses.models import Analysis
-    return Analysis.objects.get(pk=int(pk))
+    Analysis.objects.filter(pk=int(pk)).update(**updates)
