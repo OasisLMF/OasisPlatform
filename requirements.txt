@@ -197,7 +197,7 @@ django-storages[azure]==1.14.6
     # via -r requirements-server.in
 django-webtest==1.9.15
     # via -r requirements.in
-djangorestframework==3.14.0
+djangorestframework==3.18.2
     # via
     #   -r requirements-server.in
     #   djangorestframework-simplejwt
@@ -526,9 +526,7 @@ python-discovery==1.6.4
     #   tox
     #   virtualenv
 pytz==2026.5
-    # via
-    #   djangorestframework
-    #   oasislmf
+    # via oasislmf
 pyyaml==6.0.3
     # via
     #   -r requirements-worker.in

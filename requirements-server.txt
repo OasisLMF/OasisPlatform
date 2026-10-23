@@ -119,7 +119,7 @@ django-request-logging==0.7.5
     # via -r requirements-server.in
 django-storages[azure]==1.14.6
     # via -r requirements-server.in
-djangorestframework==3.14.0
+djangorestframework==3.18.2
     # via
     #   -r requirements-server.in
     #   djangorestframework-simplejwt
@@ -249,8 +249,6 @@ python-dateutil==2.9.0.post0
     #   botocore
     #   celery
     #   pandas
-pytz==2026.5
-    # via djangorestframework
 pyyaml==6.0.3
     # via drf-spectacular
 redis==5.3.1
