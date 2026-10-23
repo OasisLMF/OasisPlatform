@@ -613,6 +613,32 @@ class CombineTasks(TestCase):
 
     @patch('src.model_execution_worker.server_tasks.combine')
     @patch('src.model_execution_worker.server_tasks.get_filestore')
+    def test_run_combine_transform__mixed_occurrence_locations(self, mock_get_filestore, mock_combine):
+        mock_get_filestore.return_value.get.side_effect = self.mock_get
+        mock_combine.prepare_config.return_value = {}
+
+        with TemporaryDirectory() as tmpdir:
+            tmpdir = Path(tmpdir)
+            input_tars, output_tars = [], []
+            occ_in_input = [True, False, True]
+            occ_in_output = [False, True, True]
+            for i in range(3):
+                inp = tmpdir / f'input_{i}.tar.gz'
+                out = tmpdir / f'output_{i}.tar.gz'
+                self.create_input_tar(inp, include_occurrence=occ_in_input[i])
+                self.create_output_tar(out, include_occurrence=occ_in_output[i])
+                input_tars.append(inp)
+                output_tars.append(out)
+
+            success, _ = run_combine(input_tars, output_tars, {})
+
+            assert success
+            call_kwargs = mock_combine.combine.call_args[1]
+            assert len(call_kwargs["analysis_dirs"]) == 3
+            mock_get_filestore.return_value.put.assert_called_once()
+
+    @patch('src.model_execution_worker.server_tasks.combine')
+    @patch('src.model_execution_worker.server_tasks.get_filestore')
     def test_run_comine_transform__missing_occurrence(self, mock_get_filestore, mock_combine):
         mock_get_filestore.return_value.get.side_effect = self.mock_get
         mock_combine.prepare_config.return_value = {}
