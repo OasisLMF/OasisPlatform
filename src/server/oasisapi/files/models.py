@@ -1,6 +1,7 @@
 import os
 import json
 from io import BytesIO
+from urllib.parse import urlparse
 
 import pandas as pd
 import tarfile
@@ -24,6 +25,16 @@ def related_file_to_df(RelatedFile):
         return pd.read_parquet(BytesIO(RelatedFile.read()))
     else:
         return pd.read_csv(BytesIO(RelatedFile.read()))
+
+
+def tabular_file_type(reference):
+    """ Returns the (content_type, extension) of a stored csv or parquet file,
+        from its storage reference (file path, storage key or url)
+    """
+    path = urlparse(reference).path if reference else ''
+    if os.path.splitext(path)[1].startswith('.parquet'):
+        return 'application/octet-stream', 'parquet'
+    return 'text/csv', 'csv'
 
 
 def list_tar_file(RelatedFile):

@@ -38,6 +38,7 @@ from .utils import (
     prepare_complex_model_file_inputs,
     config_strip_default_exposure,
     notify_api_status_v1,
+    get_lookup_success_file,
 )
 
 '''
@@ -491,7 +492,7 @@ def generate_input(self,
 
         # Find Generated Files
         lookup_error_fp = next(iter(glob.glob(os.path.join(oasis_files_dir, '*keys-errors*.csv'))), None)
-        lookup_success_fp = next(iter(glob.glob(os.path.join(oasis_files_dir, 'gul_summary_map.csv'))), None)
+        lookup_success_fp = get_lookup_success_file(oasis_files_dir)
         lookup_validation_fp = next(iter(glob.glob(os.path.join(oasis_files_dir, 'exposure_summary_report.json'))), None)
         summary_levels_fp = next(iter(glob.glob(os.path.join(oasis_files_dir, 'exposure_summary_levels.json'))), None)
         analysis_settings_fp = task_params.get('analysis_settings_json', None)
