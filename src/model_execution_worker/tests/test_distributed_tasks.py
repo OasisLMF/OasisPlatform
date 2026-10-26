@@ -521,8 +521,8 @@ class GetKeysFormat(TestCase):
     def test_json_keys_format___falls_back_to_parquet(self):
         # chunk merging only handles tabular formats
         self.assertEqual(get_keys_format({'keys_format': 'json'}), ('parquet', 'parquet'))
-            self.assertEqual(generate_files.keys_data_path, os.path.join(target_dir, 'keys.csv'))
-            self.assertEqual(generate_files.keys_errors_path, os.path.join(target_dir, 'keys-errors.csv'))
+        self.assertEqual(generate_files.keys_data_path, os.path.join(target_dir, 'keys.csv'))
+        self.assertEqual(generate_files.keys_errors_path, os.path.join(target_dir, 'keys-errors.csv'))
 
 
 class ArchiveCompressionType(TestCase):
