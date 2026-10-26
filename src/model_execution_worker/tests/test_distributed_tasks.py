@@ -3,6 +3,8 @@ from unittest import TestCase
 
 import pandas as pd
 import polars as pl
+import pyarrow as pa
+import pyarrow.parquet as pq
 from backports.tempfile import TemporaryDirectory
 from mock import patch
 from oasislmf.computation.generate.files import GenerateFiles
@@ -30,6 +32,11 @@ def write_csv(path, rows):
 
 def write_parquet(path, rows):
     pl.DataFrame(rows).write_parquet(str(path))
+
+
+def write_zero_row_parquet(path, columns):
+    """Zero-row chunk as oasislmf writes it: every column has the arrow null type."""
+    pq.write_table(pa.Table.from_pandas(pd.DataFrame(columns=columns)), str(path))
 
 
 class MergeCsvStreaming(TestCase):
@@ -87,6 +94,22 @@ class MergeCsvStreaming(TestCase):
             merged = pl.read_csv(str(output_file))
             self.assertEqual(merged['id'].to_list(), [1])
 
+    def test_header_only_chunk_merges_with_typed_chunk_in_either_order(self):
+        for header_first in (True, False):
+            with self.subTest(header_first=header_first), TemporaryDirectory() as tmp_dir:
+                header_only = Path(tmp_dir, 'header.csv')
+                chunk_a = Path(tmp_dir, 'a.csv')
+                output_file = Path(tmp_dir, 'merged.csv')
+                header_only.write_text('id,value\n')
+                write_csv(chunk_a, [{'id': 1, 'value': 'x'}])
+                chunks = [header_only, chunk_a] if header_first else [chunk_a, header_only]
+
+                _merge_csv_streaming(chunks, output_file)
+
+                merged = pl.read_csv(str(output_file))
+                self.assertEqual(merged['id'].to_list(), [1])
+                self.assertEqual(merged['value'].to_list(), ['x'])
+
     def test_all_chunks_empty___no_output_file_is_written(self):
         with TemporaryDirectory() as tmp_dir:
             empty_chunk = Path(tmp_dir, 'empty.csv')
@@ -124,6 +147,21 @@ class MergeParquetStreaming(TestCase):
 
             merged = pl.read_parquet(str(output_file))
             self.assertEqual(len(merged), 2)
+
+    def test_zero_row_chunk_first_keeps_typed_schema(self):
+        # e.g. lookup-1 had no lookup errors but a later chunk did
+        with TemporaryDirectory() as tmp_dir:
+            zero_row = Path(tmp_dir, 'a.parquet')
+            chunk_b = Path(tmp_dir, 'b.parquet')
+            output_file = Path(tmp_dir, 'merged.parquet')
+            write_zero_row_parquet(zero_row, ['id', 'value'])
+            write_parquet(chunk_b, [{'id': 1, 'value': 'x'}])
+
+            _merge_parquet_streaming([zero_row, chunk_b], output_file)
+
+            merged = pl.read_parquet(str(output_file))
+            self.assertEqual(merged['id'].to_list(), [1])
+            self.assertEqual(merged.schema, {'id': pl.Int64, 'value': pl.String})
 
     def test_corrupt_file_is_skipped_and_valid_content_survives(self):
         with TemporaryDirectory() as tmp_dir:

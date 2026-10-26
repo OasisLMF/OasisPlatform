@@ -643,9 +643,10 @@ def _merge_csv_streaming(paths, output_file):
         return
 
     # diagonal concat: chunk files' column sets aren't always identical.
+    # relaxed: a header-only chunk scans as all-String, so dtypes can differ too.
     lazy_frames = [pl.scan_csv(path) for path in non_empty_paths]
     (
-        pl.concat(lazy_frames, how='diagonal')
+        pl.concat(lazy_frames, how='diagonal_relaxed')
         .unique(keep='first', maintain_order=True)
         .sink_csv(str(output_file))
     )
@@ -664,9 +665,10 @@ def _merge_parquet_streaming(paths, output_file):
         logger.warning(f"All files were empty or unreadable: {paths}. --skipped--")
         return
 
+    # relaxed: a zero-row chunk written from pandas has all-null column types.
     lazy_frames = [pl.scan_parquet(path) for path in valid_paths]
     (
-        pl.concat(lazy_frames, how='diagonal')
+        pl.concat(lazy_frames, how='diagonal_relaxed')
         .unique(keep='first', maintain_order=True)
         .sink_parquet(str(output_file))
     )
