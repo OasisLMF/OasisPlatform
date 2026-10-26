@@ -4,7 +4,8 @@ import pytest
 import filecmp
 import os
 from pathlib import Path
-import tarfile
+
+from oasis_data_manager.filestore.archive import compress_dir
 
 from hypothesis.extra.django import TestCase
 from django.conf import settings as django_settings
@@ -538,22 +539,25 @@ class Transform(TestCase):
 
 
 class CombineTasks(TestCase):
-    def create_input_tar(self, tar_path, include_occurrence=True):
+    def create_input_tar(self, tar_path, include_occurrence=True, compression='gz'):
         '''Helper to create input tar file'''
         input_files = ['analysis_settings.json']
         if include_occurrence:
             input_files += ['occurrence.bin']
 
-        with tarfile.open(tar_path, 'w:gz') as tar:
+        with TemporaryDirectory() as src:
             for i_file in input_files:
-                tar.add(COMBINE_DIR / 'input' / i_file, arcname=i_file)
+                shutil.copy2(COMBINE_DIR / 'input' / i_file, src)
+            compress_dir(tar_path, src, arcname='/', compression=compression)
 
-    def create_output_tar(self, tar_path):
+    def create_output_tar(self, tar_path, compression='gz'):
         '''Helper to mock output tar files'''
         output_files = ['0_alt.csv', 'gul_GS0_summary-info.csv']
-        with tarfile.open(tar_path, 'w:gz') as tar:
+        with TemporaryDirectory() as src:
+            Path(src, 'output').mkdir()
             for o_file in output_files:
-                tar.add(COMBINE_DIR / 'output' / o_file, arcname=f'output/{o_file}')
+                shutil.copy2(COMBINE_DIR / 'output' / o_file, Path(src, 'output'))
+            compress_dir(tar_path, src, arcname='/', compression=compression)
 
     @staticmethod
     def mock_get(ref, dst, storage_subdir=''):
@@ -582,6 +586,28 @@ class CombineTasks(TestCase):
             call_kwargs = mock_combine.combine.call_args[1]
             assert len(call_kwargs["analysis_dirs"]) == 3
             mock_get_filestore.return_value.put.assert_called_once()
+
+    @patch('src.model_execution_worker.server_tasks.combine')
+    @patch('src.model_execution_worker.server_tasks.get_filestore')
+    def test_run_combine_transform__zstd_archives(self, mock_get_filestore, mock_combine):
+        mock_get_filestore.return_value.get.side_effect = self.mock_get
+        mock_combine.prepare_config.return_value = {}
+
+        with TemporaryDirectory() as tmpdir:
+            tmpdir = Path(tmpdir)
+            inp = tmpdir / 'input_0.tar.zst'
+            out = tmpdir / 'output_0.tar.zst'
+            self.create_input_tar(inp, compression='zst')
+            self.create_output_tar(out, compression='zst')
+
+            extracted = []
+            mock_combine.combine.side_effect = lambda analysis_dirs, **kw: extracted.extend(
+                (Path(d, 'input', 'occurrence.bin').exists(), Path(d, 'output', '0_alt.csv').exists()) for d in analysis_dirs)
+
+            success, _ = run_combine([inp], [out], {})
+
+            assert success
+            assert extracted == [(True, True)]
 
     @patch('src.model_execution_worker.server_tasks.combine')
     @patch('src.model_execution_worker.server_tasks.get_filestore')

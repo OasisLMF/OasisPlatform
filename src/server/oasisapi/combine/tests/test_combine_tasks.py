@@ -17,13 +17,13 @@ class RecordCombineOutput(TestCase):
         expected_output_path = '/path/to/output.tar.gz'
         result = (True, expected_output_path)
 
-        with patch('src.server.oasisapi.combine.tasks.store_file') as mock_store_file:
+        with patch('src.server.oasisapi.analyses.v2_api.utils.store_file') as mock_store_file:
             mock_store_file.return_value = mock_related_file
 
             record_combine_output(result, analysis_id=analysis.pk, user_id=user.pk)
             mock_store_file.assert_called_once_with(
                 expected_output_path, 'application/gzip', user,
-                filename=f'analysis_{analysis.pk}_outputs.tar.gz'
+                required=True, filename=f'analysis_{analysis.pk}_outputs.tar.gz'
             )
 
             analysis.refresh_from_db()
