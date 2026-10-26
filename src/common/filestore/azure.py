@@ -21,6 +21,6 @@ class ContainerRootedAzureStorage(AzureABFSStorage):
         super().__init__(location='', **kwargs)
         self.location = location
 
-    def put(self, reference, filename=None, subdir='', suffix=None, arcname=None):
+    def put(self, reference, filename=None, subdir='', suffix=None, arcname=None, compression=None):
         subdir = os.path.join(self.location, subdir) if self.location else subdir
-        return super().put(reference, filename=filename, subdir=subdir, suffix=suffix, arcname=arcname)
+        return super().put(reference, filename=filename, subdir=subdir, suffix=suffix, arcname=arcname, compression=compression)

@@ -3,8 +3,36 @@ import os
 from typing import Union
 
 from oasis_data_manager.errors import OasisException
+from oasis_data_manager.filestore.archive import ARCHIVE_SUFFIXES, GZIP
 from oasis_data_manager.filestore.backends.local import LocalStorage
 from oasis_data_manager.filestore.backends.base import BaseStorage
+
+
+def get_archive_options(settings, section='worker'):
+    """ How the filestore archives directories on `put`
+
+    ARCHIVE_COMPRESSION_LEVEL: compression level, unset uses the format default (gzip 1, zstd 3)
+    ARCHIVE_COMPRESSION_THREADS: zstd worker threads, -1 for every core
+    """
+    level = settings.get(section, 'ARCHIVE_COMPRESSION_LEVEL', fallback=None)
+    return {
+        'archive_compresslevel': int(level) if level not in (None, '') else None,
+        'archive_threads': settings.getint(section, 'ARCHIVE_COMPRESSION_THREADS', fallback=-1),
+    }
+
+
+def get_archive_compression(settings, section='worker'):
+    """ ARCHIVE_COMPRESSION_TYPE: compression for directory archives the worker stores, 'gz' (default) or 'zst'
+
+    Passed to each directory `put` rather than set as the filestore default.
+    Unknown values fall back to 'gz' with a warning, so a typo can't fail every store
+    """
+    value = settings.get(section, 'ARCHIVE_COMPRESSION_TYPE', fallback=GZIP) or GZIP
+    compression = value.strip().lower()
+    if compression not in ARCHIVE_SUFFIXES:
+        logging.warning(f"Unknown ARCHIVE_COMPRESSION_TYPE '{value}', expected one of {list(ARCHIVE_SUFFIXES)}, using '{GZIP}'")
+        return GZIP
+    return compression
 
 
 def get_filestore(settings, section='worker', raise_error=True) -> Union[BaseStorage | None]:
@@ -13,6 +41,7 @@ def get_filestore(settings, section='worker', raise_error=True) -> Union[BaseSto
         return LocalStorage(
             root_dir=settings.get(section, "MEDIA_ROOT"),
             cache_dir=settings.get(section, 'CACHE_DIR', fallback='/tmp/data-cache'),
+            **get_archive_options(settings, section),
         )
     elif selected_storage in ['aws-s3', 'aws', 's3']:
 
@@ -57,6 +86,7 @@ def get_filestore(settings, section='worker', raise_error=True) -> Union[BaseSto
                 'image/svg+xml',
             )),
             cache_dir=settings.get(section, 'CACHE_DIR', fallback='/tmp/data-cache'),
+            **get_archive_options(settings, section),
         )
     elif selected_storage in ['azure']:
         from oasis_data_manager.filestore.backends.azure_abfs import AzureABFSStorage
@@ -88,6 +118,7 @@ def get_filestore(settings, section='worker', raise_error=True) -> Union[BaseSto
             azure_log_level=settings.get(section, 'AZURE_LOG_LEVEL', fallback=settings.get(section, 'AWS_LOG_LEVEL', fallback=logging.ERROR)),
             cache_dir=settings.get(section, 'CACHE_DIR', fallback='/tmp/data-cache'),
             endpoint_url=settings.get(section, 'ENDPOINT_URL', fallback=None),
+            **get_archive_options(settings, section),
         )
     else:
         if raise_error:

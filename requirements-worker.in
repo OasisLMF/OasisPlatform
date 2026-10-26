@@ -1,6 +1,6 @@
 oasislmf[extra]
+oasis-data-manager[zstd]>=0.0,<1.0
 ods-tools @ git+https://github.com/OasisLMF/ODS_Tools.git@main
-oasis-data-manager>=0.0,<1.0
 adlfs>=2024.0,<2025.0
 s3fs
 azure-core>=1.38.0,<2.0
