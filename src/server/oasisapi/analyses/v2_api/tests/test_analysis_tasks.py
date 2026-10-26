@@ -17,12 +17,11 @@ from pathlib2 import Path
 from .fakes import fake_analysis, fake_analysis_task_status
 from ...models import Analysis, AnalysisTaskStatus
 from ....auth.tests.fakes import fake_user
-from ....files.models import RelatedFile
 from ....files.v2_api.tests.fakes import fake_related_file
 from ...v2_api.tasks import (
-    chord_error_callback, handle_task_failure, record_losses_files, record_sub_task_failure, record_sub_task_success,
-    record_sub_task_start, start_input_and_loss_generation_task, start_loss_generation_task, start_input_generation_task,
-    subtask_error_log, store_lookup_errors_file,
+    chord_error_callback, handle_task_failure, record_sub_task_failure, record_sub_task_success, record_sub_task_start,
+    start_input_and_loss_generation_task, start_loss_generation_task, start_input_generation_task, subtask_error_log,
+    store_lookup_errors_file,
 )
 from ...v1_api.tasks import (
     record_run_analysis_result, generate_input_success, record_generate_input_failure, record_run_analysis_failure
@@ -201,105 +200,6 @@ class StartLossGenerationTask(TestCase):
             start_loss_generation_task(analysis.pk, initiator.pk, 41)
 
         task_controller.generate_losses.assert_called_once_with(analysis, initiator, 41)
-
-
-class RecordLossesFiles(TestCase):
-    """ generate_and_run adds input files (occurrence.bin) during the loss run, after
-        record_input_files has already stored the inputs tarball.
-    """
-
-    def _record_losses_files(self, result):
-        initiator = fake_user()
-        analysis = fake_analysis(input_file=fake_related_file())
-        original_input_file = analysis.input_file
-        stored = fake_related_file()
-        with patch('src.server.oasisapi.analyses.v2_api.utils.store_file', return_value=stored) as store_file_mock, \
-                patch('src.server.oasisapi.analyses.v2_api.tasks.record_sub_task_start'):
-            record_losses_files(result, analysis_id=analysis.pk, initiator_id=initiator.pk, slug='record-losses-files')
-        analysis.refresh_from_db()
-        return analysis, original_input_file, stored, store_file_mock, initiator
-
-    def test_updated_input_location___input_file_is_replaced(self):
-        with TemporaryDirectory() as d:
-            with override_settings(MEDIA_ROOT=d):
-                analysis, _, stored, store_file_mock, initiator = self._record_losses_files(
-                    {'output_location': 'output.tar.gz', 'updated_input_location': 'fresh-inputs.tar.gz'})
-
-                store_file_mock.assert_any_call('fresh-inputs.tar.gz', 'application/gzip', initiator,
-                                                required=True, filename=f'analysis_{analysis.pk}_inputs.tar.gz')
-                self.assertEqual(analysis.input_file, stored)
-
-    def test_updated_input_location___replaced_input_file_is_deleted(self):
-        with TemporaryDirectory() as d:
-            with override_settings(MEDIA_ROOT=d):
-                analysis, original_input_file, _, _, _ = self._record_losses_files(
-                    {'output_location': 'output.tar.gz', 'updated_input_location': 'fresh-inputs.tar.gz'})
-
-                self.assertTrue(Analysis.objects.filter(pk=analysis.pk).exists())
-                self.assertFalse(RelatedFile.objects.filter(pk=original_input_file.pk).exists())
-
-    def test_replaced_input_file_has_a_different_name___its_stored_file_is_deleted(self):
-        with TemporaryDirectory() as d:
-            with override_settings(MEDIA_ROOT=d):
-                initiator = fake_user()
-                analysis = fake_analysis(input_file=fake_related_file())
-                old_path = analysis.input_file.file.path
-                with self.captureOnCommitCallbacks(execute=True), \
-                        patch('src.server.oasisapi.analyses.v2_api.utils.store_file', side_effect=lambda *a, **kw: fake_related_file()), \
-                        patch('src.server.oasisapi.analyses.v2_api.tasks.record_sub_task_start'):
-                    record_losses_files({'output_location': 'output.tar.gz', 'updated_input_location': 'fresh-inputs.tar.gz'},
-                                        analysis_id=analysis.pk, initiator_id=initiator.pk, slug='record-losses-files')
-
-                self.assertFalse(os.path.exists(old_path))
-
-    def test_replaced_input_file_has_the_same_storage_name___new_file_is_kept(self):
-        """ record_input_files and record_losses_files both store 'analysis_<id>_inputs.tar.gz', so on
-            S3/Azure the new copy overwrites the old object. Deleting the old row must not delete that object.
-        """
-        with TemporaryDirectory() as d:
-            with override_settings(MEDIA_ROOT=d):
-                initiator = fake_user()
-                name = 'analysis_inputs.tar.gz'
-                Path(d, name).write_bytes(b'new inputs')
-                old_input_file = RelatedFile.objects.create(file=name, filename=name, content_type='application/gzip', creator=initiator)
-                analysis = fake_analysis(input_file=old_input_file)
-
-                def overwrite_in_place(*args, **kwargs):
-                    return RelatedFile.objects.create(file=name, filename=name, content_type='application/gzip', creator=initiator)
-
-                with self.captureOnCommitCallbacks(execute=True), \
-                        patch('src.server.oasisapi.analyses.v2_api.utils.store_file', side_effect=overwrite_in_place), \
-                        patch('src.server.oasisapi.analyses.v2_api.tasks.record_sub_task_start'):
-                    record_losses_files({'output_location': 'output.tar.gz', 'updated_input_location': 'fresh-inputs.tar.gz'},
-                                        analysis_id=analysis.pk, initiator_id=initiator.pk, slug='record-losses-files')
-
-                analysis.refresh_from_db()
-                self.assertFalse(RelatedFile.objects.filter(pk=old_input_file.pk).exists())
-                self.assertEqual(analysis.input_file.file.name, name)
-                self.assertEqual(Path(d, name).read_bytes(), b'new inputs')
-
-    def test_replaced_input_file_shared_with_another_analysis___not_deleted(self):
-        with TemporaryDirectory() as d:
-            with override_settings(MEDIA_ROOT=d):
-                shared_input_file = fake_related_file()
-                other = fake_analysis(input_file=shared_input_file)
-                initiator = fake_user()
-                analysis = fake_analysis(input_file=shared_input_file)
-                with patch('src.server.oasisapi.analyses.v2_api.utils.store_file', side_effect=lambda *a, **kw: fake_related_file()), \
-                        patch('src.server.oasisapi.analyses.v2_api.tasks.record_sub_task_start'):
-                    record_losses_files({'output_location': 'output.tar.gz', 'updated_input_location': 'fresh-inputs.tar.gz'},
-                                        analysis_id=analysis.pk, initiator_id=initiator.pk, slug='record-losses-files')
-
-                other.refresh_from_db()
-                self.assertEqual(other.input_file, shared_input_file)
-                self.assertTrue(RelatedFile.objects.filter(pk=shared_input_file.pk).exists())
-
-    def test_no_updated_input_location___input_file_is_unchanged(self):
-        with TemporaryDirectory() as d:
-            with override_settings(MEDIA_ROOT=d):
-                analysis, original_input_file, _, _, _ = self._record_losses_files({'output_location': 'output.tar.gz'})
-
-                self.assertEqual(analysis.input_file, original_input_file)
 
 
 class RecordSubTaskStart(TestCase):

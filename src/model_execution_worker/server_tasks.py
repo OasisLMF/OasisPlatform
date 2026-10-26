@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+import shutil
 
 from ..conf import celeryconf_v2 as celery_conf
 from ..conf.iniconf import settings
@@ -156,40 +157,50 @@ def run_combine(input_tar_paths, output_tar_paths, config):
             if not Path(dst).exists():
                 out = filestore.get(filestore_ref, dst, storage_subdir)
 
-    required_input_files = ['occurrence.bin']
+    combine_file_locations = {'output': os.path.join('combine', 'occurrence.bin'),
+                              'input': 'occurrence.bin'}
 
+    analysis_dirs = []
     with TemporaryDir() as tmpdir:
-        analysis_dirs = []
         for i, (_input_path, _output_path) in enumerate(zip(input_tar_paths, output_tar_paths)):
             # make analysis dir
             _curr_tmp_dir = os.path.join(tmpdir, str(i))
             os.mkdir(_curr_tmp_dir)
             os.mkdir(os.path.join(_curr_tmp_dir, 'input'))
 
-            # download input + output tars
-            _tmp_input_tar = get_destination_file(_input_path, _curr_tmp_dir, 'input')
-            maybe_get_tar(_input_path, _tmp_input_tar)
-
+            # download output tars and extract
             _tmp_output_tar = get_destination_file(_output_path, _curr_tmp_dir, 'output')
             maybe_get_tar(_output_path, _tmp_output_tar)
 
-            # extract necessary files and place in correct dirs
-            # archives may be gzip or zstd, zstd is read as a stream so pick members while iterating
-            with open_archive(_tmp_input_tar) as f:
-                missing = set(required_input_files)
-                for member in f:
-                    name = member.name.removeprefix('./')
-                    if name in missing:
-                        f.extract(member, path=os.path.join(_curr_tmp_dir, 'input'))
-                        missing.discard(name)
-            if missing:
-                logging.error(f'Combine input files missing: {sorted(missing)}')
-                return (False, f'Input files missing: {sorted(missing)}')
-
+            # archives may be gzip or zstd
             with open_archive(_tmp_output_tar) as f:
                 f.extractall(path=_curr_tmp_dir)  # tar already has `output/`
 
-            analysis_dirs.append(_curr_tmp_dir)
+            if os.path.exists(os.path.join(_curr_tmp_dir, 'output', combine_file_locations['output'])):
+                shutil.copy2(os.path.join(_curr_tmp_dir, 'output', combine_file_locations['output']),
+                             os.path.join(_curr_tmp_dir, 'input', combine_file_locations['input']))
+                analysis_dirs.append(_curr_tmp_dir)
+                continue
+
+            # Try and find occ file in input
+            _tmp_input_tar = get_destination_file(_input_path, _curr_tmp_dir, 'input')
+            maybe_get_tar(_input_path, _tmp_input_tar)
+
+            # extract necessary files and place in correct dirs
+            # archives may be gzip or zstd, zstd is read as a stream so pick the member while iterating
+            found = False
+            with open_archive(_tmp_input_tar) as f:
+                for member in f:
+                    if member.name.removeprefix('./') == combine_file_locations['input']:
+                        f.extract(member, path=os.path.join(_curr_tmp_dir, 'input'))
+                        found = True
+                        break
+            if found:
+                analysis_dirs.append(_curr_tmp_dir)
+            else:
+                occ_ps = ', '.join([os.path.join(k, v) for k, v in combine_file_locations.items()])
+                logging.error(f'Combine Required file: occurrence.bin missing from {occ_ps}')
+                return (False, 'Combine Required file: occurrence.bin missing.')
 
         combine_results_dir = os.path.join(tmpdir, 'combine_results')
 
