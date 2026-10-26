@@ -3,6 +3,8 @@ from unittest import TestCase
 
 import pandas as pd
 import polars as pl
+import pyarrow as pa
+import pyarrow.parquet as pq
 from backports.tempfile import TemporaryDirectory
 from mock import patch
 from oasislmf.computation.generate.files import GenerateFiles
@@ -19,6 +21,7 @@ from src.model_execution_worker.distributed_tasks import (
     handle_task_failure,
     generate_losses_output,
     write_input_files,
+    get_keys_format,
 )
 
 
@@ -29,6 +32,11 @@ def write_csv(path, rows):
 
 def write_parquet(path, rows):
     pl.DataFrame(rows).write_parquet(str(path))
+
+
+def write_zero_row_parquet(path, columns):
+    """Zero-row chunk as oasislmf writes it: every column has the arrow null type."""
+    pq.write_table(pa.Table.from_pandas(pd.DataFrame(columns=columns)), str(path))
 
 
 class MergeCsvStreaming(TestCase):
@@ -86,6 +94,22 @@ class MergeCsvStreaming(TestCase):
             merged = pl.read_csv(str(output_file))
             self.assertEqual(merged['id'].to_list(), [1])
 
+    def test_header_only_chunk_merges_with_typed_chunk_in_either_order(self):
+        for header_first in (True, False):
+            with self.subTest(header_first=header_first), TemporaryDirectory() as tmp_dir:
+                header_only = Path(tmp_dir, 'header.csv')
+                chunk_a = Path(tmp_dir, 'a.csv')
+                output_file = Path(tmp_dir, 'merged.csv')
+                header_only.write_text('id,value\n')
+                write_csv(chunk_a, [{'id': 1, 'value': 'x'}])
+                chunks = [header_only, chunk_a] if header_first else [chunk_a, header_only]
+
+                _merge_csv_streaming(chunks, output_file)
+
+                merged = pl.read_csv(str(output_file))
+                self.assertEqual(merged['id'].to_list(), [1])
+                self.assertEqual(merged['value'].to_list(), ['x'])
+
     def test_all_chunks_empty___no_output_file_is_written(self):
         with TemporaryDirectory() as tmp_dir:
             empty_chunk = Path(tmp_dir, 'empty.csv')
@@ -123,6 +147,21 @@ class MergeParquetStreaming(TestCase):
 
             merged = pl.read_parquet(str(output_file))
             self.assertEqual(len(merged), 2)
+
+    def test_zero_row_chunk_first_keeps_typed_schema(self):
+        # e.g. lookup-1 had no lookup errors but a later chunk did
+        with TemporaryDirectory() as tmp_dir:
+            zero_row = Path(tmp_dir, 'a.parquet')
+            chunk_b = Path(tmp_dir, 'b.parquet')
+            output_file = Path(tmp_dir, 'merged.parquet')
+            write_zero_row_parquet(zero_row, ['id', 'value'])
+            write_parquet(chunk_b, [{'id': 1, 'value': 'x'}])
+
+            _merge_parquet_streaming([zero_row, chunk_b], output_file)
+
+            merged = pl.read_parquet(str(output_file))
+            self.assertEqual(merged['id'].to_list(), [1])
+            self.assertEqual(merged.schema, {'id': pl.Int64, 'value': pl.String})
 
     def test_corrupt_file_is_skipped_and_valid_content_survives(self):
         with TemporaryDirectory() as tmp_dir:
@@ -410,16 +449,24 @@ class WriteInputFiles(TestCase):
         whole portfolio in a single task.
     """
 
-    def _run_write_input_files(self, run_dir):
+    def _run_write_input_files(self, run_dir, keys_format=None):
         def extract_keys(archive, target_dir, subdir):
             Path(target_dir).mkdir(parents=True, exist_ok=True)
-            Path(target_dir, 'keys.csv').write_text('LocID,PerilID,CoverageTypeID,AreaPerilID,VulnerabilityID\n')
-            Path(target_dir, 'keys-errors.csv').write_text('LocID,PerilID,CoverageTypeID,Status,Message\n')
+            keys = pl.DataFrame(schema=['LocID', 'PerilID', 'CoverageTypeID', 'AreaPerilID', 'VulnerabilityID'])
+            errors = pl.DataFrame(schema=['LocID', 'PerilID', 'CoverageTypeID', 'Status', 'Message'])
+            if keys_format == 'oasis':
+                keys.write_csv(str(Path(target_dir, 'keys.csv')))
+                errors.write_csv(str(Path(target_dir, 'keys-errors.csv')))
+            else:
+                keys.write_parquet(str(Path(target_dir, 'keys.parquet')))
+                errors.write_parquet(str(Path(target_dir, 'keys-errors.parquet')))
 
         def settings_get(section, option, fallback=None):
             return run_dir if option == 'base_run_dir' else fallback
 
         params = {'keys_data': 'keys-data.tar.gz', 'log_storage': {}}
+        if keys_format:
+            params['keys_format'] = keys_format
         with patch('src.model_execution_worker.distributed_tasks.TASK_LOG_DIR', run_dir), \
                 patch('src.model_execution_worker.distributed_tasks.settings.get', side_effect=settings_get), \
                 patch('src.model_execution_worker.distributed_tasks.notify_api_task_started'), \
@@ -436,6 +483,14 @@ class WriteInputFiles(TestCase):
             generate_kwargs = self._run_write_input_files(run_dir)
 
             target_dir = generate_kwargs['target_dir']
+            self.assertEqual(generate_kwargs['keys_data_path'], os.path.join(target_dir, 'keys.parquet'))
+            self.assertEqual(generate_kwargs['keys_errors_path'], os.path.join(target_dir, 'keys-errors.parquet'))
+
+    def test_oasis_keys_format___csv_keys_are_passed_to_generate_files(self):
+        with TemporaryDirectory() as run_dir:
+            generate_kwargs = self._run_write_input_files(run_dir, keys_format='oasis')
+
+            target_dir = generate_kwargs['target_dir']
             self.assertEqual(generate_kwargs['keys_data_path'], os.path.join(target_dir, 'keys.csv'))
             self.assertEqual(generate_kwargs['keys_errors_path'], os.path.join(target_dir, 'keys-errors.csv'))
 
@@ -447,5 +502,20 @@ class WriteInputFiles(TestCase):
             generate_files = GenerateFiles(**generate_kwargs)
 
             target_dir = generate_kwargs['target_dir']
-            self.assertEqual(generate_files.keys_data_path, os.path.join(target_dir, 'keys.csv'))
-            self.assertEqual(generate_files.keys_errors_path, os.path.join(target_dir, 'keys-errors.csv'))
+            self.assertEqual(generate_files.keys_data_path, os.path.join(target_dir, 'keys.parquet'))
+            self.assertEqual(generate_files.keys_errors_path, os.path.join(target_dir, 'keys-errors.parquet'))
+
+
+class GetKeysFormat(TestCase):
+    def test_missing_keys_format___defaults_to_parquet(self):
+        self.assertEqual(get_keys_format({}), ('parquet', 'parquet'))
+
+    def test_oasis_keys_format___uses_csv(self):
+        self.assertEqual(get_keys_format({'keys_format': 'oasis'}), ('oasis', 'csv'))
+
+    def test_keys_format_is_case_insensitive(self):
+        self.assertEqual(get_keys_format({'keys_format': 'Parquet'}), ('parquet', 'parquet'))
+
+    def test_json_keys_format___falls_back_to_parquet(self):
+        # chunk merging only handles tabular formats
+        self.assertEqual(get_keys_format({'keys_format': 'json'}), ('parquet', 'parquet'))

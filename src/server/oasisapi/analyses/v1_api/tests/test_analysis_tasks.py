@@ -148,6 +148,23 @@ class GenerateInputsSuccess(TestCase):
                 self.assertEqual(analysis.status, analysis.status_choices.READY)
                 self.assertTrue(isinstance(analysis.task_finished, datetime.datetime))
 
+    def test_parquet_lookup_errors_file___is_stored_as_parquet(self):
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d):
+                file_names = ['inputs.tar.gz', 'keys-errors.parquet', 'gul_summary_map.csv',
+                              'exposure_summary_report.json', 'exposure_summary_levels.json', 'trace.txt']
+                for name in file_names:
+                    Path(d, name).touch()
+
+                initiator = fake_user()
+                analysis = fake_analysis()
+
+                record_generate_input_result((*[os.path.join(d, name) for name in file_names], 0), analysis.pk, initiator.pk)
+                analysis.refresh_from_db()
+
+                self.assertEqual(analysis.lookup_errors_file.filename, f'analysis_{analysis.pk}_keys-errors.parquet')
+                self.assertEqual(analysis.lookup_errors_file.content_type, 'application/octet-stream')
+
 
 class GenerateInputsFailure(TestCase):
     @given(traceback=text(min_size=1, max_size=10, alphabet=string.ascii_letters))
