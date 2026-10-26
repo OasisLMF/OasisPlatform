@@ -14,6 +14,8 @@ from django.contrib.auth.models import User
 from src.conf.iniconf import settings
 from ...files.models import file_storage_link
 
+from ...celery_app_v2 import v2 as celery_app_v2
+
 if TYPE_CHECKING:
     from src.server.oasisapi.analyses.models import Analysis, AnalysisTaskStatus
 
@@ -357,7 +359,6 @@ class Controller:
         :param stage_chains: The stage chains to run in order
         :return: The joined chain
         """
-        from ...celery_app_v2 import v2 as celery_app_v2
         tasks = [task for stage_chain in stage_chains for task in stage_chain.unchain_tasks()]
         return chain(*tasks, app=celery_app_v2)
 
