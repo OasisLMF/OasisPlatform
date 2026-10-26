@@ -1,10 +1,17 @@
+import bz2
+import csv
+import gzip
+import io
+import lzma
 import os
 import json
 from io import BytesIO
 from urllib.parse import urlparse
 
 import pandas as pd
+import pyarrow.parquet as pq
 import tarfile
+import zipfile
 from uuid import uuid4
 
 from django.conf import settings
@@ -35,6 +42,55 @@ def tabular_file_type(reference):
     if os.path.splitext(path)[1].startswith('.parquet'):
         return 'application/octet-stream', 'parquet'
     return 'text/csv', 'csv'
+
+
+def _open_decompressed(fileobj):
+    """ Wrap a binary file in a streaming decompressor, detected from its magic bytes.
+
+    Content type can't be relied on, e.g. 'loc.csv.gz' is inferred as 'text/csv'
+    """
+    fileobj.seek(0)
+    magic = fileobj.read(6)
+    fileobj.seek(0)
+    if magic.startswith(b'\x1f\x8b'):
+        return gzip.GzipFile(fileobj=fileobj, mode='rb')
+    if magic.startswith(b'BZh'):
+        return bz2.BZ2File(fileobj, mode='rb')
+    if magic.startswith(b'\xfd7zXZ\x00'):
+        return lzma.LZMAFile(fileobj, mode='rb')
+    if magic.startswith(b'PK\x03\x04'):
+        zf = zipfile.ZipFile(fileobj)
+        names = zf.namelist()
+        if len(names) != 1:
+            raise ValueError(f'Expected a single file in zip archive, found {len(names)}')
+        return zf.open(names[0])
+    return fileobj
+
+
+def related_file_row_count(RelatedFile):
+    """ Count data rows without loading the file into a DataFrame.
+
+    Parquet reads the count from the footer metadata, CSV (optionally gzip, bz2,
+    xz or zip compressed) is streamed, skipping the header and blank lines
+    to match pd.read_csv
+    """
+    if not RelatedFile:
+        return None
+    RelatedFile.file.seek(0)
+    if RelatedFile.content_type == 'application/octet-stream' or RelatedFile.file.read(4) == b'PAR1':
+        RelatedFile.file.seek(0)
+        return pq.ParquetFile(RelatedFile.file).metadata.num_rows
+
+    stream = _open_decompressed(RelatedFile.file)
+    text = io.TextIOWrapper(stream, encoding='utf-8', newline='')
+    try:
+        rows = sum(1 for row in csv.reader(text) if row)
+    finally:
+        # Don't let the wrapper close the underlying file
+        text.detach()
+        if stream is not RelatedFile.file:
+            stream.close()
+    return max(rows - 1, 0)
 
 
 def list_tar_file(RelatedFile):
