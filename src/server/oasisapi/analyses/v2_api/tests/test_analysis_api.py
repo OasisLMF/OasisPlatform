@@ -1827,6 +1827,39 @@ class AnalysisLookupErrorsFile(WebTestMixin, TestCase):
                 self.assertEqual(response.content_type, 'text/csv')
                 pd.testing.assert_frame_equal(pd.read_csv(io.StringIO(response.text)), errors_df)
 
+    def test_lookup_errors_file_stored_as_parquet___is_streamed_as_csv_in_batches(self):
+        # int column with nulls in only some batches must format the same in every batch
+        errors_df = pd.DataFrame({'LocID': [1, 2, 3, 4, 5], 'AreaCode': [10, None, 30, 40, 50], 'PerilID': ['WTC', 'W,SS', 'WTC', 'WSS', 'WTC']})
+        errors_df['AreaCode'] = errors_df['AreaCode'].astype('Int64')
+        buffer = io.BytesIO()
+        errors_df.to_parquet(buffer, index=False)
+
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d), \
+                    patch('src.server.oasisapi.files.v1_api.views.PARQUET_TO_CSV_BATCH_ROWS', 2):
+                analysis = fake_analysis(lookup_errors_file=fake_related_file(
+                    file=buffer.getvalue(), content_type='application/octet-stream', filename='analysis_1_keys-errors.parquet'))
+
+                response = self._get_lookup_errors_file(analysis)
+
+                self.assertEqual(response.content_type, 'text/csv')
+                self.assertEqual(response.text, 'LocID,AreaCode,PerilID\n1,10,WTC\n2,,"W,SS"\n3,30,WTC\n4,40,WSS\n5,50,WTC\n')
+
+    def test_lookup_errors_file_stored_as_zero_row_parquet___csv_has_header_only(self):
+        # zero-row file as oasislmf writes it: every column has the arrow null type
+        buffer = io.BytesIO()
+        pd.DataFrame(columns=['LocID', 'PerilID', 'Message']).to_parquet(buffer, index=False)
+
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d):
+                analysis = fake_analysis(lookup_errors_file=fake_related_file(
+                    file=buffer.getvalue(), content_type='application/octet-stream', filename='analysis_1_keys-errors.parquet'))
+
+                response = self._get_lookup_errors_file(analysis)
+
+                self.assertEqual(response.content_type, 'text/csv')
+                self.assertEqual(response.text, 'LocID,PerilID,Message\n')
+
     def test_lookup_success_file_stored_as_parquet___no_file_format___is_returned_as_csv(self):
         success_df = pd.DataFrame({'loc_id': [1, 2], 'peril_id': ['WTC', 'WSS']})
         buffer = io.BytesIO()
