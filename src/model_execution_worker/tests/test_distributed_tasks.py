@@ -478,6 +478,6 @@ class GetKeysFormat(TestCase):
     def test_keys_format_is_case_insensitive(self):
         self.assertEqual(get_keys_format({'keys_format': 'Parquet'}), ('parquet', 'parquet'))
 
-    def test_json_keys_format___falls_back_to_csv(self):
+    def test_json_keys_format___falls_back_to_parquet(self):
         # chunk merging only handles tabular formats
-        self.assertEqual(get_keys_format({'keys_format': 'json'}), ('oasis', 'csv'))
+        self.assertEqual(get_keys_format({'keys_format': 'json'}), ('parquet', 'parquet'))

@@ -559,12 +559,12 @@ def pre_analysis_hook(self,
 def get_keys_format(params):
     """ Return the oasislmf 'keys_format' and matching file extension for the
         distributed lookup. Chunk merging only supports the tabular formats, so
-        'json' falls back to 'oasis' (csv).
+        'json' falls back to the default, 'parquet'.
     """
     keys_format = (params.get('keys_format') or 'parquet').lower()
     if keys_format not in KEYS_FORMAT_EXT:
-        logger.warning(f'keys_format "{keys_format}" is not supported for distributed lookups, using "oasis" (csv)')
-        keys_format = 'oasis'
+        logger.warning(f'keys_format "{keys_format}" is not supported for distributed lookups, using "parquet"')
+        keys_format = 'parquet'
     return keys_format, KEYS_FORMAT_EXT[keys_format]
 
 
