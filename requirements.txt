@@ -219,7 +219,7 @@ fastparquet==2026.9.0
     # via
     #   oasis-data-manager
     #   oasislmf
-filelock==3.32.7
+filelock==4.2.1
     # via
     #   -r requirements-worker.in
     #   python-discovery
@@ -375,7 +375,7 @@ oasis-data-manager==0.2.4
     #   ods-tools
 oasislmf[extra]==2.5.8
     # via -r requirements-worker.in
-ods-tools @ git+https://github.com/OasisLMF/ODS_Tools.git@6a28c8280ff904c02ede6dfc0e7938dffd960a83
+ods-tools @ git+https://github.com/OasisLMF/ODS_Tools.git@4f4215d782aa9806eae55965798c85a6c110e764
     # via
     #   -r requirements-server.in
     #   -r requirements-worker.in
@@ -617,7 +617,7 @@ traitlets==5.16.1
     # via
     #   ipython
     #   matplotlib-inline
-twisted[tls]==26.4.0
+twisted[tls]==26.10.0rc1
     # via daphne
 txaio==26.6.1
     # via autobahn
