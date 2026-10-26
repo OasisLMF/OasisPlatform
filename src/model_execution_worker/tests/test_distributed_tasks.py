@@ -17,6 +17,7 @@ from src.model_execution_worker.distributed_tasks import (
     _merge_parquet_streaming,
     take_first,
     handle_task_failure,
+    generate_losses_output,
     write_input_files,
     get_keys_format,
 )
@@ -337,6 +338,71 @@ class HandleTaskFailureSignal(TestCase):
                 filestore_mock.put.assert_not_called()
                 dispatched_names = [c.args[0] for c in signature_mock.call_args_list]
                 self.assertNotIn('subtask_error_log', dispatched_names)
+
+
+class GenerateLossesOutputInputReupload(TestCase):
+    """ Input files produced during the loss run (occurrence.bin) must reach analysis.input_file.
+        The input reference is never overwritten in place: it may be this worker's own tarball
+        (generate_and_run) or a server key/URL under a different bucket or location. A fresh
+        tarball is returned for record_losses_files to store instead.
+    """
+
+    def _run_generate_losses_output(self, run_dir, occurrence_in_inputs=False, **chunk_params):
+        root_dir = Path(run_dir, 'analysis-1_losses-run-uuid')
+        oasis_files_dir = Path(root_dir, 'input-data')
+        model_run_dir = Path(root_dir, 'run-data')
+        oasis_files_dir.mkdir(parents=True)
+        Path(model_run_dir, 'input').mkdir(parents=True)
+        Path(model_run_dir, 'input', 'occurrence.bin').write_bytes(b'')
+        if occurrence_in_inputs:
+            Path(oasis_files_dir, 'occurrence.bin').write_bytes(b'')
+
+        def settings_get(section, option, fallback=None):
+            return run_dir if option == 'base_run_dir' else fallback
+
+        params = [{
+            'chunk_work_location': 'work-1.tar.gz',
+            'chunk_log_location': 'log-1.tar.gz',
+            **chunk_params,
+        }]
+        with patch('src.model_execution_worker.distributed_tasks.TASK_LOG_DIR', run_dir), \
+                patch('src.model_execution_worker.distributed_tasks.settings.get', side_effect=settings_get), \
+                patch('src.model_execution_worker.distributed_tasks.notify_api_task_started'), \
+                patch('src.model_execution_worker.distributed_tasks.filestore') as filestore_mock, \
+                patch('oasislmf.manager.OasisManager'):
+            filestore_mock.put.side_effect = lambda ref, filename=None, **kw: filename or 'fresh-inputs.tar.gz'
+            result = generate_losses_output.run(params, analysis_id=1, run_data_uuid='run-uuid', slug='generate-losses-output')
+
+        input_puts = [c for c in filestore_mock.put.call_args_list if c.args[0] == str(oasis_files_dir)]
+        return result, input_puts
+
+    def _assert_fresh_tarball_returned(self, result, input_puts):
+        self.assertEqual(len(input_puts), 1)
+        self.assertIsNone(input_puts[0].kwargs.get('filename'))
+        self.assertEqual(result['updated_input_location'], 'fresh-inputs.tar.gz')
+
+    def test_run_analysis_with_server_key___fresh_inputs_tarball_is_returned(self):
+        with TemporaryDirectory() as run_dir:
+            self._assert_fresh_tarball_returned(*self._run_generate_losses_output(
+                run_dir, input_location='oasis/server/stored-inputs.tar.gz'))
+
+    def test_run_analysis_with_presigned_url___fresh_inputs_tarball_is_returned(self):
+        with TemporaryDirectory() as run_dir:
+            self._assert_fresh_tarball_returned(*self._run_generate_losses_output(
+                run_dir, input_location='https://server-bucket.s3.amazonaws.com/oasis/server/inputs.tar.gz?X-Amz-Signature=abc'))
+
+    def test_generate_and_run___fresh_inputs_tarball_is_returned(self):
+        with TemporaryDirectory() as run_dir:
+            self._assert_fresh_tarball_returned(*self._run_generate_losses_output(
+                run_dir, **{'input-location_generate-and-run': 'oasis/worker/worker-inputs.tar.gz'}))
+
+    def test_no_input_files_added___inputs_are_not_reuploaded(self):
+        with TemporaryDirectory() as run_dir:
+            result, input_puts = self._run_generate_losses_output(
+                run_dir, occurrence_in_inputs=True, input_location='stored-inputs.tar.gz')
+
+            self.assertEqual(input_puts, [])
+            self.assertNotIn('updated_input_location', result)
 
 
 class WriteInputFiles(TestCase):
