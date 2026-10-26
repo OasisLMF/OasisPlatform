@@ -41,6 +41,7 @@ from .utils import (
     config_strip_default_exposure,
     unwrap_task_args,
     notify_api_status_v2,
+    get_lookup_success_file,
 )
 
 # Set before importing polars - it sizes its thread pool from host CPU count
@@ -807,7 +808,7 @@ def write_input_files(self, params, run_data_uuid=None, analysis_id=None, initia
 
     return {
         'lookup_error_location': filestore.put(params['keys_errors_path']),
-        'lookup_success_location': filestore.put(os.path.join(params['target_dir'], 'gul_summary_map.csv')),
+        'lookup_success_location': filestore.put(get_lookup_success_file(params['target_dir'])),
         'lookup_validation_location': filestore.put(os.path.join(params['target_dir'], 'exposure_summary_report.json')),
         'summary_levels_location': filestore.put(os.path.join(params['target_dir'], 'exposure_summary_levels.json')),
         'output_location': filestore.put(params['target_dir'], compression=ARCHIVE_COMPRESSION_TYPE),

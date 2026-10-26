@@ -338,6 +338,7 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         get:
         Gets the portfolios `lookup_success_file` contents
         """
+        # Stored as parquet by newer workers, returned as csv unless `file_format=parquet` is requested
         return handle_related_file(self.get_object(), 'lookup_success_file', request, [], default_file_format='csv')
 
     @extend_schema(responses={200: FILE_RESPONSE})

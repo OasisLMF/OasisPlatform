@@ -88,6 +88,16 @@ def extract_file_from_tar(RelatedFile, fname):
     return tarf.extractfile(fname)
 
 
+def tabular_file_type(reference):
+    """ Returns the (content_type, extension) of a stored csv or parquet file,
+        from its storage reference (file path, storage key or url)
+    """
+    path = urlparse(reference).path if reference else ''
+    if os.path.splitext(path)[1].startswith('.parquet'):
+        return 'application/octet-stream', 'parquet'
+    return 'text/csv', 'csv'
+
+
 # --- Uploaded portfolio files ---
 
 def _open_decompressed_upload(fileobj):

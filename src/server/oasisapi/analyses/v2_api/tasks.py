@@ -25,7 +25,7 @@ from django.conf import settings
 from django.http import HttpRequest
 from django.utils import timezone
 
-from src.server.oasisapi.files.models import RelatedFile
+from src.server.oasisapi.files.models import RelatedFile, tabular_file_type
 from src.server.oasisapi.files.v1_api.views import handle_json_data
 from src.server.oasisapi.schemas.serializers import ModelParametersSerializer
 
@@ -316,7 +316,9 @@ def record_input_files(self, result, analysis_id=None, initiator_id=None, run_da
     analysis.status = Analysis.status_choices.READY
     analysis.input_file = store_archive(input_location, initiator, f'analysis_{analysis_id}_inputs')
     analysis.lookup_errors_file = store_lookup_errors_file(lookup_error_fp, initiator, analysis_id)
-    analysis.lookup_success_file = store_file(lookup_success_fp, 'text/csv', initiator, filename=f'analysis_{analysis_id}_gul_summary_map.csv')
+    lookup_success_type, lookup_success_ext = tabular_file_type(lookup_success_fp)
+    analysis.lookup_success_file = store_file(lookup_success_fp, lookup_success_type, initiator,
+                                              filename=f'analysis_{analysis_id}_gul_summary_map.{lookup_success_ext}')
     analysis.lookup_validation_file = store_file(lookup_validation_fp, 'application/json', initiator,
                                                  filename=f'analysis_{analysis_id}_exposure_summary_report.json')
     analysis.summary_levels_file = store_file(summary_levels_fp, 'application/json', initiator,
