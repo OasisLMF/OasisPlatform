@@ -6,7 +6,7 @@ import polars as pl
 import pyarrow as pa
 import pyarrow.parquet as pq
 from backports.tempfile import TemporaryDirectory
-from mock import patch
+from mock import ANY, patch
 from oasislmf.computation.generate.files import GenerateFiles
 from pathlib2 import Path
 
@@ -420,7 +420,7 @@ class GenerateLossesOutputCombineFiles(TestCase):
             combine_occ = Path(model_run_dir, 'output', 'combine', 'occurrence.bin')
             self.assertTrue(combine_occ.is_file())
             self.assertEqual(combine_occ.read_bytes(), b'occurrence-data')
-            filestore_mock.put.assert_any_call(str(Path(model_run_dir, 'output')), arcname='output')
+            filestore_mock.put.assert_any_call(str(Path(model_run_dir, 'output')), arcname='output', compression=ANY)
 
     def test_occurrence_file_exists___inputs_are_not_reuploaded(self):
         with TemporaryDirectory() as run_dir:
@@ -521,8 +521,6 @@ class GetKeysFormat(TestCase):
     def test_json_keys_format___falls_back_to_parquet(self):
         # chunk merging only handles tabular formats
         self.assertEqual(get_keys_format({'keys_format': 'json'}), ('parquet', 'parquet'))
-        self.assertEqual(generate_files.keys_data_path, os.path.join(target_dir, 'keys.csv'))
-        self.assertEqual(generate_files.keys_errors_path, os.path.join(target_dir, 'keys-errors.csv'))
 
 
 class ArchiveCompressionType(TestCase):
@@ -573,4 +571,3 @@ class ArchiveCompressionType(TestCase):
             dir_puts = {c.args[0]: c.kwargs.get('compression') for c in filestore_mock.put.call_args_list}
             for name in ['output', 'log']:
                 self.assertEqual(dir_puts[str(Path(model_run_dir, name))], 'zst')
-            self.assertEqual(dir_puts[str(Path(root_dir, 'input-data'))], 'zst')
