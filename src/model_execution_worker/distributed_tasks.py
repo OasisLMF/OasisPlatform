@@ -59,6 +59,8 @@ LOG_FILE_SUFFIX = 'txt'
 ARCHIVE_COMPRESSION_TYPE = get_archive_compression(settings)
 RUNNING_TASK_STATUS = OASIS_TASK_STATUS["running"]["id"]
 TASK_LOG_DIR = settings.get('worker', 'TASK_LOG_DIR', fallback='/var/log/oasis/tasks')
+# oasislmf 'keys_format' -> keys file extension (formats chunk merging supports)
+KEYS_FORMAT_EXT = {'parquet': 'parquet', 'oasis': 'csv'}
 FAIL_ON_REDELIVERY = settings.getboolean('worker', 'FAIL_ON_REDELIVERY', fallback=True)
 
 
@@ -381,10 +383,6 @@ def keys_generation_task(fn):
         params.setdefault('lookup_complex_config_json', os.path.join(params['root_run_dir'], 'analysis_settings.json'))
         params.setdefault('analysis_settings_json', os.path.join(params['root_run_dir'], 'analysis_settings.json'))
 
-        # Generate keys files
-        params.setdefault('keys_fp', os.path.join(params['root_run_dir'], 'keys.csv'))
-        params.setdefault('keys_errors_fp', os.path.join(params['root_run_dir'], 'keys-errors.csv'))
-
         # user settings and data
         settings_file = kwargs.get('analysis_settings_file')
         complex_data_files = kwargs.get('complex_data_files')
@@ -555,6 +553,18 @@ def pre_analysis_hook(self,
     return params
 
 
+def get_keys_format(params):
+    """ Return the oasislmf 'keys_format' and matching file extension for the
+        distributed lookup. Chunk merging only supports the tabular formats, so
+        'json' falls back to the default, 'parquet'.
+    """
+    keys_format = (params.get('keys_format') or 'parquet').lower()
+    if keys_format not in KEYS_FORMAT_EXT:
+        logger.warning(f'keys_format "{keys_format}" is not supported for distributed lookups, using "parquet"')
+        keys_format = 'parquet'
+    return keys_format, KEYS_FORMAT_EXT[keys_format]
+
+
 @app.task(bind=True, name='prepare_keys_file_chunk', **celery_conf.worker_task_kwargs)
 @keys_generation_task
 def prepare_keys_file_chunk(
@@ -590,14 +600,15 @@ def prepare_keys_file_chunk(
         if sar_df.empty:
             logger.info(f'Lookup chunk {chunk_idx + 1}/{num_chunks} is empty --skipped--')
         else:
-            chunk_keys_fp = os.path.join(chunk_target_dir, 'keys.csv')
-            chunk_keys_errors_fp = os.path.join(chunk_target_dir, 'keys-errors.csv')
+            keys_format, keys_ext = get_keys_format(params)
+            chunk_keys_fp = os.path.join(chunk_target_dir, f'keys.{keys_ext}')
+            chunk_keys_errors_fp = os.path.join(chunk_target_dir, f'keys-errors.{keys_ext}')
             lookup.generate_key_files(
                 location_fp=None,
                 location_df=sar_df,
                 successes_fp=chunk_keys_fp,
                 errors_fp=chunk_keys_errors_fp,
-                output_format='oasis',
+                output_format=keys_format,
                 keys_success_msg=False,
                 multiproc_enabled=params.get('lookup_multiprocessing', False),
                 multiproc_num_cores=params.get('lookup_num_processes', -1),
@@ -630,9 +641,10 @@ def _merge_csv_streaming(paths, output_file):
         return
 
     # diagonal concat: chunk files' column sets aren't always identical.
+    # relaxed: a header-only chunk scans as all-String, so dtypes can differ too.
     lazy_frames = [pl.scan_csv(path) for path in non_empty_paths]
     (
-        pl.concat(lazy_frames, how='diagonal')
+        pl.concat(lazy_frames, how='diagonal_relaxed')
         .unique(keep='first', maintain_order=True)
         .sink_csv(str(output_file))
     )
@@ -651,9 +663,10 @@ def _merge_parquet_streaming(paths, output_file):
         logger.warning(f"All files were empty or unreadable: {paths}. --skipped--")
         return
 
+    # relaxed: a zero-row chunk written from pandas has all-null column types.
     lazy_frames = [pl.scan_parquet(path) for path in valid_paths]
     (
-        pl.concat(lazy_frames, how='diagonal')
+        pl.concat(lazy_frames, how='diagonal_relaxed')
         .unique(keep='first', maintain_order=True)
         .sink_parquet(str(output_file))
     )
@@ -757,8 +770,9 @@ def collect_keys(
 def write_input_files(self, params, run_data_uuid=None, analysis_id=None, initiator_id=None, slug=None, **kwargs):
     # Load Collected keys data
     filestore.extract(params['keys_data'], params['target_dir'], params['storage_subdir'])
-    params['keys_data_path'] = os.path.join(params['target_dir'], 'keys.csv')
-    params['keys_errors_path'] = os.path.join(params['target_dir'], 'keys-errors.csv')
+    _, keys_ext = get_keys_format(params)
+    params['keys_data_path'] = os.path.join(params['target_dir'], f'keys.{keys_ext}')
+    params['keys_errors_path'] = os.path.join(params['target_dir'], f'keys-errors.{keys_ext}')
     params['oasis_files_dir'] = params['target_dir']
     from oasislmf.manager import OasisManager
     try:
@@ -788,7 +802,7 @@ def write_input_files(self, params, run_data_uuid=None, analysis_id=None, initia
         filestore.get(params['log_storage'][log_ref], os.path.join(log_dir, f'v2-{log_ref}.txt'))
 
     return {
-        'lookup_error_location': filestore.put(os.path.join(params['target_dir'], 'keys-errors.csv')),
+        'lookup_error_location': filestore.put(params['keys_errors_path']),
         'lookup_success_location': filestore.put(os.path.join(params['target_dir'], 'gul_summary_map.csv')),
         'lookup_validation_location': filestore.put(os.path.join(params['target_dir'], 'exposure_summary_report.json')),
         'summary_levels_location': filestore.put(os.path.join(params['target_dir'], 'exposure_summary_levels.json')),
@@ -1180,7 +1194,7 @@ def handle_task_failure(*args, sender=None, task_id=None, **kwargs):
             task_args.get('analysis_id'),
             task_args.get('initiator_id'),
             filestore.put(task_params.get('target_dir'), compression=ARCHIVE_COMPRESSION_TYPE),
-            filestore.put(os.path.join(task_params.get('target_dir'), 'keys-errors.csv'))
+            filestore.put(os.path.join(task_params.get('target_dir'), f'keys-errors.{get_keys_format(task_params)[1]}'))
         )
 
     # Store failed loss gen files
