@@ -195,7 +195,7 @@ numpy==2.5.4
     # via
     #   fastparquet
     #   pandas
-oasis-data-manager==0.2.3
+oasis-data-manager[zstd]==0.2.4
     # via
     #   -r requirements-server.in
     #   ods-tools

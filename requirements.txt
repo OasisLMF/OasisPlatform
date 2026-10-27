@@ -367,7 +367,7 @@ numpy==2.5.4
     #   scikit-learn
     #   scipy
     #   shapely
-oasis-data-manager==0.2.3
+oasis-data-manager[zstd]==0.2.4
     # via
     #   -r requirements-server.in
     #   -r requirements-worker.in
@@ -504,7 +504,7 @@ pyproject-hooks==1.3.3
     # via
     #   build
     #   pip-tools
-pytest==8.4.2
+pytest==9.1.1
     # via
     #   -r requirements.in
     #   pytest-cov

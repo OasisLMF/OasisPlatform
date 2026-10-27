@@ -3,7 +3,7 @@ import shutil
 
 from ..conf import celeryconf_v2 as celery_conf
 from ..conf.iniconf import settings
-from ..common.filestore.filestore import get_filestore
+from ..common.filestore.filestore import get_archive_compression, get_filestore
 from oasislmf.manager import OasisManager
 from src.model_execution_worker.utils import TemporaryDir, update_params, get_destination_file, copy_or_download, get_all_exposure_files
 import os
@@ -13,7 +13,7 @@ from ods_tools.oed.exposure import OedExposure
 from ods_tools.odtf.controller import transform_format
 from ods_tools.combine import combine
 import logging
-import tarfile
+from oasis_data_manager.filestore.archive import open_archive
 from celery.utils.log import get_task_logger
 import filelock
 
@@ -172,7 +172,8 @@ def run_combine(input_tar_paths, output_tar_paths, config):
             _tmp_output_tar = get_destination_file(_output_path, _curr_tmp_dir, 'output')
             maybe_get_tar(_output_path, _tmp_output_tar)
 
-            with tarfile.open(_tmp_output_tar, 'r:gz') as f:
+            # archives may be gzip or zstd
+            with open_archive(_tmp_output_tar) as f:
                 f.extractall(path=_curr_tmp_dir)  # tar already has `output/`
 
             if os.path.exists(os.path.join(_curr_tmp_dir, 'output', combine_file_locations['output'])):
@@ -185,15 +186,19 @@ def run_combine(input_tar_paths, output_tar_paths, config):
             _tmp_input_tar = get_destination_file(_input_path, _curr_tmp_dir, 'input')
             maybe_get_tar(_input_path, _tmp_input_tar)
 
-            # extract necessary files and place in correct dirs
-            try:
-                with tarfile.open(_tmp_input_tar, 'r:gz') as f:
-                    f.extractall(path=os.path.join(_curr_tmp_dir, 'input'), members=[combine_file_locations['input']])
-                analysis_dirs.append(_curr_tmp_dir)
-            except KeyError:
+            # zstd is read as a stream so pick the member while iterating
+            found = False
+            with open_archive(_tmp_input_tar) as f:
+                for member in f:
+                    if member.name.removeprefix('./') == combine_file_locations['input']:
+                        f.extract(member, path=os.path.join(_curr_tmp_dir, 'input'))
+                        found = True
+                        break
+            if not found:
                 occ_ps = ', '.join([os.path.join(k, v) for k, v in combine_file_locations.items()])
                 logging.error(f'Combine Required file: occurrence.bin missing from {occ_ps}')
                 return (False, 'Combine Required file: occurrence.bin missing.')
+            analysis_dirs.append(_curr_tmp_dir)
 
         combine_results_dir = os.path.join(tmpdir, 'combine_results')
 
@@ -203,7 +208,7 @@ def run_combine(input_tar_paths, output_tar_paths, config):
             combine.combine(analysis_dirs=analysis_dirs,
                             output_dir=combine_results_dir,
                             **config)
-            result_ref = filestore.put(combine_results_dir)
+            result_ref = filestore.put(combine_results_dir, compression=get_archive_compression(settings))
             return (True, result_ref)
         except Exception as e:
             logging.error(f'Combine failed: {str(e)}')

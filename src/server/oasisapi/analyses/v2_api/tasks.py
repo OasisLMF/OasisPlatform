@@ -32,7 +32,7 @@ from src.server.oasisapi.schemas.serializers import ModelParametersSerializer
 from ..models import AnalysisTaskStatus, Analysis
 from .task_controller import get_analysis_task_controller
 from ...celery_app_v2 import v2 as celery_app_v2
-from .utils import delete_prev_output, store_file
+from .utils import delete_prev_output, store_archive, store_file
 
 
 logger = get_task_logger(__name__)
@@ -314,7 +314,7 @@ def record_input_files(self, result, analysis_id=None, initiator_id=None, run_da
     initiator = get_user_model().objects.get(pk=initiator_id)
 
     analysis.status = Analysis.status_choices.READY
-    analysis.input_file = store_file(input_location, 'application/gzip', initiator, filename=f'analysis_{analysis_id}_inputs.tar.gz')
+    analysis.input_file = store_archive(input_location, initiator, f'analysis_{analysis_id}_inputs')
     analysis.lookup_errors_file = store_lookup_errors_file(lookup_error_fp, initiator, analysis_id)
     analysis.lookup_success_file = store_file(lookup_success_fp, 'text/csv', initiator, filename=f'analysis_{analysis_id}_gul_summary_map.csv')
     analysis.lookup_validation_file = store_file(lookup_validation_fp, 'application/json', initiator,
@@ -366,7 +366,7 @@ def record_input_error_files(analysis_id, initiator_id, output_location=None, lo
     analysis = Analysis.objects.get(pk=analysis_id)
     initiator = get_user_model().objects.get(pk=initiator_id)
     if output_location:
-        analysis.input_file = store_file(output_location, 'application/gzip', initiator, filename=f'analysis_{analysis_id}_inputs.tar.gz')
+        analysis.input_file = store_archive(output_location, initiator, f'analysis_{analysis_id}_inputs')
     if lookup_error_location:
         analysis.lookup_errors_file = store_lookup_errors_file(lookup_error_location, initiator, analysis_id)
 
@@ -406,9 +406,9 @@ def record_losses_files(self, result, analysis_id=None, initiator_id=None, slug=
 
     # Store logs and output
     if result.get('run_logs', None):
-        analysis.run_log_file = store_file(result['run_logs'], 'application/gzip', initiator, filename=f'analysis_{analysis_id}_logs.tar.gz')
+        analysis.run_log_file = store_archive(result['run_logs'], initiator, f'analysis_{analysis_id}_logs')
 
-    analysis.output_file = store_file(result['output_location'], 'application/gzip', initiator, filename=f'analysis_{analysis_id}_output.tar.gz')
+    analysis.output_file = store_archive(result['output_location'], initiator, f'analysis_{analysis_id}_output')
 
     analysis.save()
     return result
@@ -423,9 +423,9 @@ def record_losses_error_files(analysis_id, initiator_id, output_location=None, r
     initiator = get_user_model().objects.get(pk=initiator_id)
 
     if output_location:
-        analysis.output_file = store_file(output_location, 'application/gzip', initiator, filename=f'analysis_{analysis_id}_output.tar.gz')
+        analysis.output_file = store_archive(output_location, initiator, f'analysis_{analysis_id}_output')
     if run_logs:
-        analysis.run_log_file = store_file(run_logs, 'application/gzip', initiator, filename=f'analysis_{analysis_id}_logs.tar.gz')
+        analysis.run_log_file = store_archive(run_logs, initiator, f'analysis_{analysis_id}_logs')
 
     analysis.save(update_fields=["output_file", "run_log_file"])
 
