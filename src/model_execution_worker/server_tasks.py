@@ -2,7 +2,7 @@ from __future__ import absolute_import
 
 from ..conf import celeryconf_v2 as celery_conf
 from ..conf.iniconf import settings
-from ..common.filestore.filestore import get_filestore
+from ..common.filestore.filestore import get_archive_compression, get_filestore
 from oasislmf.manager import OasisManager
 from src.model_execution_worker.utils import TemporaryDir, update_params, get_destination_file, copy_or_download, get_all_exposure_files
 import os
@@ -12,7 +12,7 @@ from ods_tools.oed.exposure import OedExposure
 from ods_tools.odtf.controller import transform_format
 from ods_tools.combine import combine
 import logging
-import tarfile
+from oasis_data_manager.filestore.archive import open_archive
 from celery.utils.log import get_task_logger
 import filelock
 
@@ -174,14 +174,19 @@ def run_combine(input_tar_paths, output_tar_paths, config):
             maybe_get_tar(_output_path, _tmp_output_tar)
 
             # extract necessary files and place in correct dirs
-            try:
-                with tarfile.open(_tmp_input_tar, 'r:gz') as f:
-                    f.extractall(path=os.path.join(_curr_tmp_dir, 'input'), members=required_input_files)
-            except KeyError as e:
-                logging.error('Combine input files missing: ' + str(e))
-                return (False, 'Input files missing: ' + str(e))
+            # archives may be gzip or zstd, zstd is read as a stream so pick members while iterating
+            with open_archive(_tmp_input_tar) as f:
+                missing = set(required_input_files)
+                for member in f:
+                    name = member.name.removeprefix('./')
+                    if name in missing:
+                        f.extract(member, path=os.path.join(_curr_tmp_dir, 'input'))
+                        missing.discard(name)
+            if missing:
+                logging.error(f'Combine input files missing: {sorted(missing)}')
+                return (False, f'Input files missing: {sorted(missing)}')
 
-            with tarfile.open(_tmp_output_tar, 'r:gz') as f:
+            with open_archive(_tmp_output_tar) as f:
                 f.extractall(path=_curr_tmp_dir)  # tar already has `output/`
 
             analysis_dirs.append(_curr_tmp_dir)
@@ -194,7 +199,7 @@ def run_combine(input_tar_paths, output_tar_paths, config):
             combine.combine(analysis_dirs=analysis_dirs,
                             output_dir=combine_results_dir,
                             **config)
-            result_ref = filestore.put(combine_results_dir)
+            result_ref = filestore.put(combine_results_dir, compression=get_archive_compression(settings))
             return (True, result_ref)
         except Exception as e:
             logging.error(f'Combine failed: {str(e)}')

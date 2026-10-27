@@ -367,7 +367,7 @@ numpy==2.5.4
     #   scikit-learn
     #   scipy
     #   shapely
-oasis-data-manager==0.2.3
+oasis-data-manager[zstd]==0.2.4
     # via
     #   -r requirements-server.in
     #   -r requirements-worker.in

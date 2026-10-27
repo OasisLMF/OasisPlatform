@@ -213,7 +213,7 @@ class RecordLossesFiles(TestCase):
         analysis = fake_analysis(input_file=fake_related_file())
         original_input_file = analysis.input_file
         stored = fake_related_file()
-        with patch('src.server.oasisapi.analyses.v2_api.tasks.store_file', return_value=stored) as store_file_mock, \
+        with patch('src.server.oasisapi.analyses.v2_api.utils.store_file', return_value=stored) as store_file_mock, \
                 patch('src.server.oasisapi.analyses.v2_api.tasks.record_sub_task_start'):
             record_losses_files(result, analysis_id=analysis.pk, initiator_id=initiator.pk, slug='record-losses-files')
         analysis.refresh_from_db()
@@ -226,7 +226,7 @@ class RecordLossesFiles(TestCase):
                     {'output_location': 'output.tar.gz', 'updated_input_location': 'fresh-inputs.tar.gz'})
 
                 store_file_mock.assert_any_call('fresh-inputs.tar.gz', 'application/gzip', initiator,
-                                                filename=f'analysis_{analysis.pk}_inputs.tar.gz')
+                                                required=True, filename=f'analysis_{analysis.pk}_inputs.tar.gz')
                 self.assertEqual(analysis.input_file, stored)
 
     def test_updated_input_location___replaced_input_file_is_deleted(self):
@@ -245,7 +245,7 @@ class RecordLossesFiles(TestCase):
                 analysis = fake_analysis(input_file=fake_related_file())
                 old_path = analysis.input_file.file.path
                 with self.captureOnCommitCallbacks(execute=True), \
-                        patch('src.server.oasisapi.analyses.v2_api.tasks.store_file', side_effect=lambda *a, **kw: fake_related_file()), \
+                        patch('src.server.oasisapi.analyses.v2_api.utils.store_file', side_effect=lambda *a, **kw: fake_related_file()), \
                         patch('src.server.oasisapi.analyses.v2_api.tasks.record_sub_task_start'):
                     record_losses_files({'output_location': 'output.tar.gz', 'updated_input_location': 'fresh-inputs.tar.gz'},
                                         analysis_id=analysis.pk, initiator_id=initiator.pk, slug='record-losses-files')
@@ -268,7 +268,7 @@ class RecordLossesFiles(TestCase):
                     return RelatedFile.objects.create(file=name, filename=name, content_type='application/gzip', creator=initiator)
 
                 with self.captureOnCommitCallbacks(execute=True), \
-                        patch('src.server.oasisapi.analyses.v2_api.tasks.store_file', side_effect=overwrite_in_place), \
+                        patch('src.server.oasisapi.analyses.v2_api.utils.store_file', side_effect=overwrite_in_place), \
                         patch('src.server.oasisapi.analyses.v2_api.tasks.record_sub_task_start'):
                     record_losses_files({'output_location': 'output.tar.gz', 'updated_input_location': 'fresh-inputs.tar.gz'},
                                         analysis_id=analysis.pk, initiator_id=initiator.pk, slug='record-losses-files')
@@ -285,7 +285,7 @@ class RecordLossesFiles(TestCase):
                 other = fake_analysis(input_file=shared_input_file)
                 initiator = fake_user()
                 analysis = fake_analysis(input_file=shared_input_file)
-                with patch('src.server.oasisapi.analyses.v2_api.tasks.store_file', side_effect=lambda *a, **kw: fake_related_file()), \
+                with patch('src.server.oasisapi.analyses.v2_api.utils.store_file', side_effect=lambda *a, **kw: fake_related_file()), \
                         patch('src.server.oasisapi.analyses.v2_api.tasks.record_sub_task_start'):
                     record_losses_files({'output_location': 'output.tar.gz', 'updated_input_location': 'fresh-inputs.tar.gz'},
                                         analysis_id=analysis.pk, initiator_id=initiator.pk, slug='record-losses-files')
