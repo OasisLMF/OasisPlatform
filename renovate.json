@@ -1,0 +1,24 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "enabledManagers": ["custom.regex"],
+  "customManagers": [
+    {
+      "description": "Third-party image pins in the Helm chart values (image/version pairs)",
+      "customType": "regex",
+      "managerFilePatterns": ["/^kubernetes/charts/[^/]+/values\\.yaml$/"],
+      "matchStrings": [
+        "\\n\\s+image:\\s*(?<depName>[^\\s#]+)\\s*\\n\\s+version:\\s*[\"']?(?<currentValue>[^\\s\"'#]+)"
+      ],
+      "datasourceTemplate": "docker",
+      "versioningTemplate": "docker"
+    }
+  ],
+  "packageRules": [
+    {
+      "description": "Our own images are built from this repo, not pinned",
+      "matchPackageNames": ["coreoasis/**"],
+      "enabled": false
+    }
+  ]
+}
