@@ -10,8 +10,12 @@ from mock import patch
 from oasislmf.computation.generate.files import GenerateFiles
 from pathlib2 import Path
 
+from oasis_data_manager.filestore.backends.local import LocalStorage
+
 from src.model_execution_worker.distributed_tasks import (
+    load_subject_at_risk_chunk,
     load_subject_at_risk_data,
+    store_subject_at_risk_chunks,
     merge_dataframes,
     split_subject_at_risk_data,
     merge_chunk_log_storage,
@@ -271,6 +275,70 @@ class LoadSubjectAtRiskData(TestCase):
         self.assertEqual(len(sar_df), expected_rows)
         self.assertIn('loc_id', sar_df.columns)
         self.assertIn('LocNumber', sar_df.columns)
+
+
+class SubjectAtRiskChunkFiles(TestCase):
+    """ 'pre_analysis_hook' splits the exposure once into per-chunk files, so each
+        'prepare_keys_file_chunk' loads only its own rows instead of the full portfolio.
+    """
+    inputs_dir = os.path.join(os.path.dirname(__file__), 'inputs')
+
+    def setUp(self):
+        self.params = {
+            'oed_location_csv': os.path.join(self.inputs_dir, 'location.csv'),
+            'oed_accounts_csv': os.path.join(self.inputs_dir, 'accounts.csv'),
+            'storage_subdir': 'analysis-1_files-abc',
+        }
+        self.full_sar_df = load_subject_at_risk_data(self.params)
+
+    def _store_and_load(self, num_chunks):
+        with TemporaryDirectory() as tmp_dir:
+            storage = LocalStorage(root_dir=os.path.join(tmp_dir, 'media'), cache_dir=None)
+            # created by '_prepare_directories' in the worker
+            os.makedirs(os.path.join(tmp_dir, 'media', self.params['storage_subdir']))
+            split_dir = os.path.join(tmp_dir, 'split')
+            os.makedirs(split_dir)
+            with patch('src.model_execution_worker.distributed_tasks.filestore', storage):
+                self.params['sar_chunks'] = store_subject_at_risk_chunks(self.params, num_chunks, split_dir)
+                with patch('src.model_execution_worker.distributed_tasks.load_subject_at_risk_data') as full_load:
+                    chunks = []
+                    for idx in range(num_chunks):
+                        chunk_dir = os.path.join(tmp_dir, f'chunk-{idx}')
+                        os.makedirs(chunk_dir)
+                        chunks.append(load_subject_at_risk_chunk(self.params, num_chunks, idx, chunk_dir))
+                    full_load.assert_not_called()
+            self.assertEqual(os.listdir(split_dir), [])
+        return chunks
+
+    def test_stored_chunks_match_splitting_the_full_exposure(self):
+        chunks = self._store_and_load(3)
+
+        self.assertEqual(len(self.params['sar_chunks']), 3)
+        for idx, chunk in enumerate(chunks):
+            pd.testing.assert_frame_equal(chunk, split_subject_at_risk_data(self.full_sar_df, 3, idx))
+
+    def test_more_chunks_than_subjects___extra_chunks_are_empty(self):
+        num_chunks = len(self.full_sar_df) + 2
+
+        chunks = self._store_and_load(num_chunks)
+
+        self.assertTrue(chunks[-1].empty)
+        self.assertEqual(sum(len(c) for c in chunks), len(self.full_sar_df))
+
+    def test_no_stored_chunks___full_exposure_is_loaded_and_split(self):
+        # e.g. an older API that doesn't send 'num_chunks' to 'pre_analysis_hook'
+        with TemporaryDirectory() as tmp_dir:
+            chunk = load_subject_at_risk_chunk(self.params, 3, 1, tmp_dir)
+
+        pd.testing.assert_frame_equal(chunk, split_subject_at_risk_data(self.full_sar_df, 3, 1))
+
+    def test_stored_chunk_count_differs___full_exposure_is_loaded_and_split(self):
+        self.params['sar_chunks'] = ['a.parquet', 'b.parquet']
+
+        with TemporaryDirectory() as tmp_dir:
+            chunk = load_subject_at_risk_chunk(self.params, 3, 2, tmp_dir)
+
+        pd.testing.assert_frame_equal(chunk, split_subject_at_risk_data(self.full_sar_df, 3, 2))
 
 
 class MergeChunkLogStorage(TestCase):
