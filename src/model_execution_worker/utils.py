@@ -417,12 +417,14 @@ def update_params(params, given_params):
         'extra_summary_cols',
         'kernel_alloc_rule_ri',
         'check_oed',
-        'do_disaggregation',
+        'disaggregation',
         'verbose'
     ]
     for k, v in given_params.items():
         if k in ALLOWED_PARAMS:
             params[k] = v
+    if 'disaggregation' not in given_params and given_params.get('do_disaggregation') is not None:
+        params['disaggregation'] = 'items' if given_params['do_disaggregation'] else 'none'
     if params['supported_oed_coverage_types'] == [0]:
         params['supported_oed_coverage_types'] = None
     params["output_file"] = "outfile.csv"
