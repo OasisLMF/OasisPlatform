@@ -26,6 +26,7 @@ from src.model_execution_worker.distributed_tasks import (
     generate_losses_output,
     write_input_files,
     get_keys_format,
+    pre_analysis_hook,
 )
 
 
@@ -580,6 +581,28 @@ class WriteInputFiles(TestCase):
             target_dir = generate_kwargs['target_dir']
             self.assertEqual(generate_files.keys_data_path, os.path.join(target_dir, 'keys.parquet'))
             self.assertEqual(generate_files.keys_errors_path, os.path.join(target_dir, 'keys-errors.parquet'))
+
+
+class PreAnalysisHookChunks(TestCase):
+    """ With a single lookup chunk there is nothing to split, so 'pre_analysis_hook'
+        must not store per-chunk exposure files.
+    """
+
+    def test_single_chunk___sar_chunks_not_set(self):
+        def settings_get(section, option, fallback=None):
+            return run_dir if option == 'base_run_dir' else fallback
+
+        with TemporaryDirectory() as run_dir:
+            params = {'log_storage': {}}
+            with patch('src.model_execution_worker.distributed_tasks.TASK_LOG_DIR', run_dir), \
+                    patch('src.model_execution_worker.distributed_tasks.settings.get', side_effect=settings_get), \
+                    patch('src.model_execution_worker.distributed_tasks.notify_api_task_started'), \
+                    patch('src.model_execution_worker.distributed_tasks.filestore'), \
+                    patch('src.model_execution_worker.distributed_tasks.store_subject_at_risk_chunks') as store_chunks:
+                result = pre_analysis_hook.run(params, analysis_id=1, run_data_uuid='run-uuid', slug='pre-analysis-hook', num_chunks=1)
+
+        store_chunks.assert_not_called()
+        self.assertNotIn('sar_chunks', result)
 
 
 class GetKeysFormat(TestCase):
