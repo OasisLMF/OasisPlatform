@@ -159,7 +159,10 @@ def load_subject_at_risk_chunk(params, num_chunks, chunk_idx, chunk_dir):
     """
     sar_chunks = params.get('sar_chunks') or []
     if len(sar_chunks) != num_chunks:
-        logger.info('No pre-split exposure chunks, loading the full exposure')
+        if sar_chunks:
+            logger.warning(f'Expected {num_chunks} pre-split exposure chunks, got {len(sar_chunks)}, loading the full exposure')
+        else:
+            logger.info('No pre-split exposure chunks, loading the full exposure')
         return split_subject_at_risk_data(load_subject_at_risk_data(params), num_chunks, chunk_idx)
 
     chunk_fp = os.path.join(chunk_dir, os.path.basename(sar_chunks[chunk_idx]))
