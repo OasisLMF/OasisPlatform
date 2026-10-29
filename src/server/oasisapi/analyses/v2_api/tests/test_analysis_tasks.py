@@ -21,7 +21,7 @@ from ....files.v2_api.tests.fakes import fake_related_file
 from ...v2_api.tasks import (
     chord_error_callback, handle_task_failure, record_sub_task_failure, record_sub_task_success, record_sub_task_start,
     start_input_and_loss_generation_task, start_loss_generation_task, start_input_generation_task, subtask_error_log,
-    store_lookup_errors_file,
+    store_lookup_errors_file, store_lookup_success_file,
 )
 from ...v1_api.tasks import (
     record_run_analysis_result, generate_input_success, record_generate_input_failure, record_run_analysis_failure
@@ -552,3 +552,19 @@ class StoreLookupErrorsFile(TestCase):
 
         store_file_mock.assert_called_once_with(
             'abc123.csv', 'text/csv', 'user', filename='analysis_1_keys-errors.csv')
+
+
+class StoreLookupSuccessFile(TestCase):
+    def test_parquet_reference___stored_as_parquet(self):
+        with patch('src.server.oasisapi.analyses.v2_api.tasks.store_file') as store_file_mock:
+            store_lookup_success_file('abc123.parquet', 'user', 1)
+
+        store_file_mock.assert_called_once_with(
+            'abc123.parquet', 'application/octet-stream', 'user', filename='analysis_1_gul_summary_map.parquet')
+
+    def test_csv_reference___stored_as_csv(self):
+        with patch('src.server.oasisapi.analyses.v2_api.tasks.store_file') as store_file_mock:
+            store_lookup_success_file('abc123.csv', 'user', 1)
+
+        store_file_mock.assert_called_once_with(
+            'abc123.csv', 'text/csv', 'user', filename='analysis_1_gul_summary_map.csv')

@@ -27,7 +27,7 @@ from tempfile import TemporaryFile
 from urllib.request import urlopen
 from urllib.parse import urlparse
 
-from src.server.oasisapi.files.models import ARCHIVE_CONTENT_TYPES, RelatedFile, archive_suffix, tabular_file_type
+from src.server.oasisapi.files.models import ARCHIVE_CONTENT_TYPES, RelatedFile, archive_suffix
 from src.server.oasisapi.files.v1_api.views import handle_json_data
 from src.server.oasisapi.schemas.serializers import ModelParametersSerializer
 from src.server.oasisapi.files.upload import wait_for_blob_copy
@@ -398,6 +398,15 @@ def store_lookup_errors_file(reference, initiator, analysis_pk):
     return store_file(reference, 'text/csv', initiator, required=False, filename=f'analysis_{analysis_pk}_keys-errors.csv')
 
 
+def store_lookup_success_file(reference, initiator, analysis_pk):
+    """ The worker writes the gul summary map as parquet with newer oasislmf, csv with older versions
+    """
+    if str(reference).endswith('.parquet'):
+        return store_file(reference, 'application/octet-stream', initiator,
+                          filename=f'analysis_{analysis_pk}_gul_summary_map.parquet')
+    return store_file(reference, 'text/csv', initiator, filename=f'analysis_{analysis_pk}_gul_summary_map.csv')
+
+
 @celery_app_v1.task(name='record_generate_input_result', base=LogTaskError)
 def record_generate_input_result(result, analysis_pk, initiator_pk):
     logger.info('result: {}, analysis_pk: {}, initiator_pk: {}'.format(
@@ -445,9 +454,7 @@ def record_generate_input_result(result, analysis_pk, initiator_pk):
 
     # Add current Output
     analysis.input_file = store_archive(input_location, initiator, f'analysis_{analysis_pk}_inputs') if input_location else None
-    lookup_success_type, lookup_success_ext = tabular_file_type(lookup_success_fp)
-    analysis.lookup_success_file = store_file(lookup_success_fp, lookup_success_type, initiator,
-                                              filename=f'analysis_{analysis_pk}_gul_summary_map.{lookup_success_ext}') if lookup_success_fp else None
+    analysis.lookup_success_file = store_lookup_success_file(lookup_success_fp, initiator, analysis_pk) if lookup_success_fp else None
     analysis.lookup_errors_file = store_lookup_errors_file(lookup_error_fp, initiator, analysis_pk) if lookup_error_fp else None
     analysis.lookup_validation_file = store_file(lookup_validation_fp, 'application/json', initiator, required=False,
                                                  filename=f'analysis_{analysis_pk}_exposure_summary_report.json') if lookup_validation_fp else None
