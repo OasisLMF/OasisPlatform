@@ -32,7 +32,7 @@ from src.server.oasisapi.schemas.serializers import ModelParametersSerializer
 from ..models import AnalysisTaskStatus, Analysis
 from .task_controller import get_analysis_task_controller
 from ...celery_app_v2 import v2 as celery_app_v2
-from .utils import delete_prev_output, store_file
+from .utils import delete_prev_output, store_archive, store_file
 
 
 logger = get_task_logger(__name__)
@@ -314,8 +314,8 @@ def record_input_files(self, result, analysis_id=None, initiator_id=None, run_da
     initiator = get_user_model().objects.get(pk=initiator_id)
 
     analysis.status = Analysis.status_choices.READY
-    analysis.input_file = store_file(input_location, 'application/gzip', initiator, filename=f'analysis_{analysis_id}_inputs.tar.gz')
-    analysis.lookup_errors_file = store_file(lookup_error_fp, 'text/csv', initiator, filename=f'analysis_{analysis_id}_keys-errors.csv')
+    analysis.input_file = store_archive(input_location, initiator, f'analysis_{analysis_id}_inputs')
+    analysis.lookup_errors_file = store_lookup_errors_file(lookup_error_fp, initiator, analysis_id)
     lookup_success_type, lookup_success_ext = tabular_file_type(lookup_success_fp)
     analysis.lookup_success_file = store_file(lookup_success_fp, lookup_success_type, initiator,
                                               filename=f'analysis_{analysis_id}_gul_summary_map.{lookup_success_ext}')
@@ -352,6 +352,14 @@ def record_input_files(self, result, analysis_id=None, initiator_id=None, run_da
     return result
 
 
+def store_lookup_errors_file(reference, initiator, analysis_id):
+    """ The worker writes keys errors as csv or parquet, depending on the model's 'keys_format'
+    """
+    if str(reference).endswith('.parquet'):
+        return store_file(reference, 'application/octet-stream', initiator, filename=f'analysis_{analysis_id}_keys-errors.parquet')
+    return store_file(reference, 'text/csv', initiator, filename=f'analysis_{analysis_id}_keys-errors.csv')
+
+
 @celery_app_v2.task(name='record_input_error_files')
 def record_input_error_files(analysis_id, initiator_id, output_location=None, lookup_error_location=None, **kwargs):
     """ If a V2 worker fails during oasis input file generate,
@@ -360,9 +368,9 @@ def record_input_error_files(analysis_id, initiator_id, output_location=None, lo
     analysis = Analysis.objects.get(pk=analysis_id)
     initiator = get_user_model().objects.get(pk=initiator_id)
     if output_location:
-        analysis.input_file = store_file(output_location, 'application/gzip', initiator, filename=f'analysis_{analysis_id}_inputs.tar.gz')
+        analysis.input_file = store_archive(output_location, initiator, f'analysis_{analysis_id}_inputs')
     if lookup_error_location:
-        analysis.lookup_errors_file = store_file(lookup_error_location, 'text/csv', initiator, filename=f'analysis_{analysis_id}_keys-errors.csv')
+        analysis.lookup_errors_file = store_lookup_errors_file(lookup_error_location, initiator, analysis_id)
 
     analysis.save(update_fields=["input_file", "lookup_errors_file"])
 
@@ -400,27 +408,11 @@ def record_losses_files(self, result, analysis_id=None, initiator_id=None, slug=
 
     # Store logs and output
     if result.get('run_logs', None):
-        analysis.run_log_file = store_file(result['run_logs'], 'application/gzip', initiator, filename=f'analysis_{analysis_id}_logs.tar.gz')
+        analysis.run_log_file = store_archive(result['run_logs'], initiator, f'analysis_{analysis_id}_logs')
 
-    analysis.output_file = store_file(result['output_location'], 'application/gzip', initiator, filename=f'analysis_{analysis_id}_output.tar.gz')
-
-    # Inputs gained files during the loss run (e.g. occurrence.bin)
-    replaced_input_file = None
-    if result.get('updated_input_location', None):
-        replaced_input_file = analysis.input_file
-        analysis.input_file = store_file(result['updated_input_location'], 'application/gzip', initiator,
-                                         filename=f'analysis_{analysis_id}_inputs.tar.gz')
+    analysis.output_file = store_archive(result['output_location'], initiator, f'analysis_{analysis_id}_output')
 
     analysis.save()
-
-    # Only delete once nothing points at it, `input_file` cascades deletes to the analysis
-    if replaced_input_file and not replaced_input_file.input_file_analyses.exists():
-        if replaced_input_file.file.name == analysis.input_file.file.name:
-            # Both were stored as 'analysis_<id>_inputs.tar.gz', so on S3/Azure the new copy overwrote the
-            # same object. Clear the name without signals so django_cleanup doesn't delete the new file.
-            RelatedFile.objects.filter(pk=replaced_input_file.pk).update(file='')
-            replaced_input_file = RelatedFile.objects.get(pk=replaced_input_file.pk)
-        replaced_input_file.delete()
     return result
 
 
@@ -433,9 +425,9 @@ def record_losses_error_files(analysis_id, initiator_id, output_location=None, r
     initiator = get_user_model().objects.get(pk=initiator_id)
 
     if output_location:
-        analysis.output_file = store_file(output_location, 'application/gzip', initiator, filename=f'analysis_{analysis_id}_output.tar.gz')
+        analysis.output_file = store_archive(output_location, initiator, f'analysis_{analysis_id}_output')
     if run_logs:
-        analysis.run_log_file = store_file(run_logs, 'application/gzip', initiator, filename=f'analysis_{analysis_id}_logs.tar.gz')
+        analysis.run_log_file = store_archive(run_logs, initiator, f'analysis_{analysis_id}_logs')
 
     analysis.save(update_fields=["output_file", "run_log_file"])
 

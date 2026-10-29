@@ -3,14 +3,13 @@ import io
 import os
 from tempfile import TemporaryFile
 
-import pandas as pd
-
 from django.core.files import File
 from django.http import StreamingHttpResponse, Http404
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
 
 from ..models import RelatedFile, list_tar_file, extract_file_from_tar
+from ..v1_api.views import convert_tabular_file
 from .serializers import RelatedFileSerializer, EXPOSURE_ARGS
 from ...permissions.group_auth import verify_user_is_in_obj_groups, resolve_user
 
@@ -38,31 +37,6 @@ def _get_chunked_content(f, chunk_size=1024):
         content = f.read(chunk_size)
 
 
-def _convert_tabular_file(file_obj, content_type, download_name, file_format):
-    """ Convert a stored non-OED csv / parquet file to the requested format,
-        returns None if no conversion is needed
-    """
-    if file_format == 'parquet' and content_type == 'text/csv':
-        file_obj.seek(0)
-        df = pd.read_csv(io.BytesIO(file_obj.read()))
-        output_buffer = io.BytesIO()
-        df.to_parquet(output_buffer, index=False)
-        output_content_type = 'application/octet-stream'
-    elif file_format == 'csv' and content_type == 'application/octet-stream':
-        file_obj.seek(0)
-        df = pd.read_parquet(io.BytesIO(file_obj.read()))
-        output_buffer = io.BytesIO()
-        df.to_csv(output_buffer, index=False)
-        output_content_type = 'text/csv'
-    else:
-        return None
-
-    output_buffer.seek(0)
-    response = StreamingHttpResponse(output_buffer, content_type=output_content_type)
-    response['Content-Disposition'] = 'attachment; filename="{}.{}"'.format(os.path.splitext(download_name)[0], file_format)
-    return response
-
-
 def _handle_get_related_file(parent, field, request, default_file_format=None):
 
     # fetch file
@@ -83,9 +57,9 @@ def _handle_get_related_file(parent, field, request, default_file_format=None):
         download_name = f.filename if f.filename else f.file.name
         file_obj = f.file
 
-    # Non-OED files are converted directly with pandas
+    # Non OED files (e.g. analysis lookup files) are converted without OED validation
     if field not in EXPOSURE_ARGS:
-        response = _convert_tabular_file(file_obj, f.content_type, download_name, file_format)
+        response = convert_tabular_file(f.content_type, file_obj, download_name, file_format)
         if response:
             return response
 

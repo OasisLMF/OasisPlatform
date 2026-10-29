@@ -23,7 +23,7 @@ from oasislmf.utils.exceptions import OasisExceptionNoKeys
 from oasislmf.utils.status import OASIS_TASK_STATUS
 from pathlib2 import Path
 
-from ..common.filestore.filestore import get_filestore, remote_subdir
+from ..common.filestore.filestore import get_archive_compression, get_filestore, remote_subdir
 from ..conf import celeryconf_v2 as celery_conf
 from ..conf.iniconf import settings, settings_local
 from .celery_error_handler import OasisWorkerTask
@@ -56,9 +56,12 @@ Celery task wrapper for Oasis calculation.
 
 logger = get_task_logger(__name__)
 LOG_FILE_SUFFIX = 'txt'
-ARCHIVE_FILE_SUFFIX = 'tar.gz'
+# Compression for every directory archive the worker stores, 'zst' is much faster than gzip on large runs
+ARCHIVE_COMPRESSION_TYPE = get_archive_compression(settings)
 RUNNING_TASK_STATUS = OASIS_TASK_STATUS["running"]["id"]
 TASK_LOG_DIR = settings.get('worker', 'TASK_LOG_DIR', fallback='/var/log/oasis/tasks')
+# oasislmf 'keys_format' -> keys file extension (formats chunk merging supports)
+KEYS_FORMAT_EXT = {'parquet': 'parquet', 'oasis': 'csv'}
 FAIL_ON_REDELIVERY = settings.getboolean('worker', 'FAIL_ON_REDELIVERY', fallback=True)
 
 
@@ -381,10 +384,6 @@ def keys_generation_task(fn):
         params.setdefault('lookup_complex_config_json', os.path.join(params['root_run_dir'], 'analysis_settings.json'))
         params.setdefault('analysis_settings_json', os.path.join(params['root_run_dir'], 'analysis_settings.json'))
 
-        # Generate keys files
-        params.setdefault('keys_fp', os.path.join(params['root_run_dir'], 'keys.csv'))
-        params.setdefault('keys_errors_fp', os.path.join(params['root_run_dir'], 'keys-errors.csv'))
-
         # user settings and data
         settings_file = kwargs.get('analysis_settings_file')
         complex_data_files = kwargs.get('complex_data_files')
@@ -555,6 +554,18 @@ def pre_analysis_hook(self,
     return params
 
 
+def get_keys_format(params):
+    """ Return the oasislmf 'keys_format' and matching file extension for the
+        distributed lookup. Chunk merging only supports the tabular formats, so
+        'json' falls back to the default, 'parquet'.
+    """
+    keys_format = (params.get('keys_format') or 'parquet').lower()
+    if keys_format not in KEYS_FORMAT_EXT:
+        logger.warning(f'keys_format "{keys_format}" is not supported for distributed lookups, using "parquet"')
+        keys_format = 'parquet'
+    return keys_format, KEYS_FORMAT_EXT[keys_format]
+
+
 @app.task(bind=True, name='prepare_keys_file_chunk', **celery_conf.worker_task_kwargs)
 @keys_generation_task
 def prepare_keys_file_chunk(
@@ -590,14 +601,15 @@ def prepare_keys_file_chunk(
         if sar_df.empty:
             logger.info(f'Lookup chunk {chunk_idx + 1}/{num_chunks} is empty --skipped--')
         else:
-            chunk_keys_fp = os.path.join(chunk_target_dir, 'keys.csv')
-            chunk_keys_errors_fp = os.path.join(chunk_target_dir, 'keys-errors.csv')
+            keys_format, keys_ext = get_keys_format(params)
+            chunk_keys_fp = os.path.join(chunk_target_dir, f'keys.{keys_ext}')
+            chunk_keys_errors_fp = os.path.join(chunk_target_dir, f'keys-errors.{keys_ext}')
             lookup.generate_key_files(
                 location_fp=None,
                 location_df=sar_df,
                 successes_fp=chunk_keys_fp,
                 errors_fp=chunk_keys_errors_fp,
-                output_format='oasis',
+                output_format=keys_format,
                 keys_success_msg=False,
                 multiproc_enabled=params.get('lookup_multiprocessing', False),
                 multiproc_num_cores=params.get('lookup_num_processes', -1),
@@ -607,8 +619,9 @@ def prepare_keys_file_chunk(
         # Store chunks
         params['chunk_keys'] = filestore.put(
             chunk_target_dir,
-            filename=f'lookup-{chunk_idx + 1}.tar.gz',
-            subdir=params['storage_subdir']
+            filename=f'lookup-{chunk_idx + 1}.{filestore.archive_suffix(ARCHIVE_COMPRESSION_TYPE)}',
+            subdir=params['storage_subdir'],
+            compression=ARCHIVE_COMPRESSION_TYPE,
         )
 
     params['log_location'] = filestore.put(kwargs.get('log_filename'))
@@ -629,9 +642,10 @@ def _merge_csv_streaming(paths, output_file):
         return
 
     # diagonal concat: chunk files' column sets aren't always identical.
+    # relaxed: a header-only chunk scans as all-String, so dtypes can differ too.
     lazy_frames = [pl.scan_csv(path) for path in non_empty_paths]
     (
-        pl.concat(lazy_frames, how='diagonal')
+        pl.concat(lazy_frames, how='diagonal_relaxed')
         .unique(keep='first', maintain_order=True)
         .sink_csv(str(output_file))
     )
@@ -650,9 +664,10 @@ def _merge_parquet_streaming(paths, output_file):
         logger.warning(f"All files were empty or unreadable: {paths}. --skipped--")
         return
 
+    # relaxed: a zero-row chunk written from pandas has all-null column types.
     lazy_frames = [pl.scan_parquet(path) for path in valid_paths]
     (
-        pl.concat(lazy_frames, how='diagonal')
+        pl.concat(lazy_frames, how='diagonal_relaxed')
         .unique(keep='first', maintain_order=True)
         .sink_parquet(str(output_file))
     )
@@ -741,8 +756,9 @@ def collect_keys(
             # store keys data
             chunk_params['keys_data'] = filestore.put(
                 merge_dir.as_posix(),
-                filename='keys-data.tar.gz',
-                subdir=chunk_params['storage_subdir']
+                filename=f'keys-data.{filestore.archive_suffix(ARCHIVE_COMPRESSION_TYPE)}',
+                subdir=chunk_params['storage_subdir'],
+                compression=ARCHIVE_COMPRESSION_TYPE,
             )
 
     chunk_params['log_location'] = filestore.put(kwargs.get('log_filename'))
@@ -755,8 +771,9 @@ def collect_keys(
 def write_input_files(self, params, run_data_uuid=None, analysis_id=None, initiator_id=None, slug=None, **kwargs):
     # Load Collected keys data
     filestore.extract(params['keys_data'], params['target_dir'], params['storage_subdir'])
-    params['keys_data_path'] = os.path.join(params['target_dir'], 'keys.csv')
-    params['keys_errors_path'] = os.path.join(params['target_dir'], 'keys-errors.csv')
+    _, keys_ext = get_keys_format(params)
+    params['keys_data_path'] = os.path.join(params['target_dir'], f'keys.{keys_ext}')
+    params['keys_errors_path'] = os.path.join(params['target_dir'], f'keys-errors.{keys_ext}')
     params['oasis_files_dir'] = params['target_dir']
     from oasislmf.manager import OasisManager
     try:
@@ -786,11 +803,11 @@ def write_input_files(self, params, run_data_uuid=None, analysis_id=None, initia
         filestore.get(params['log_storage'][log_ref], os.path.join(log_dir, f'v2-{log_ref}.txt'))
 
     return {
-        'lookup_error_location': filestore.put(os.path.join(params['target_dir'], 'keys-errors.csv')),
+        'lookup_error_location': filestore.put(params['keys_errors_path']),
         'lookup_success_location': filestore.put(get_lookup_success_file(params['target_dir'])),
         'lookup_validation_location': filestore.put(os.path.join(params['target_dir'], 'exposure_summary_report.json')),
         'summary_levels_location': filestore.put(os.path.join(params['target_dir'], 'exposure_summary_levels.json')),
-        'output_location': filestore.put(params['target_dir']),
+        'output_location': filestore.put(params['target_dir'], compression=ARCHIVE_COMPRESSION_TYPE),
         'analysis_settings_location': filestore.put(params['analysis_settings_json']),
         'log_location': params['log_location'],
     }
@@ -992,8 +1009,9 @@ def prepare_losses_generation_directory(self, params, analysis_id=None, slug=Non
 
         params['run_location'] = filestore.put(
             params['model_run_dir'],
-            filename='run_directory.tar.gz',
-            subdir=params['storage_subdir']
+            filename=f'run_directory.{filestore.archive_suffix(ARCHIVE_COMPRESSION_TYPE)}',
+            subdir=params['storage_subdir'],
+            compression=ARCHIVE_COMPRESSION_TYPE,
         )
         params['log_location'] = filestore.put(kwargs.get('log_filename'))
         return params
@@ -1051,13 +1069,15 @@ def generate_losses_chunk(self, params, chunk_idx, num_chunks, analysis_id=None,
             **params,
             'chunk_work_location': filestore.put(
                 chunk_params['kernel_work_dir'],
-                filename=f'work-{chunk_idx + 1}.tar.gz',
-                subdir=params['storage_subdir']
+                filename=f'work-{chunk_idx + 1}.{filestore.archive_suffix(ARCHIVE_COMPRESSION_TYPE)}',
+                subdir=params['storage_subdir'],
+                compression=ARCHIVE_COMPRESSION_TYPE,
             ),
             'chunk_log_location': filestore.put(
                 chunk_params['kernel_log_dir'],
-                filename=f'log-{chunk_idx + 1}.tar.gz',
-                subdir=params['storage_subdir']
+                filename=f'log-{chunk_idx + 1}.{filestore.archive_suffix(ARCHIVE_COMPRESSION_TYPE)}',
+                subdir=params['storage_subdir'],
+                compression=ARCHIVE_COMPRESSION_TYPE,
             ),
             'kernel_work_dir': chunk_params['kernel_work_dir'],
             'process_number': chunk_idx + 1,
@@ -1095,32 +1115,21 @@ def generate_losses_output(self, params, analysis_id=None, slug=None, **kwargs):
         logger.info(f"post_losses_hook: running {res.get('post_analysis_module')}")
         OasisManager().post_analysis(**res)
 
-    # store additional input files
-    additional_input_files = ['occurrence.bin']
-    curr_input_files = list(os.listdir(res['oasis_files_dir']))
-
-    input_files_added = False
-    for fname in additional_input_files:
-        if fname in curr_input_files:
-            continue
-
-        fpath = os.path.join(res['model_run_dir'], 'input', fname)
-        shutil.copy2(fpath, res['oasis_files_dir'])
-        input_files_added = True
-
-    if input_files_added:
-        # Upload a fresh tarball for record_losses_files to store as analysis.input_file. The input reference
-        # can't be overwritten in place: in generate_and_run it is this worker's own tarball (already copied by
-        # record_input_files), and otherwise it is a server key or URL that may sit under a different bucket or
-        # location than this worker's filestore.
-        res['updated_input_location'] = filestore.put(res['oasis_files_dir'])
+    # store additional files needed for combine run
+    occ_path = os.path.join(res['model_run_dir'], 'input', 'occurrence.bin')
+    if os.path.exists(occ_path):
+        combine_folder = os.path.join(res['model_run_dir'], 'output', 'combine')
+        os.makedirs(combine_folder, exist_ok=True)
+        shutil.copy2(occ_path, os.path.join(combine_folder, 'occurrence.bin'))
+    else:
+        logger.info('Occurrence file not found. This analysis will not support the combine endpoint.')
 
     output_dir = os.path.join(res['model_run_dir'], 'output')
     logs_dir = os.path.join(res['model_run_dir'], 'log')
     return {
         **res,
-        'output_location': filestore.put(output_dir, arcname='output'),
-        'run_logs': filestore.put(logs_dir),
+        'output_location': filestore.put(output_dir, arcname='output', compression=ARCHIVE_COMPRESSION_TYPE),
+        'run_logs': filestore.put(logs_dir, compression=ARCHIVE_COMPRESSION_TYPE),
         'log_location': filestore.put(kwargs.get('log_filename')),
     }
 
@@ -1166,7 +1175,7 @@ def handle_task_failure(*args, sender=None, task_id=None, **kwargs):
         signature('record_input_error_files').delay(
             task_args.get('analysis_id'),
             task_args.get('initiator_id'),
-            filestore.put(task_params.get('target_dir'))
+            filestore.put(task_params.get('target_dir'), compression=ARCHIVE_COMPRESSION_TYPE)
         )
 
     # Store failed input gen files
@@ -1174,8 +1183,8 @@ def handle_task_failure(*args, sender=None, task_id=None, **kwargs):
         signature('record_input_error_files').delay(
             task_args.get('analysis_id'),
             task_args.get('initiator_id'),
-            filestore.put(task_params.get('target_dir')),
-            filestore.put(os.path.join(task_params.get('target_dir'), 'keys-errors.csv'))
+            filestore.put(task_params.get('target_dir'), compression=ARCHIVE_COMPRESSION_TYPE),
+            filestore.put(os.path.join(task_params.get('target_dir'), f'keys-errors.{get_keys_format(task_params)[1]}'))
         )
 
     # Store failed loss gen files
@@ -1183,8 +1192,8 @@ def handle_task_failure(*args, sender=None, task_id=None, **kwargs):
         signature('record_losses_error_files').delay(
             task_args.get('analysis_id'),
             task_args.get('initiator_id'),
-            filestore.put(os.path.join(task_params.get('model_run_dir'), 'output')),
-            filestore.put(os.path.join(task_params.get('model_run_dir'), 'log')),
+            filestore.put(os.path.join(task_params.get('model_run_dir'), 'output'), compression=ARCHIVE_COMPRESSION_TYPE),
+            filestore.put(os.path.join(task_params.get('model_run_dir'), 'log'), compression=ARCHIVE_COMPRESSION_TYPE),
         )
 
     # Wipe worker's remote data storage

@@ -468,7 +468,7 @@ def get_lookup_success_file(directory):
 
 
 def get_destination_file(filename, destination_dir, destination_title):
-    """Returns desired location for file to go into as csv, parquet, tar.gz
+    """Returns desired location for file to go into as csv, parquet, tar.gz, tar.zst
     (does not move the file itself!)
 
     Args:
@@ -490,7 +490,9 @@ def get_destination_file(filename, destination_dir, destination_title):
         return os.path.join(destination_dir, destination_title + ".parquet")
     if ext.startswith('.gz'):
         return os.path.join(destination_dir, destination_title + '.tar.gz')
-    raise ValueError(f"File must be either Parquet, CSV, tar.gz: {filename, ext}")
+    if ext.startswith('.zst'):
+        return os.path.join(destination_dir, destination_title + '.tar.zst')
+    raise ValueError(f"File must be either Parquet, CSV, tar.gz, tar.zst: {filename, ext}")
 
 
 def get_all_exposure_files(loc_filepath, acc_filepath, ri_filepath, rl_filepath, conv_filepath, directory):

@@ -22,7 +22,7 @@ from oasislmf.utils.data import get_json
 from oasislmf.utils.exceptions import OasisExceptionNoKeys
 from oasislmf.utils.status import OASIS_TASK_STATUS
 
-from ..common.filestore.filestore import get_filestore
+from ..common.filestore.filestore import get_archive_compression, get_filestore
 from ..conf import celeryconf_v1 as celery_conf
 from ..conf.iniconf import settings, settings_local
 
@@ -46,7 +46,7 @@ Celery task wrapper for Oasis calculation.
 '''
 
 LOG_FILE_SUFFIX = 'txt'
-ARCHIVE_FILE_SUFFIX = 'tar.gz'
+ARCHIVE_COMPRESSION_TYPE = get_archive_compression(settings)
 RUNNING_TASK_STATUS = OASIS_TASK_STATUS["running"]["id"]
 TASK_LOG_DIR = settings.get('worker', 'TASK_LOG_DIR', fallback='/var/log/oasis/tasks')
 app = Celery(task_cls=OasisWorkerTask)
@@ -351,11 +351,11 @@ def start_analysis(analysis_settings, input_location, complex_data_files=None, *
         # Ktools log Tar file
         traceback_location = filestore.put(kwargs['log_filename'])
         log_directory = os.path.join(run_dir, "log")
-        log_location = filestore.put(log_directory, suffix=ARCHIVE_FILE_SUFFIX)
+        log_location = filestore.put(log_directory, compression=ARCHIVE_COMPRESSION_TYPE)
 
         # Results dir & analysis-settings
         output_directory = os.path.join(run_dir, "output")
-        output_location = filestore.put(output_directory, suffix=ARCHIVE_FILE_SUFFIX, arcname='output')
+        output_location = filestore.put(output_directory, arcname='output', compression=ARCHIVE_COMPRESSION_TYPE)
 
     return output_location, traceback_location, log_location, returncode
 
@@ -491,7 +491,11 @@ def generate_input(self,
             returncode = 1
 
         # Find Generated Files
-        lookup_error_fp = next(iter(glob.glob(os.path.join(oasis_files_dir, '*keys-errors*.csv'))), None)
+        # keys errors are csv or parquet, depending on the model's 'keys_format'
+        lookup_error_fp = next(iter(
+            glob.glob(os.path.join(oasis_files_dir, '*keys-errors*.csv'))
+            + glob.glob(os.path.join(oasis_files_dir, '*keys-errors*.parquet'))
+        ), None)
         lookup_success_fp = get_lookup_success_file(oasis_files_dir)
         lookup_validation_fp = next(iter(glob.glob(os.path.join(oasis_files_dir, 'exposure_summary_report.json'))), None)
         summary_levels_fp = next(iter(glob.glob(os.path.join(oasis_files_dir, 'exposure_summary_levels.json'))), None)
@@ -506,7 +510,7 @@ def generate_input(self,
         lookup_success = filestore.put(lookup_success_fp)
         lookup_validation = filestore.put(lookup_validation_fp)
         summary_levels = filestore.put(summary_levels_fp)
-        output_tar_path = filestore.put(oasis_files_dir)
+        output_tar_path = filestore.put(oasis_files_dir, compression=ARCHIVE_COMPRESSION_TYPE)
         analysis_settings = filestore.put(analysis_settings_fp)
 
         return output_tar_path, lookup_error, lookup_success, lookup_validation, summary_levels, traceback, returncode, analysis_settings

@@ -6,12 +6,12 @@ import lzma
 import os
 import json
 from io import BytesIO
-from urllib.parse import urlparse
 
 import pandas as pd
 import pyarrow.parquet as pq
 import tarfile
 import zipfile
+from urllib.parse import urlparse
 from uuid import uuid4
 
 from django.conf import settings
@@ -21,6 +21,7 @@ from django.db import models
 from django.db.models import TextChoices
 from django.utils.translation import gettext_lazy as _
 from model_utils.models import TimeStampedModel
+from oasis_data_manager.filestore.archive import ZSTD_MAGIC
 from rest_framework.reverse import reverse
 
 
@@ -44,8 +45,65 @@ def tabular_file_type(reference):
     return 'text/csv', 'csv'
 
 
-def _open_decompressed(fileobj):
-    """ Wrap a binary file in a streaming decompressor, detected from its magic bytes.
+# --- Worker directory archives ---
+# Run/output directories are tarred by the workers and compressed as gzip or
+# zstd (ARCHIVE_COMPRESSION_TYPE)
+ARCHIVE_CONTENT_TYPES = {'tar.gz': 'application/gzip', 'tar.zst': 'application/zstd'}
+
+
+def archive_suffix(reference):
+    """ Suffix of a worker archive from its storage reference (key, path or URL), 'tar.gz' unless it's 'tar.zst' """
+    return 'tar.zst' if urlparse(str(reference)).path.endswith('.tar.zst') else 'tar.gz'
+
+
+def _zstd_decompress(data):
+    """ Decompress zstd bytes, stdlib on Python 3.14+, else the zstandard package """
+    try:
+        from compression import zstd
+        return zstd.decompress(data)
+    except ImportError:
+        import zstandard
+        with zstandard.ZstdDecompressor().stream_reader(BytesIO(data)) as reader:
+            return reader.read()
+
+
+def _open_worker_archive(RelatedFile):
+    """ Open a worker archive (tar, optionally gzip or zstd compressed) for random access.
+
+    tarfile detects gzip itself, only zstd needs decompressing first. The whole
+    archive is read into memory as members are looked up by name
+    """
+    data = RelatedFile.read()
+    if data[:len(ZSTD_MAGIC)] == ZSTD_MAGIC:
+        data = _zstd_decompress(data)
+    return tarfile.open(fileobj=BytesIO(data), mode='r')
+
+
+def list_tar_file(RelatedFile):
+    if not RelatedFile:
+        return None
+
+    tarf = _open_worker_archive(RelatedFile)
+
+    files = [m.name for m in tarf.getmembers() if m.isfile()]
+    return files
+
+
+def extract_file_from_tar(RelatedFile, fname):
+    if not RelatedFile:
+        return None
+
+    tarf = _open_worker_archive(RelatedFile)
+
+    return tarf.extractfile(fname)
+
+
+# --- Uploaded portfolio files ---
+
+def _open_decompressed_upload(fileobj):
+    """ Wrap an uploaded single-file input (e.g. a location CSV) in a streaming
+    decompressor for gzip, bz2, xz or single-entry zip, detected from its magic bytes.
+    Uncompressed files are returned as-is.
 
     Content type can't be relied on, e.g. 'loc.csv.gz' is inferred as 'text/csv'
     """
@@ -81,7 +139,7 @@ def related_file_row_count(RelatedFile):
         RelatedFile.file.seek(0)
         return pq.ParquetFile(RelatedFile.file).metadata.num_rows
 
-    stream = _open_decompressed(RelatedFile.file)
+    stream = _open_decompressed_upload(RelatedFile.file)
     text = io.TextIOWrapper(stream, encoding='utf-8', newline='')
     try:
         rows = sum(1 for row in csv.reader(text) if row)
@@ -93,32 +151,13 @@ def related_file_row_count(RelatedFile):
     return max(rows - 1, 0)
 
 
-def list_tar_file(RelatedFile):
-    if not RelatedFile:
-        return None
-
-    tarf = tarfile.open(fileobj=BytesIO(RelatedFile.read()), mode='r')
-
-    files = [m.name for m in tarf.getmembers() if m.isfile()]
-    return files
-
-
-def extract_file_from_tar(RelatedFile, fname):
-    if not RelatedFile:
-        return None
-
-    tarf = tarfile.open(fileobj=BytesIO(RelatedFile.read()), mode='r')
-
-    return tarf.extractfile(fname)
-
-
 def random_file_name(instance, filename):
     if getattr(instance, "store_as_filename", False):
         return filename
 
     # Work around: S3 objects pushed as '<hash>.gz' should be '<hash>.tar.gz'
-    if filename.endswith('.tar.gz'):
-        ext = '.tar.gz'
+    if filename.endswith(('.tar.gz', '.tar.zst')):
+        ext = '.tar.' + filename.rsplit('.', 1)[-1]
     else:
         ext = os.path.splitext(filename)[-1]
     return '{}{}'.format(uuid4().hex, ext)
