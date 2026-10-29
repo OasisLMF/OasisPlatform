@@ -426,6 +426,17 @@ class Analysis(TimeStampedModel):
             groups.append(group.name)
         return groups
 
+    @staticmethod
+    def get_fallback_num_events(selected_event_set, model_settings):
+        """ Returns 'event_set.fallback_number_of_events' from the model settings when no
+        event set is selected in the analysis settings and the model has no default event set,
+        otherwise None.
+        """
+        event_set = model_settings.get('model_settings', {}).get('event_set', {})
+        if selected_event_set or event_set.get('default'):
+            return None
+        return event_set.get('fallback_number_of_events')
+
     def get_num_events(self):
 
         chunking_options = self.get_chunking_options()
@@ -442,6 +453,11 @@ class Analysis(TimeStampedModel):
         selected_event_set = analysis_settings.get('model_settings', {}).get('event_set', "")
         if len(user_selected_events) > 1:
             return len(user_selected_events)
+
+        # No event set selected (run reads 'events.bin'), use the model's fallback size
+        fallback_num_events = self.get_fallback_num_events(selected_event_set, model_settings)
+        if fallback_num_events:
+            return fallback_num_events
 
         # Read event_set_size for model settings
         event_set_options = model_settings.get('model_settings', {}).get('event_set').get('options', [])
@@ -604,6 +620,8 @@ class Analysis(TimeStampedModel):
             analysis_settings = self.settings_file.read_json()
             if not analysis_settings.get('event_ids'):
                 events_selected = analysis_settings.get('model_settings', {}).get('event_set', "")
+                if self.get_fallback_num_events(events_selected, model_settings):
+                    return
                 events_options = model_settings.get("model_settings", {}).get('event_set', {}).get('options', [])
                 events_matched = [opt for opt in events_options if opt.get('id') == events_selected]
                 if not events_selected:
