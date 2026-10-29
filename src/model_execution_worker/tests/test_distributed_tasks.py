@@ -252,6 +252,15 @@ class SplitSubjectAtRiskData(TestCase):
         self.assertEqual(chunks[0]['loc_id'].to_list(), [1, 1, 2, 2, 2])
         self.assertEqual(chunks[1]['loc_id'].to_list(), [3])
 
+    def test_interleaved_subject_rows___split_by_first_appearance_keeping_row_order(self):
+        sar_df = pd.DataFrame({'loc_id': [5, 3, 5, 9, 3, 7, 9], 'row': range(7)})
+
+        chunks = [split_subject_at_risk_data(sar_df, 2, idx) for idx in range(2)]
+
+        # subjects in order of first appearance are [5, 3, 9, 7], split [5, 3] / [9, 7]
+        self.assertEqual(chunks[0]['row'].to_list(), [0, 1, 2, 4])
+        self.assertEqual(chunks[1]['row'].to_list(), [3, 5, 6])
+
     def test_more_chunks_than_subjects___extra_chunks_are_empty(self):
         sar_df = pd.DataFrame({'loc_id': [1, 2]})
 

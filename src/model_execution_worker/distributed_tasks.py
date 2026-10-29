@@ -115,16 +115,29 @@ def load_subject_at_risk_data(params):
     return exposure.get_subject_at_risk_source().dataframe
 
 
-def split_subject_at_risk_data(sar_df, num_chunks, chunk_idx):
-    """ Returns the `chunk_idx` slice of `sar_df`, split into `num_chunks` parts
+def subject_at_risk_chunk_rows(sar_df, num_chunks):
+    """ Returns the row positions of `sar_df` in each of its `num_chunks` lookup chunks
 
     Split by subject id ('loc_id') rather than by row, so that every row for a
     subject (e.g. multiple layers of a cyber account) is looked up in the same chunk.
+    The subjects, in order of first appearance, are split into `num_chunks` even
+    blocks, and each row is assigned its chunk in one pass.
     """
-    sar_ids = sar_df['loc_id'].unique()
-    chunk_ids = np.array_split(sar_ids, num_chunks)[chunk_idx]
-    chunk_df = sar_df[sar_df['loc_id'].isin(chunk_ids)]
-    return chunk_df.reset_index(drop=True)
+    codes, sar_ids = pd.factorize(sar_df['loc_id'], use_na_sentinel=False)
+    chunk_sizes = [len(ids) for ids in np.array_split(np.arange(len(sar_ids)), num_chunks)]
+    row_chunks = np.repeat(np.arange(num_chunks), chunk_sizes)[codes]
+
+    # stable, so rows keep their original order within each chunk
+    rows = np.argsort(row_chunks, kind='stable')
+    return np.split(rows, np.searchsorted(row_chunks[rows], np.arange(1, num_chunks)))
+
+
+def split_subject_at_risk_data(sar_df, num_chunks, chunk_idx):
+    """ Returns the `chunk_idx` slice of `sar_df`, split into `num_chunks` parts
+        (see `subject_at_risk_chunk_rows`)
+    """
+    chunk_rows = subject_at_risk_chunk_rows(sar_df, num_chunks)[chunk_idx]
+    return sar_df.iloc[chunk_rows].reset_index(drop=True)
 
 
 def store_subject_at_risk_chunks(params, num_chunks, chunks_dir):
@@ -136,12 +149,11 @@ def store_subject_at_risk_chunks(params, num_chunks, chunks_dir):
         with the chunk count.
     """
     sar_df = load_subject_at_risk_data(params)
-    sar_ids = sar_df['loc_id'].unique()
 
     chunk_refs = []
-    for chunk_idx, chunk_ids in enumerate(np.array_split(sar_ids, num_chunks)):
+    for chunk_idx, chunk_rows in enumerate(subject_at_risk_chunk_rows(sar_df, num_chunks)):
         chunk_fp = os.path.join(chunks_dir, f'sar-chunk-{chunk_idx + 1}.parquet')
-        chunk_df = sar_df[sar_df['loc_id'].isin(chunk_ids)].reset_index(drop=True)
+        chunk_df = sar_df.iloc[chunk_rows].reset_index(drop=True)
         chunk_df.to_parquet(chunk_fp, index=False)
         chunk_refs.append(filestore.put(
             chunk_fp,
