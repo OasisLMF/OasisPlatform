@@ -300,13 +300,14 @@ class SubjectAtRiskChunkFiles(TestCase):
             os.makedirs(split_dir)
             with patch('src.model_execution_worker.distributed_tasks.filestore', storage):
                 self.params['sar_chunks'] = store_subject_at_risk_chunks(self.params, num_chunks, split_dir)
-                with patch('src.model_execution_worker.distributed_tasks.load_subject_at_risk_data') as full_load:
+                with patch('src.model_execution_worker.distributed_tasks.load_subject_at_risk_data') as full_load, \
+                        patch.object(storage, 'get') as storage_get:
                     chunks = []
                     for idx in range(num_chunks):
-                        chunk_dir = os.path.join(tmp_dir, f'chunk-{idx}')
-                        os.makedirs(chunk_dir)
-                        chunks.append(load_subject_at_risk_chunk(self.params, num_chunks, idx, chunk_dir))
+                        chunks.append(load_subject_at_risk_chunk(self.params, num_chunks, idx))
                     full_load.assert_not_called()
+                    # 'get' leaves a copy in the data cache on S3 / Azure
+                    storage_get.assert_not_called()
             self.assertEqual(os.listdir(split_dir), [])
         return chunks
 
@@ -327,16 +328,14 @@ class SubjectAtRiskChunkFiles(TestCase):
 
     def test_no_stored_chunks___full_exposure_is_loaded_and_split(self):
         # e.g. an older API that doesn't send 'num_chunks' to 'pre_analysis_hook'
-        with TemporaryDirectory() as tmp_dir:
-            chunk = load_subject_at_risk_chunk(self.params, 3, 1, tmp_dir)
+        chunk = load_subject_at_risk_chunk(self.params, 3, 1)
 
         pd.testing.assert_frame_equal(chunk, split_subject_at_risk_data(self.full_sar_df, 3, 1))
 
     def test_stored_chunk_count_differs___full_exposure_is_loaded_and_split(self):
         self.params['sar_chunks'] = ['a.parquet', 'b.parquet']
 
-        with TemporaryDirectory() as tmp_dir:
-            chunk = load_subject_at_risk_chunk(self.params, 3, 2, tmp_dir)
+        chunk = load_subject_at_risk_chunk(self.params, 3, 2)
 
         pd.testing.assert_frame_equal(chunk, split_subject_at_risk_data(self.full_sar_df, 3, 2))
 

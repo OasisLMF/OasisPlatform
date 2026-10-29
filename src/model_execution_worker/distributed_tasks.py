@@ -152,24 +152,24 @@ def store_subject_at_risk_chunks(params, num_chunks, chunks_dir):
     return chunk_refs
 
 
-def load_subject_at_risk_chunk(params, num_chunks, chunk_idx, chunk_dir):
+def load_subject_at_risk_chunk(params, num_chunks, chunk_idx):
     """ Returns this lookup chunk's SAR rows, from the file stored by
         'pre_analysis_hook' when there is one, otherwise by loading and splitting
         the full exposure (e.g. the API didn't send 'num_chunks' to the hook)
+
+        The chunk file is read straight from the filestore, as 'filestore.get'
+        on S3 / Azure also leaves a copy in the worker's data cache.
     """
     sar_chunks = params.get('sar_chunks') or []
     if len(sar_chunks) != num_chunks:
         if sar_chunks:
             logger.warning(f'Expected {num_chunks} pre-split exposure chunks, got {len(sar_chunks)}, loading the full exposure')
-        else:
+        elif num_chunks > 1:
             logger.info('No pre-split exposure chunks, loading the full exposure')
         return split_subject_at_risk_data(load_subject_at_risk_data(params), num_chunks, chunk_idx)
 
-    chunk_fp = os.path.join(chunk_dir, os.path.basename(sar_chunks[chunk_idx]))
-    filestore.get(sar_chunks[chunk_idx], chunk_fp, required=True)
-    sar_df = pd.read_parquet(chunk_fp)
-    os.remove(chunk_fp)
-    return sar_df
+    with filestore.open(sar_chunks[chunk_idx], 'rb') as f:
+        return pd.read_parquet(f)
 
 
 @task_revoked.connect
@@ -646,7 +646,7 @@ def prepare_keys_file_chunk(
             output_directory=chunk_target_dir,
         )
 
-        sar_df = load_subject_at_risk_chunk(params, num_chunks, chunk_idx, chunk_tmp_dir)
+        sar_df = load_subject_at_risk_chunk(params, num_chunks, chunk_idx)
 
         # With no location file the chunk count isn't capped by the row count
         # (see `_get_inputs_generation_chunks`), so a chunk can be empty. Skip the
