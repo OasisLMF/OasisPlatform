@@ -426,7 +426,8 @@ class Controller:
                 'Pre analysis hook',
                 'pre-analysis-hook',
                 queue,
-                TaskParams(**files_kwargs),
+                # the hook splits the exposure into one file per lookup chunk
+                TaskParams(num_chunks=num_chunks, **files_kwargs),
             ),
             cls.get_subchord_statuses_and_signature(
                 'prepare_keys_file_chunk',

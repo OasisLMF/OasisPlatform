@@ -11,6 +11,7 @@ from datetime import datetime
 
 import filelock
 import numpy as np
+import pandas as pd
 import pyarrow as pa
 import pyarrow.parquet as pq
 from celery import Celery, signature
@@ -115,16 +116,73 @@ def load_subject_at_risk_data(params):
     return exposure.get_subject_at_risk_source().dataframe
 
 
-def split_subject_at_risk_data(sar_df, num_chunks, chunk_idx):
-    """ Returns the `chunk_idx` slice of `sar_df`, split into `num_chunks` parts
+def subject_at_risk_chunk_rows(sar_df, num_chunks):
+    """ Returns the row positions of `sar_df` in each of its `num_chunks` lookup chunks
 
     Split by subject id ('loc_id') rather than by row, so that every row for a
     subject (e.g. multiple layers of a cyber account) is looked up in the same chunk.
+    The subjects, in order of first appearance, are split into `num_chunks` even
+    blocks, and each row is assigned its chunk in one pass.
     """
-    sar_ids = sar_df['loc_id'].unique()
-    chunk_ids = np.array_split(sar_ids, num_chunks)[chunk_idx]
-    chunk_df = sar_df[sar_df['loc_id'].isin(chunk_ids)]
-    return chunk_df.reset_index(drop=True)
+    codes, sar_ids = pd.factorize(sar_df['loc_id'], use_na_sentinel=False)
+    chunk_sizes = [len(ids) for ids in np.array_split(np.arange(len(sar_ids)), num_chunks)]
+    row_chunks = np.repeat(np.arange(num_chunks), chunk_sizes)[codes]
+
+    # stable, so rows keep their original order within each chunk
+    rows = np.argsort(row_chunks, kind='stable')
+    return np.split(rows, np.searchsorted(row_chunks[rows], np.arange(1, num_chunks)))
+
+
+def split_subject_at_risk_data(sar_df, num_chunks, chunk_idx):
+    """ Returns the `chunk_idx` slice of `sar_df`, split into `num_chunks` parts
+        (see `subject_at_risk_chunk_rows`)
+    """
+    chunk_rows = subject_at_risk_chunk_rows(sar_df, num_chunks)[chunk_idx]
+    return sar_df.iloc[chunk_rows].reset_index(drop=True)
+
+
+def store_subject_at_risk_chunks(params, num_chunks, chunks_dir):
+    """ Load the SAR exposure once, split it into `num_chunks` parquet files and
+        store them, returning one filestore reference per lookup chunk
+
+        Without this every 'prepare_keys_file_chunk' task loads and checks the
+        whole portfolio just to keep its own rows, so lookup memory and CPU grow
+        with the chunk count.
+    """
+    sar_df = load_subject_at_risk_data(params)
+
+    chunk_refs = []
+    for chunk_idx, chunk_rows in enumerate(subject_at_risk_chunk_rows(sar_df, num_chunks)):
+        chunk_fp = os.path.join(chunks_dir, f'sar-chunk-{chunk_idx + 1}.parquet')
+        chunk_df = sar_df.iloc[chunk_rows].reset_index(drop=True)
+        chunk_df.to_parquet(chunk_fp, index=False)
+        chunk_refs.append(filestore.put(
+            chunk_fp,
+            filename=os.path.basename(chunk_fp),
+            subdir=params['storage_subdir']
+        ))
+        os.remove(chunk_fp)
+    return chunk_refs
+
+
+def load_subject_at_risk_chunk(params, num_chunks, chunk_idx):
+    """ Returns this lookup chunk's SAR rows, from the file stored by
+        'pre_analysis_hook' when there is one, otherwise by loading and splitting
+        the full exposure (e.g. the API didn't send 'num_chunks' to the hook)
+
+        The chunk file is read straight from the filestore, as 'filestore.get'
+        on S3 / Azure also leaves a copy in the worker's data cache.
+    """
+    sar_chunks = params.get('sar_chunks') or []
+    if len(sar_chunks) != num_chunks:
+        if sar_chunks:
+            logger.warning(f'Expected {num_chunks} pre-split exposure chunks, got {len(sar_chunks)}, loading the full exposure')
+        elif num_chunks > 1:
+            logger.info('No pre-split exposure chunks, loading the full exposure')
+        return split_subject_at_risk_data(load_subject_at_risk_data(params), num_chunks, chunk_idx)
+
+    with filestore.open(sar_chunks[chunk_idx], 'rb') as f:
+        return pd.read_parquet(f)
 
 
 @task_revoked.connect
@@ -503,11 +561,14 @@ def pre_analysis_hook(self,
                       analysis_id=None,
                       initiator_id=None,
                       slug=None,
+                      num_chunks=None,
                       **kwargs
                       ):
 
-    if params.get('exposure_pre_analysis_module'):
-        with TemporaryDir() as hook_target_dir:
+    # Exposure files modified by the hook, which the lookup chunks must use
+    sar_files = {}
+    with TemporaryDir() as hook_target_dir:
+        if params.get('exposure_pre_analysis_module'):
             params['oasis_files_dir'] = hook_target_dir
             from oasislmf.manager import OasisManager
             pre_hook_output = OasisManager().exposure_pre_analysis(**params)
@@ -521,6 +582,7 @@ def pre_analysis_hook(self,
                     # filename=os.path.basename(pre_loc_fp),
                     subdir=params['storage_subdir']
                 )
+                sar_files['oed_location_csv'] = pre_loc_fp
             if files_modified.get('account'):
                 pre_acc_fp = os.path.join(hook_target_dir, files_modified.get('account'))
                 params['pre_acc_file'] = filestore.put(
@@ -528,6 +590,7 @@ def pre_analysis_hook(self,
                     # filename=os.path.basename(pre_acc_fp),
                     subdir=params['storage_subdir']
                 )
+                sar_files['oed_accounts_csv'] = pre_acc_fp
             if files_modified.get('ri_info'):
                 pre_info_fp = os.path.join(hook_target_dir, files_modified.get('ri_info'))
                 params['pre_info_file'] = filestore.put(
@@ -546,8 +609,12 @@ def pre_analysis_hook(self,
             # OED has been loaded and check in this step, disable check in file gen
             # This is in case pre-exposure func has added non-standard cols to the file.
             params['check_oed'] = False
-    else:
-        logger.info('pre_generation_hook: SKIPPING, param "exposure_pre_analysis_module" not set')
+        else:
+            logger.info('pre_generation_hook: SKIPPING, param "exposure_pre_analysis_module" not set')
+
+        # Split the exposure once here, so each lookup chunk loads only its own rows
+        if num_chunks and num_chunks > 1:
+            params['sar_chunks'] = store_subject_at_risk_chunks({**params, **sar_files}, num_chunks, hook_target_dir)
     params['log_location'] = filestore.put(kwargs.get('log_filename'))
     params['log_storage'][slug] = params['log_location']
     return params
@@ -578,8 +645,8 @@ def prepare_keys_file_chunk(
     slug=None,
     **kwargs
 ):
-    with TemporaryDir() as chunk_target_dir:
-        chunk_target_dir = os.path.join(chunk_target_dir, f'lookup-{chunk_idx + 1}')
+    with TemporaryDir() as chunk_tmp_dir:
+        chunk_target_dir = os.path.join(chunk_tmp_dir, f'lookup-{chunk_idx + 1}')
         Path(chunk_target_dir).mkdir(parents=True, exist_ok=True)
 
         _, lookup = OasisLookupFactory.create(
@@ -592,7 +659,7 @@ def prepare_keys_file_chunk(
             output_directory=chunk_target_dir,
         )
 
-        sar_df = split_subject_at_risk_data(load_subject_at_risk_data(params), num_chunks, chunk_idx)
+        sar_df = load_subject_at_risk_chunk(params, num_chunks, chunk_idx)
 
         # With no location file the chunk count isn't capped by the row count
         # (see `_get_inputs_generation_chunks`), so a chunk can be empty. Skip the
