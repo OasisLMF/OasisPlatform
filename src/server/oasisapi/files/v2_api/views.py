@@ -64,7 +64,7 @@ def _handle_get_related_file(parent, field, request, default_file_format=None):
             return response
 
     # Parquet format requested and data stored as csv
-    if file_format == 'parquet' and f.content_type == 'text/csv':
+    elif file_format == 'parquet' and f.content_type == 'text/csv':
         exposure = OedExposure(**{
             EXPOSURE_ARGS[field]: file_obj,
         })
@@ -78,7 +78,7 @@ def _handle_get_related_file(parent, field, request, default_file_format=None):
         return response
 
     # CSV format requested and data stored as Parquet
-    if file_format == 'csv' and f.content_type == 'application/octet-stream':
+    elif file_format == 'csv' and f.content_type == 'application/octet-stream':
         exposure = OedExposure(**{
             EXPOSURE_ARGS[field]: file_obj,
         })
