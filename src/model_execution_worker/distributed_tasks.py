@@ -597,7 +597,7 @@ def pre_analysis_hook(self,
             logger.info('pre_generation_hook: SKIPPING, param "exposure_pre_analysis_module" not set')
 
         # Split the exposure once here, so each lookup chunk loads only its own rows
-        if num_chunks:
+        if num_chunks and num_chunks > 1:
             params['sar_chunks'] = store_subject_at_risk_chunks({**params, **sar_files}, num_chunks, hook_target_dir)
     params['log_location'] = filestore.put(kwargs.get('log_filename'))
     params['log_storage'][slug] = params['log_location']
