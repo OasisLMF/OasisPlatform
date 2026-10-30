@@ -1,6 +1,29 @@
 OasisPlatform Changelog
 =======================
 
+`2.5.9`_
+ ---------
+* [#1452](https://github.com/OasisLMF/OasisPlatform/pull/1452) - Share validation and dispatch between generate_inputs, run and generate_and_run
+* [#1453](https://github.com/OasisLMF/OasisPlatform/pull/1453) - AWS location is append twice to some uploads
+* [#1458](https://github.com/OasisLMF/OasisPlatform/pull/1458) - Error loading settings file on Input gen crash
+* [#1464](https://github.com/OasisLMF/OasisPlatform/pull/1464) - Fix - distributed input generation re-running the keys lookup
+* [#1465](https://github.com/OasisLMF/OasisPlatform/pull/1465) - Fix CVE issues for Oct 
+* [#1466](https://github.com/OasisLMF/OasisPlatform/pull/1466) -  Switch images to Docker Hardened Images (Python 3.14)
+* [#1470](https://github.com/OasisLMF/OasisPlatform/pull/1470) - Use Parquet keys files for distributed input generation
+* [#1472](https://github.com/OasisLMF/OasisPlatform/pull/1472) - Fix generate_and_run not marking analysis failed on lookup chunk errors
+* [#1477](https://github.com/OasisLMF/OasisPlatform/pull/1477) - Count location rows without loading the file into pandas
+* [#1479](https://github.com/OasisLMF/OasisPlatform/pull/1479) - Speed up internal dir compression for larger runs
+* [#1480](https://github.com/OasisLMF/OasisPlatform/pull/1480) - Support parquet gul_summary_map for analysis lookup_success_file
+* [#1481](https://github.com/OasisLMF/OasisPlatform/pull/1481) - Update aiohttp to 3.14.4 to fix CVE-2026-111064
+* [#1486](https://github.com/OasisLMF/OasisPlatform/pull/1486) - fix/no reupload input combine
+* [#1488](https://github.com/OasisLMF/OasisPlatform/pull/1488) - Update CVE 
+* [#1492](https://github.com/OasisLMF/OasisPlatform/pull/1492) - Bump pytest to 9.1.1 (CVE-2025-71176)
+* [#1493](https://github.com/OasisLMF/OasisPlatform/pull/1493) - Split the lookup exposure once in pre_analysis_hook
+* [#1497](https://github.com/OasisLMF/OasisPlatform/pull/1497) - Helper script for image builds
+* [#1498](https://github.com/OasisLMF/OasisPlatform/pull/1498) - Fix changelog crash on unreadable linked issues
+* [#1499](https://github.com/OasisLMF/OasisPlatform/pull/1499) - CI fix py3.14
+.. _`2.5.9`:  https://github.com/OasisLMF/OasisPlatform/compare/2.5.8...2.5.9
+
 `2.5.8`_
  ---------
 * [#1431](https://github.com/OasisLMF/OasisPlatform/pull/1431) - Helm: enforce read-only root filesystem and explicit SA token mounting
