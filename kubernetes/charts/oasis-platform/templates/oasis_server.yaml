@@ -127,7 +127,7 @@ spec:
           ports:
             - containerPort: {{ .Values.oasisWebsocket.port }}
               name: {{ .Values.oasisWebsocket.name }}
-          command: [ "./asgi/run-asgi.sh" ]
+          command: [ "./asgi/run-asgi.py" ]
           volumeMounts:
             - name: shared-fs-persistent-storage
               mountPath: /shared-fs

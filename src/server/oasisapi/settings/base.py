@@ -19,6 +19,14 @@ from oasis_data_manager.filestore.log import set_azure_log_level, set_aws_log_le
 from ....conf import iniconf  # noqa
 from ....conf.base import *
 
+# Use PyMySQL as the MySQL driver when mysqlclient isn't installed (e.g. the api_server image,
+# which has no system libmariadb). PyMySQL reports itself as MySQLdb 1.4.6, which Django accepts.
+try:
+    import MySQLdb  # noqa: F401
+except ImportError:
+    import pymysql
+    pymysql.install_as_MySQLdb()
+
 
 IN_TEST = 'test' in sys.argv or 'test' in sys.argv[0]
 
@@ -443,7 +451,7 @@ AWS_QUERYSTRING_AUTH = iniconf.settings.getboolean('server', 'AWS_QUERYSTRING_AU
 AWS_QUERYSTRING_EXPIRE = iniconf.settings.get('server', 'AWS_QUERYSTRING_EXPIRE', fallback=604800)
 
 # When 'True' return the bucket object key instead of URL, this assumes a shared bucket between workers and server
-AWS_SHARED_BUCKET = iniconf.settings.getboolean('server', 'AWS_SHARED_BUCKET', fallback=False)
+AWS_SHARED_BUCKET = iniconf.settings.getboolean('server', 'AWS_SHARED_BUCKET', fallback=True)
 
 # General optimization for faster delivery
 AWS_IS_GZIPPED = True
@@ -465,12 +473,12 @@ AZURE_ACCOUNT_KEY = iniconf.settings.get('server', 'AZURE_ACCOUNT_KEY', fallback
 AZURE_CUSTOM_DOMAIN = f'{AZURE_ACCOUNT_NAME}.blob.core.windows.net'
 AZURE_CONTAINER = iniconf.settings.get('server', 'AZURE_CONTAINER', fallback=None)
 AZURE_LOCATION = iniconf.settings.get('server', 'AZURE_LOCATION', fallback='')
-AZURE_SHARED_CONTAINER = iniconf.settings.get('server', 'AZURE_SHARED_CONTAINER', fallback=True)
-AZURE_OVERWRITE_FILES = iniconf.settings.get('server', 'AZURE_OVERWRITE_FILES', fallback=True)
+AZURE_SHARED_CONTAINER = iniconf.settings.getboolean('server', 'AZURE_SHARED_CONTAINER', fallback=True)
+AZURE_OVERWRITE_FILES = iniconf.settings.getboolean('server', 'AZURE_OVERWRITE_FILES', fallback=True)
 
 # Optional Blob storage settings
 AZURE_LOG_LEVEL = iniconf.settings.get('server', 'AZURE_LOG_LEVEL', fallback="")
-AZURE_SSL = iniconf.settings.get('server', 'AZURE_SSL', fallback=True)
+AZURE_SSL = iniconf.settings.getboolean('server', 'AZURE_SSL', fallback=True)
 
 # WARNING, adding default settings with 'None' casues storage adapter to break
 # AZURE_UPLOAD_MAX_CONN = iniconf.settings.get('server', 'AZURE_UPLOAD_MAX_CONN', fallback=2)

@@ -11,7 +11,7 @@ from django.core.files import File
 from django.core.files.base import ContentFile
 from azure.storage.blob import BlobLeaseClient
 
-from src.server.oasisapi.files.models import RelatedFile
+from src.server.oasisapi.files.models import ARCHIVE_CONTENT_TYPES, RelatedFile, archive_suffix
 from src.server.oasisapi.files.upload import wait_for_blob_copy
 
 logger = get_task_logger(__name__)
@@ -161,6 +161,12 @@ def store_file(reference, content_type, creator, required=True, filename=None):
             return None
         else:
             raise e
+
+
+def store_archive(reference, creator, name, required=True):
+    """ `store_file` for a worker directory archive, stored as '<name>.tar.gz' or '<name>.tar.zst' to match its compression """
+    suffix = archive_suffix(reference)
+    return store_file(reference, ARCHIVE_CONTENT_TYPES[suffix], creator, required=required, filename=f'{name}.{suffix}')
 
 
 def delete_prev_output(object_model, field_list=[]):

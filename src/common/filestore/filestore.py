@@ -1,9 +1,38 @@
 import logging
+import os
 from typing import Union
 
 from oasis_data_manager.errors import OasisException
+from oasis_data_manager.filestore.archive import ARCHIVE_SUFFIXES, GZIP
 from oasis_data_manager.filestore.backends.local import LocalStorage
 from oasis_data_manager.filestore.backends.base import BaseStorage
+
+
+def get_archive_options(settings, section='worker'):
+    """ How the filestore archives directories on `put`
+
+    ARCHIVE_COMPRESSION_LEVEL: compression level, unset uses the format default (gzip 1, zstd 3)
+    ARCHIVE_COMPRESSION_THREADS: zstd worker threads, -1 for every core
+    """
+    level = settings.get(section, 'ARCHIVE_COMPRESSION_LEVEL', fallback=None)
+    return {
+        'archive_compresslevel': int(level) if level not in (None, '') else None,
+        'archive_threads': settings.getint(section, 'ARCHIVE_COMPRESSION_THREADS', fallback=-1),
+    }
+
+
+def get_archive_compression(settings, section='worker'):
+    """ ARCHIVE_COMPRESSION_TYPE: compression for directory archives the worker stores, 'gz' (default) or 'zst'
+
+    Passed to each directory `put` rather than set as the filestore default.
+    Unknown values fall back to 'gz' with a warning, so a typo can't fail every store
+    """
+    value = settings.get(section, 'ARCHIVE_COMPRESSION_TYPE', fallback=GZIP) or GZIP
+    compression = value.strip().lower()
+    if compression not in ARCHIVE_SUFFIXES:
+        logging.warning(f"Unknown ARCHIVE_COMPRESSION_TYPE '{value}', expected one of {list(ARCHIVE_SUFFIXES)}, using '{GZIP}'")
+        return GZIP
+    return compression
 
 
 def get_filestore(settings, section='worker', raise_error=True) -> Union[BaseStorage | None]:
@@ -12,6 +41,7 @@ def get_filestore(settings, section='worker', raise_error=True) -> Union[BaseSto
         return LocalStorage(
             root_dir=settings.get(section, "MEDIA_ROOT"),
             cache_dir=settings.get(section, 'CACHE_DIR', fallback='/tmp/data-cache'),
+            **get_archive_options(settings, section),
         )
     elif selected_storage in ['aws-s3', 'aws', 's3']:
 
@@ -56,34 +86,57 @@ def get_filestore(settings, section='worker', raise_error=True) -> Union[BaseSto
                 'image/svg+xml',
             )),
             cache_dir=settings.get(section, 'CACHE_DIR', fallback='/tmp/data-cache'),
+            **get_archive_options(settings, section),
         )
     elif selected_storage in ['azure']:
         from oasis_data_manager.filestore.backends.azure_abfs import AzureABFSStorage
-        return AzureABFSStorage(
-            root_dir=settings.get(section, 'ROOT_DIR', fallback=""),
+        root_dir = settings.get(section, 'ROOT_DIR', fallback="")
+        storage_class = AzureABFSStorage
+        if section == 'worker' and not root_dir:
+            # Exchange container-relative keys with the server (model data keeps the location as its root)
+            from .azure import ContainerRootedAzureStorage
+            storage_class = ContainerRootedAzureStorage
+        return storage_class(
+            root_dir=root_dir,
             account_name=settings.get(section, 'AZURE_ACCOUNT_NAME'),
             account_key=settings.get(section, 'AZURE_ACCOUNT_KEY'),
             azure_container=settings.get(section, 'AZURE_CONTAINER'),
             location=settings.get(section, 'AZURE_LOCATION', fallback=''),
             connection_string=settings.get(section, 'AZURE_CONNECTION_STRING', fallback=None),
-            shared_container=settings.get(section, 'AZURE_SHARED_CONTAINER', fallback=True),
-            azure_ssl=settings.get(section, 'AZURE_SSL', fallback=True),
+            shared_container=settings.getboolean(section, 'AZURE_SHARED_CONTAINER', fallback=True),
+            azure_ssl=settings.getboolean(section, 'AZURE_SSL', fallback=True),
             upload_max_conn=settings.get(section, 'AZURE_UPLOAD_MAX_CONN', fallback=2),
             timeout=settings.get(section, 'AZURE_CONNECTION_TIMEOUT_SECS', fallback=20),
             max_memory_size=settings.get(section, 'AZURE_BLOB_MAX_MEMORY_SIZE', fallback=2 * 1024 * 1024),
             expiration_secs=settings.get(section, 'AZURE_URL_EXPIRATION_SECS', fallback=None),
-            overwrite_files=settings.get(section, 'AZURE_OVERWRITE_FILES', fallback=True),
+            overwrite_files=settings.getboolean(section, 'AZURE_OVERWRITE_FILES', fallback=True),
             default_content_type=settings.get(section, 'AZURE_DEFAULT_CONTENT', fallback='application/octet-stream'),
             cache_control=settings.get(section, 'AZURE_CACHE_CONTROL', fallback=None),
             sas_token=settings.get(section, 'AZURE_SAS_TOKEN', fallback=None),
             custom_domain=settings.get(section, 'AZURE_CUSTOM_DOMAIN', fallback=None),
             token_credential=settings.get(section, 'AZURE_TOKEN_CREDENTIAL', fallback=None),
-            azure_log_level=settings.get(section, 'AWS_LOG_LEVEL', fallback=logging.ERROR),
+            azure_log_level=settings.get(section, 'AZURE_LOG_LEVEL', fallback=settings.get(section, 'AWS_LOG_LEVEL', fallback=logging.ERROR)),
             cache_dir=settings.get(section, 'CACHE_DIR', fallback='/tmp/data-cache'),
             endpoint_url=settings.get(section, 'ENDPOINT_URL', fallback=None),
+            **get_archive_options(settings, section),
         )
     else:
         if raise_error:
             raise OasisException('Invalid value for STORAGE_TYPE: {}'.format(selected_storage))
         else:
             return None
+
+
+def remote_subdir(filestore, subdir):
+    """Return the storage path that `filestore.put(..., subdir=subdir)` writes under.
+
+    `AwsS3Storage.put()` prefixes `location` onto the returned key, but `delete_dir()`
+    and the other path based calls do not, so a bare `subdir` misses the uploaded
+    objects whenever AWS_LOCATION is set. `ContainerRootedAzureStorage` does the same
+    with AZURE_LOCATION. Other backends either have no `location` or already include
+    it in their root dir.
+    """
+    location = getattr(filestore, 'location', '') or ''
+    if not subdir or not location:
+        return subdir
+    return os.path.join(location, subdir)

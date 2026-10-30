@@ -3,12 +3,19 @@ from unittest import TestCase
 
 import pandas as pd
 import polars as pl
+import pyarrow as pa
+import pyarrow.parquet as pq
 from backports.tempfile import TemporaryDirectory
-from mock import patch
+from mock import ANY, patch
+from oasislmf.computation.generate.files import GenerateFiles
 from pathlib2 import Path
 
+from oasis_data_manager.filestore.backends.local import LocalStorage
+
 from src.model_execution_worker.distributed_tasks import (
+    load_subject_at_risk_chunk,
     load_subject_at_risk_data,
+    store_subject_at_risk_chunks,
     merge_dataframes,
     split_subject_at_risk_data,
     merge_chunk_log_storage,
@@ -16,6 +23,11 @@ from src.model_execution_worker.distributed_tasks import (
     _merge_parquet_streaming,
     take_first,
     handle_task_failure,
+    generate_losses_output,
+    prepare_losses_generation_directory,
+    write_input_files,
+    get_keys_format,
+    pre_analysis_hook,
 )
 
 
@@ -26,6 +38,11 @@ def write_csv(path, rows):
 
 def write_parquet(path, rows):
     pl.DataFrame(rows).write_parquet(str(path))
+
+
+def write_zero_row_parquet(path, columns):
+    """Zero-row chunk as oasislmf writes it: every column has the arrow null type."""
+    pq.write_table(pa.Table.from_pandas(pd.DataFrame(columns=columns)), str(path))
 
 
 class MergeCsvStreaming(TestCase):
@@ -83,6 +100,22 @@ class MergeCsvStreaming(TestCase):
             merged = pl.read_csv(str(output_file))
             self.assertEqual(merged['id'].to_list(), [1])
 
+    def test_header_only_chunk_merges_with_typed_chunk_in_either_order(self):
+        for header_first in (True, False):
+            with self.subTest(header_first=header_first), TemporaryDirectory() as tmp_dir:
+                header_only = Path(tmp_dir, 'header.csv')
+                chunk_a = Path(tmp_dir, 'a.csv')
+                output_file = Path(tmp_dir, 'merged.csv')
+                header_only.write_text('id,value\n')
+                write_csv(chunk_a, [{'id': 1, 'value': 'x'}])
+                chunks = [header_only, chunk_a] if header_first else [chunk_a, header_only]
+
+                _merge_csv_streaming(chunks, output_file)
+
+                merged = pl.read_csv(str(output_file))
+                self.assertEqual(merged['id'].to_list(), [1])
+                self.assertEqual(merged['value'].to_list(), ['x'])
+
     def test_all_chunks_empty___no_output_file_is_written(self):
         with TemporaryDirectory() as tmp_dir:
             empty_chunk = Path(tmp_dir, 'empty.csv')
@@ -120,6 +153,21 @@ class MergeParquetStreaming(TestCase):
 
             merged = pl.read_parquet(str(output_file))
             self.assertEqual(len(merged), 2)
+
+    def test_zero_row_chunk_first_keeps_typed_schema(self):
+        # e.g. lookup-1 had no lookup errors but a later chunk did
+        with TemporaryDirectory() as tmp_dir:
+            zero_row = Path(tmp_dir, 'a.parquet')
+            chunk_b = Path(tmp_dir, 'b.parquet')
+            output_file = Path(tmp_dir, 'merged.parquet')
+            write_zero_row_parquet(zero_row, ['id', 'value'])
+            write_parquet(chunk_b, [{'id': 1, 'value': 'x'}])
+
+            _merge_parquet_streaming([zero_row, chunk_b], output_file)
+
+            merged = pl.read_parquet(str(output_file))
+            self.assertEqual(merged['id'].to_list(), [1])
+            self.assertEqual(merged.schema, {'id': pl.Int64, 'value': pl.String})
 
     def test_corrupt_file_is_skipped_and_valid_content_survives(self):
         with TemporaryDirectory() as tmp_dir:
@@ -206,6 +254,15 @@ class SplitSubjectAtRiskData(TestCase):
         self.assertEqual(chunks[0]['loc_id'].to_list(), [1, 1, 2, 2, 2])
         self.assertEqual(chunks[1]['loc_id'].to_list(), [3])
 
+    def test_interleaved_subject_rows___split_by_first_appearance_keeping_row_order(self):
+        sar_df = pd.DataFrame({'loc_id': [5, 3, 5, 9, 3, 7, 9], 'row': range(7)})
+
+        chunks = [split_subject_at_risk_data(sar_df, 2, idx) for idx in range(2)]
+
+        # subjects in order of first appearance are [5, 3, 9, 7], split [5, 3] / [9, 7]
+        self.assertEqual(chunks[0]['row'].to_list(), [0, 1, 2, 4])
+        self.assertEqual(chunks[1]['row'].to_list(), [3, 5, 6])
+
     def test_more_chunks_than_subjects___extra_chunks_are_empty(self):
         sar_df = pd.DataFrame({'loc_id': [1, 2]})
 
@@ -229,6 +286,69 @@ class LoadSubjectAtRiskData(TestCase):
         self.assertEqual(len(sar_df), expected_rows)
         self.assertIn('loc_id', sar_df.columns)
         self.assertIn('LocNumber', sar_df.columns)
+
+
+class SubjectAtRiskChunkFiles(TestCase):
+    """ 'pre_analysis_hook' splits the exposure once into per-chunk files, so each
+        'prepare_keys_file_chunk' loads only its own rows instead of the full portfolio.
+    """
+    inputs_dir = os.path.join(os.path.dirname(__file__), 'inputs')
+
+    def setUp(self):
+        self.params = {
+            'oed_location_csv': os.path.join(self.inputs_dir, 'location.csv'),
+            'oed_accounts_csv': os.path.join(self.inputs_dir, 'accounts.csv'),
+            'storage_subdir': 'analysis-1_files-abc',
+        }
+        self.full_sar_df = load_subject_at_risk_data(self.params)
+
+    def _store_and_load(self, num_chunks):
+        with TemporaryDirectory() as tmp_dir:
+            storage = LocalStorage(root_dir=os.path.join(tmp_dir, 'media'), cache_dir=None)
+            # created by '_prepare_directories' in the worker
+            os.makedirs(os.path.join(tmp_dir, 'media', self.params['storage_subdir']))
+            split_dir = os.path.join(tmp_dir, 'split')
+            os.makedirs(split_dir)
+            with patch('src.model_execution_worker.distributed_tasks.filestore', storage):
+                self.params['sar_chunks'] = store_subject_at_risk_chunks(self.params, num_chunks, split_dir)
+                with patch('src.model_execution_worker.distributed_tasks.load_subject_at_risk_data') as full_load, \
+                        patch.object(storage, 'get') as storage_get:
+                    chunks = []
+                    for idx in range(num_chunks):
+                        chunks.append(load_subject_at_risk_chunk(self.params, num_chunks, idx))
+                    full_load.assert_not_called()
+                    # 'get' leaves a copy in the data cache on S3 / Azure
+                    storage_get.assert_not_called()
+            self.assertEqual(os.listdir(split_dir), [])
+        return chunks
+
+    def test_stored_chunks_match_splitting_the_full_exposure(self):
+        chunks = self._store_and_load(3)
+
+        self.assertEqual(len(self.params['sar_chunks']), 3)
+        for idx, chunk in enumerate(chunks):
+            pd.testing.assert_frame_equal(chunk, split_subject_at_risk_data(self.full_sar_df, 3, idx))
+
+    def test_more_chunks_than_subjects___extra_chunks_are_empty(self):
+        num_chunks = len(self.full_sar_df) + 2
+
+        chunks = self._store_and_load(num_chunks)
+
+        self.assertTrue(chunks[-1].empty)
+        self.assertEqual(sum(len(c) for c in chunks), len(self.full_sar_df))
+
+    def test_no_stored_chunks___full_exposure_is_loaded_and_split(self):
+        # e.g. an older API that doesn't send 'num_chunks' to 'pre_analysis_hook'
+        chunk = load_subject_at_risk_chunk(self.params, 3, 1)
+
+        pd.testing.assert_frame_equal(chunk, split_subject_at_risk_data(self.full_sar_df, 3, 1))
+
+    def test_stored_chunk_count_differs___full_exposure_is_loaded_and_split(self):
+        self.params['sar_chunks'] = ['a.parquet', 'b.parquet']
+
+        chunk = load_subject_at_risk_chunk(self.params, 3, 2)
+
+        pd.testing.assert_frame_equal(chunk, split_subject_at_risk_data(self.full_sar_df, 3, 2))
 
 
 class MergeChunkLogStorage(TestCase):
@@ -334,3 +454,219 @@ class HandleTaskFailureSignal(TestCase):
                 filestore_mock.put.assert_not_called()
                 dispatched_names = [c.args[0] for c in signature_mock.call_args_list]
                 self.assertNotIn('subtask_error_log', dispatched_names)
+
+
+class GenerateLossesOutputCombineFiles(TestCase):
+    """ occurrence.bin is produced during the loss run but is needed later by the combine endpoint.
+        It is shipped inside the output tarball (output/combine/occurrence.bin) so the inputs
+        tarball never has to be re-uploaded.
+    """
+
+    def _run_generate_losses_output(self, run_dir, occurrence_in_run_dir=True, **chunk_params):
+        root_dir = Path(run_dir, 'analysis-1_losses-run-uuid')
+        oasis_files_dir = Path(root_dir, 'input-data')
+        model_run_dir = Path(root_dir, 'run-data')
+        oasis_files_dir.mkdir(parents=True)
+        Path(model_run_dir, 'input').mkdir(parents=True)
+        if occurrence_in_run_dir:
+            Path(model_run_dir, 'input', 'occurrence.bin').write_bytes(b'occurrence-data')
+
+        def settings_get(section, option, fallback=None):
+            return run_dir if option == 'base_run_dir' else fallback
+
+        params = [{
+            'chunk_work_location': 'work-1.tar.gz',
+            'chunk_log_location': 'log-1.tar.gz',
+            'input_location': 'stored-inputs.tar.gz',
+            **chunk_params,
+        }]
+        with patch('src.model_execution_worker.distributed_tasks.TASK_LOG_DIR', run_dir), \
+                patch('src.model_execution_worker.distributed_tasks.settings.get', side_effect=settings_get), \
+                patch('src.model_execution_worker.distributed_tasks.notify_api_task_started'), \
+                patch('src.model_execution_worker.distributed_tasks.filestore') as filestore_mock, \
+                patch('oasislmf.manager.OasisManager'):
+            filestore_mock.put.side_effect = lambda ref, filename=None, **kw: filename or f'{os.path.basename(str(ref))}.tar.gz'
+            result = generate_losses_output.run(params, analysis_id=1, run_data_uuid='run-uuid', slug='generate-losses-output')
+
+        return result, filestore_mock, oasis_files_dir, model_run_dir
+
+    def test_occurrence_file_exists___copied_to_output_combine_dir(self):
+        with TemporaryDirectory() as run_dir:
+            _, filestore_mock, _, model_run_dir = self._run_generate_losses_output(run_dir)
+
+            combine_occ = Path(model_run_dir, 'output', 'combine', 'occurrence.bin')
+            self.assertTrue(combine_occ.is_file())
+            self.assertEqual(combine_occ.read_bytes(), b'occurrence-data')
+            filestore_mock.put.assert_any_call(str(Path(model_run_dir, 'output')), arcname='output', compression=ANY)
+
+    def test_occurrence_file_exists___inputs_are_not_reuploaded(self):
+        with TemporaryDirectory() as run_dir:
+            result, filestore_mock, oasis_files_dir, _ = self._run_generate_losses_output(run_dir)
+
+            input_puts = [c for c in filestore_mock.put.call_args_list if c.args[0] == str(oasis_files_dir)]
+            self.assertEqual(input_puts, [])
+
+    def test_generate_and_run___inputs_are_not_reuploaded(self):
+        with TemporaryDirectory() as run_dir:
+            result, filestore_mock, oasis_files_dir, _ = self._run_generate_losses_output(
+                run_dir, **{'input-location_generate-and-run': 'oasis/worker/worker-inputs.tar.gz'})
+
+            input_puts = [c for c in filestore_mock.put.call_args_list if c.args[0] == str(oasis_files_dir)]
+            self.assertEqual(input_puts, [])
+
+    def test_occurrence_file_missing___no_combine_dir_and_no_error(self):
+        with TemporaryDirectory() as run_dir:
+            result, _, _, model_run_dir = self._run_generate_losses_output(run_dir, occurrence_in_run_dir=False)
+
+            self.assertFalse(Path(model_run_dir, 'output', 'combine').exists())
+            self.assertIn('output_location', result)
+
+
+class WriteInputFiles(TestCase):
+    """ The collected keys must reach oasislmf under the parameter names it reads,
+        otherwise 'GenerateFiles' silently re-runs the full keys lookup on the
+        whole portfolio in a single task.
+    """
+
+    def _run_write_input_files(self, run_dir, keys_format=None):
+        def extract_keys(archive, target_dir, subdir):
+            Path(target_dir).mkdir(parents=True, exist_ok=True)
+            keys = pl.DataFrame(schema=['LocID', 'PerilID', 'CoverageTypeID', 'AreaPerilID', 'VulnerabilityID'])
+            errors = pl.DataFrame(schema=['LocID', 'PerilID', 'CoverageTypeID', 'Status', 'Message'])
+            if keys_format == 'oasis':
+                keys.write_csv(str(Path(target_dir, 'keys.csv')))
+                errors.write_csv(str(Path(target_dir, 'keys-errors.csv')))
+            else:
+                keys.write_parquet(str(Path(target_dir, 'keys.parquet')))
+                errors.write_parquet(str(Path(target_dir, 'keys-errors.parquet')))
+
+        def settings_get(section, option, fallback=None):
+            return run_dir if option == 'base_run_dir' else fallback
+
+        params = {'keys_data': 'keys-data.tar.gz', 'log_storage': {}}
+        if keys_format:
+            params['keys_format'] = keys_format
+        with patch('src.model_execution_worker.distributed_tasks.TASK_LOG_DIR', run_dir), \
+                patch('src.model_execution_worker.distributed_tasks.settings.get', side_effect=settings_get), \
+                patch('src.model_execution_worker.distributed_tasks.notify_api_task_started'), \
+                patch('src.model_execution_worker.distributed_tasks.filestore') as filestore_mock, \
+                patch('oasislmf.manager.OasisManager') as manager_mock:
+            filestore_mock.extract.side_effect = extract_keys
+            write_input_files.run(params, analysis_id=1, run_data_uuid='run-uuid', slug='write-input-files')
+
+        manager_mock.return_value.generate_files.assert_called_once()
+        return manager_mock.return_value.generate_files.call_args.kwargs
+
+    def test_collected_keys_are_passed_to_generate_files(self):
+        with TemporaryDirectory() as run_dir:
+            generate_kwargs = self._run_write_input_files(run_dir)
+
+            target_dir = generate_kwargs['target_dir']
+            self.assertEqual(generate_kwargs['keys_data_path'], os.path.join(target_dir, 'keys.parquet'))
+            self.assertEqual(generate_kwargs['keys_errors_path'], os.path.join(target_dir, 'keys-errors.parquet'))
+
+    def test_oasis_keys_format___csv_keys_are_passed_to_generate_files(self):
+        with TemporaryDirectory() as run_dir:
+            generate_kwargs = self._run_write_input_files(run_dir, keys_format='oasis')
+
+            target_dir = generate_kwargs['target_dir']
+            self.assertEqual(generate_kwargs['keys_data_path'], os.path.join(target_dir, 'keys.csv'))
+            self.assertEqual(generate_kwargs['keys_errors_path'], os.path.join(target_dir, 'keys-errors.csv'))
+
+    def test_generate_files_receives_pre_generated_keys___lookup_is_skipped(self):
+        # Build the real oasislmf step from the kwargs the worker passes, so a future
+        # rename of the keys parameters in oasislmf also fails this test
+        with TemporaryDirectory() as run_dir:
+            generate_kwargs = self._run_write_input_files(run_dir)
+            generate_files = GenerateFiles(**generate_kwargs)
+
+            target_dir = generate_kwargs['target_dir']
+            self.assertEqual(generate_files.keys_data_path, os.path.join(target_dir, 'keys.parquet'))
+            self.assertEqual(generate_files.keys_errors_path, os.path.join(target_dir, 'keys-errors.parquet'))
+
+
+class PreAnalysisHookChunks(TestCase):
+    """ With a single lookup chunk there is nothing to split, so 'pre_analysis_hook'
+        must not store per-chunk exposure files.
+    """
+
+    def test_single_chunk___sar_chunks_not_set(self):
+        def settings_get(section, option, fallback=None):
+            return run_dir if option == 'base_run_dir' else fallback
+
+        with TemporaryDirectory() as run_dir:
+            params = {'log_storage': {}}
+            with patch('src.model_execution_worker.distributed_tasks.TASK_LOG_DIR', run_dir), \
+                    patch('src.model_execution_worker.distributed_tasks.settings.get', side_effect=settings_get), \
+                    patch('src.model_execution_worker.distributed_tasks.notify_api_task_started'), \
+                    patch('src.model_execution_worker.distributed_tasks.filestore'), \
+                    patch('src.model_execution_worker.distributed_tasks.store_subject_at_risk_chunks') as store_chunks:
+                result = pre_analysis_hook.run(params, analysis_id=1, run_data_uuid='run-uuid', slug='pre-analysis-hook', num_chunks=1)
+
+        store_chunks.assert_not_called()
+        self.assertNotIn('sar_chunks', result)
+
+
+class GetKeysFormat(TestCase):
+    def test_missing_keys_format___defaults_to_parquet(self):
+        self.assertEqual(get_keys_format({}), ('parquet', 'parquet'))
+
+    def test_oasis_keys_format___uses_csv(self):
+        self.assertEqual(get_keys_format({'keys_format': 'oasis'}), ('oasis', 'csv'))
+
+    def test_keys_format_is_case_insensitive(self):
+        self.assertEqual(get_keys_format({'keys_format': 'Parquet'}), ('parquet', 'parquet'))
+
+    def test_json_keys_format___falls_back_to_parquet(self):
+        # chunk merging only handles tabular formats
+        self.assertEqual(get_keys_format({'keys_format': 'json'}), ('parquet', 'parquet'))
+
+
+class ArchiveCompressionType(TestCase):
+    """ Every directory archive the worker stores follows ARCHIVE_COMPRESSION_TYPE """
+
+    def test_zst___run_directory_is_stored_as_zstd(self):
+        def settings_get(section, option, fallback=None):
+            return run_dir if option == 'base_run_dir' else fallback
+
+        with TemporaryDirectory() as run_dir, \
+                patch('src.model_execution_worker.distributed_tasks.TASK_LOG_DIR', run_dir), \
+                patch('src.model_execution_worker.distributed_tasks.ARCHIVE_COMPRESSION_TYPE', 'zst'), \
+                patch('src.model_execution_worker.distributed_tasks.settings.get', side_effect=settings_get), \
+                patch('src.model_execution_worker.distributed_tasks.notify_api_task_started'), \
+                patch('src.model_execution_worker.distributed_tasks.filestore') as filestore_mock, \
+                patch('oasislmf.manager.OasisManager'):
+            filestore_mock.archive_suffix.side_effect = lambda compression: {'gz': 'tar.gz', 'zst': 'tar.zst'}[compression]
+            prepare_losses_generation_directory.run(
+                {}, analysis_id=1, run_data_uuid='run-uuid', slug='prepare-losses-generation-directory')
+
+        run_dir_puts = [c for c in filestore_mock.put.call_args_list if c.kwargs.get('filename', '').startswith('run_directory')]
+        self.assertEqual(len(run_dir_puts), 1)
+        self.assertEqual(run_dir_puts[0].kwargs['filename'], 'run_directory.tar.zst')
+        self.assertEqual(run_dir_puts[0].kwargs['compression'], 'zst')
+
+    def test_zst___outputs_and_logs_are_stored_as_zstd(self):
+        with TemporaryDirectory() as run_dir:
+            root_dir = Path(run_dir, 'analysis-1_losses-run-uuid')
+            model_run_dir = Path(root_dir, 'run-data')
+            Path(root_dir, 'input-data').mkdir(parents=True)
+            Path(model_run_dir, 'input').mkdir(parents=True)
+            Path(model_run_dir, 'input', 'occurrence.bin').write_bytes(b'')
+
+            def settings_get(section, option, fallback=None):
+                return run_dir if option == 'base_run_dir' else fallback
+
+            with patch('src.model_execution_worker.distributed_tasks.TASK_LOG_DIR', run_dir), \
+                    patch('src.model_execution_worker.distributed_tasks.ARCHIVE_COMPRESSION_TYPE', 'zst'), \
+                    patch('src.model_execution_worker.distributed_tasks.settings.get', side_effect=settings_get), \
+                    patch('src.model_execution_worker.distributed_tasks.notify_api_task_started'), \
+                    patch('src.model_execution_worker.distributed_tasks.filestore') as filestore_mock, \
+                    patch('oasislmf.manager.OasisManager'):
+                filestore_mock.put.side_effect = lambda ref, filename=None, **kw: filename or 'stored.tar.zst'
+                params = [{'chunk_work_location': 'work-1.tar.zst', 'chunk_log_location': 'log-1.tar.zst',
+                           'input_location': 'stored-inputs.tar.zst'}]
+                generate_losses_output.run(params, analysis_id=1, run_data_uuid='run-uuid', slug='generate-losses-output')
+
+            dir_puts = {c.args[0]: c.kwargs.get('compression') for c in filestore_mock.put.call_args_list}
+            for name in ['output', 'log']:
+                self.assertEqual(dir_puts[str(Path(model_run_dir, name))], 'zst')
