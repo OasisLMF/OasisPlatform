@@ -13,7 +13,7 @@ from rest_framework.reverse import reverse
 from rest_framework.exceptions import ValidationError
 from celery import chain
 
-from ..files.models import RelatedFile, related_file_to_df
+from ..files.models import RelatedFile, related_file_row_count
 from src.server.oasisapi.celery_app_v2 import v2 as celery_app_v2
 from .v2_api.tasks import record_exposure_output, record_validation_output, record_transform_output
 
@@ -166,8 +166,7 @@ class Portfolio(TimeStampedModel):
         if not self.location_file:
             return None
 
-        df = related_file_to_df(self.location_file)
-        return len(df.index)
+        return related_file_row_count(self.location_file)
 
     def set_portfolio_valid(self):
         oed_files = [

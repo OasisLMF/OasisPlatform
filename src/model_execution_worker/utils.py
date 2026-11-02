@@ -11,6 +11,7 @@ __all__ = [
     'prepare_complex_model_file_inputs',
     'config_strip_default_exposure',
     'unwrap_task_args',
+    'get_lookup_success_file',
 
     'notify_api_status_v1',
     'notify_api_status_v2',
@@ -449,8 +450,25 @@ def copy_or_download(source, destination):
                 f.write(chunk)
 
 
+def get_lookup_success_file(directory):
+    """Returns the path of the gul summary map stored as the analysis `lookup_success_file`,
+    written as parquet by newer versions of oasislmf and as csv by older ones
+
+    Args:
+        directory: generated oasis files directory
+
+    Returns:
+        (path) path of the summary map, None if not found
+    """
+    for filename in ['gul_summary_map.parquet', 'gul_summary_map.csv']:
+        filepath = os.path.join(directory, filename)
+        if os.path.isfile(filepath):
+            return filepath
+    return None
+
+
 def get_destination_file(filename, destination_dir, destination_title):
-    """Returns desired location for file to go into as csv, parquet, tar.gz
+    """Returns desired location for file to go into as csv, parquet, tar.gz, tar.zst
     (does not move the file itself!)
 
     Args:
@@ -472,7 +490,9 @@ def get_destination_file(filename, destination_dir, destination_title):
         return os.path.join(destination_dir, destination_title + ".parquet")
     if ext.startswith('.gz'):
         return os.path.join(destination_dir, destination_title + '.tar.gz')
-    raise ValueError(f"File must be either Parquet, CSV, tar.gz: {filename, ext}")
+    if ext.startswith('.zst'):
+        return os.path.join(destination_dir, destination_title + '.tar.zst')
+    raise ValueError(f"File must be either Parquet, CSV, tar.gz, tar.zst: {filename, ext}")
 
 
 def get_all_exposure_files(loc_filepath, acc_filepath, ri_filepath, rl_filepath, conv_filepath, directory):

@@ -3,6 +3,7 @@ import logging
 from asgiref.sync import sync_to_async
 from channels.routing import ProtocolTypeRouter, URLRouter
 from django.contrib.auth.models import AnonymousUser
+from django.http import HttpRequest
 from django.urls import re_path
 from mozilla_django_oidc.contrib.drf import OIDCAuthentication
 from rest_framework_simplejwt.authentication import JWTAuthentication
@@ -33,7 +34,8 @@ async def get_user(token_key):
             authentication = OIDCAuthentication(backend)
 
             async_authentication = sync_to_async(authentication.authenticate, thread_sensitive=True)
-            request = type('', (), {'META': {'HTTP_AUTHORIZATION': header_value}})()
+            request = HttpRequest()
+            request.META['HTTP_AUTHORIZATION'] = header_value
             user, access_token = await async_authentication(request)
             logger.info(f'Successfully authenticated user: {user}')
 

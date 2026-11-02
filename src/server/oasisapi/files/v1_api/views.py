@@ -1,7 +1,10 @@
 import json
 import io
+import os
 from tempfile import TemporaryFile
 
+import pandas as pd
+import pyarrow.parquet as pq
 from django.core.files import File
 from django.http import StreamingHttpResponse, Http404
 from rest_framework.response import Response
@@ -11,6 +14,8 @@ from .serializers import RelatedFileSerializer, EXPOSURE_ARGS
 from ...permissions.group_auth import verify_user_is_in_obj_groups, resolve_user
 
 from ods_tools.oed.exposure import OedExposure
+
+PARQUET_TO_CSV_BATCH_ROWS = 65536
 
 
 def _delete_related_file(parent, field, user):
@@ -34,7 +39,46 @@ def _get_chunked_content(f, chunk_size=1024):
         content = f.read(chunk_size)
 
 
-def _handle_get_related_file(parent, field, request):
+def _iter_parquet_as_csv(file_obj):
+    """ Yield a parquet file as csv one row batch at a time, so a large file
+        (e.g. keys-errors) is never fully loaded into memory.
+    """
+    parquet_file = pq.ParquetFile(file_obj)
+    header = True
+    for batch in parquet_file.iter_batches(batch_size=PARQUET_TO_CSV_BATCH_ROWS):
+        # integer_object_nulls: keep ints with nulls as ints, so a column is
+        # formatted the same way in every batch.
+        df = batch.to_pandas(integer_object_nulls=True)
+        yield df.to_csv(index=False, header=header).encode('utf-8')
+        header = False
+    if header:
+        # zero-row file: still return the header
+        yield pd.DataFrame(columns=parquet_file.schema_arrow.names).to_csv(index=False).encode('utf-8')
+
+
+def convert_tabular_file(content_type, file_obj, download_name, file_format):
+    """ Return a response with a csv file as parquet or a parquet file as csv,
+        or None when no conversion is needed.
+    """
+    if file_format == 'parquet' and content_type == 'text/csv':
+        output_buffer = io.BytesIO()
+        pd.read_csv(file_obj).to_parquet(output_buffer, index=False)
+        output_buffer.seek(0)
+        content, ext, out_content_type = output_buffer, '.parquet', 'application/octet-stream'
+    elif file_format == 'csv' and content_type == 'application/octet-stream':
+        content, ext, out_content_type = _iter_parquet_as_csv(file_obj), '.csv', 'text/csv'
+    else:
+        return None
+
+    name, current_ext = os.path.splitext(os.path.basename(download_name))
+    if current_ext not in ('.csv', '.parquet'):
+        name += current_ext
+    response = StreamingHttpResponse(content, content_type=out_content_type)
+    response['Content-Disposition'] = 'attachment; filename="{}{}"'.format(name, ext)
+    return response
+
+
+def _handle_get_related_file(parent, field, request, default_file_format=None):
 
     # fetch file
     f = getattr(parent, field)
@@ -42,7 +86,7 @@ def _handle_get_related_file(parent, field, request):
         raise Http404()
 
     verify_user_is_in_obj_groups(request.user, f, 'You do not have permission to read this file')
-    file_format = request.GET.get('file_format', None)
+    file_format = request.GET.get('file_format', default_file_format)
 
     if 'converted' in request.GET:
         if not (f.converted_file and f.conversion_state == RelatedFile.ConversionState.DONE):
@@ -54,8 +98,14 @@ def _handle_get_related_file(parent, field, request):
         download_name = f.filename if f.filename else f.file.name
         file_obj = f.file
 
+    # Non OED files (e.g. analysis lookup files) are converted without OED validation
+    if field not in EXPOSURE_ARGS:
+        response = convert_tabular_file(f.content_type, file_obj, download_name, file_format)
+        if response:
+            return response
+
     # Parquet format requested and data stored as csv
-    if file_format == 'parquet' and f.content_type == 'text/csv':
+    elif file_format == 'parquet' and f.content_type == 'text/csv':
         exposure = OedExposure(**{
             EXPOSURE_ARGS[field]: file_obj,
         })
@@ -69,7 +119,7 @@ def _handle_get_related_file(parent, field, request):
         return response
 
     # CSV format requested and data stored as Parquet
-    if file_format == 'csv' and f.content_type == 'application/octet-stream':
+    elif file_format == 'csv' and f.content_type == 'application/octet-stream':
         exposure = OedExposure(**{
             EXPOSURE_ARGS[field]: file_obj,
         })
@@ -154,11 +204,12 @@ def _json_read_from_file(parent, field):
         return Response(json.load(f))
 
 
-def handle_related_file(parent, field, request, content_types, parquet_storage=False, serializer_class=RelatedFileSerializer):
+def handle_related_file(parent, field, request, content_types, parquet_storage=False, serializer_class=RelatedFileSerializer,
+                        default_file_format=None):
     method = request.method.lower()
 
     if method == 'get':
-        return _handle_get_related_file(parent, field, request)
+        return _handle_get_related_file(parent, field, request, default_file_format)
     elif method == 'post':
         return _handle_post_related_file(parent, field, request, content_types, parquet_storage, serializer_class)
     elif method == 'delete':

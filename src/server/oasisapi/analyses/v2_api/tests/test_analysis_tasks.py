@@ -20,7 +20,8 @@ from ....auth.tests.fakes import fake_user
 from ....files.v2_api.tests.fakes import fake_related_file
 from ...v2_api.tasks import (
     chord_error_callback, handle_task_failure, record_sub_task_failure, record_sub_task_success, record_sub_task_start,
-    start_input_and_loss_generation_task, start_loss_generation_task, start_input_generation_task
+    start_input_and_loss_generation_task, start_loss_generation_task, start_input_generation_task, subtask_error_log,
+    store_lookup_errors_file, store_lookup_success_file,
 )
 from ...v1_api.tasks import (
     record_run_analysis_result, generate_input_success, record_generate_input_failure, record_run_analysis_failure
@@ -255,6 +256,43 @@ class RecordSubTaskSuccess(TestCase):
                 self.assertEqual(status.end_time, _now)
                 self.assertEqual(status.output_log.read().decode(), output_content)
                 self.assertEqual(status.error_log.read().decode(), error_content)
+
+
+class SubtaskErrorLog(TestCase):
+    @given(output_content=text(min_size=1, max_size=10, alphabet=string.ascii_letters))
+    def test_output_log_is_stored_and_readable(self, output_content):
+        status = fake_analysis_task_status(slug="slug")
+        initiator = fake_user()
+
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d):
+                log_path = os.path.join(d, uuid4().hex)
+                with open(log_path, 'w') as f:
+                    f.write(output_content)
+
+                subtask_error_log(status.analysis.pk, initiator.pk, "slug", uuid4().hex, log_path)
+                status.refresh_from_db()
+
+                self.assertEqual(status.output_log.read().decode(), output_content)
+
+    def test_log_reference_is_copied_via_store_file(self):
+        """ Regression: the raw worker key was saved as the file name, which on S3/Azure
+            got the server's storage prefix prepended and 404'd on read.
+        """
+        status = fake_analysis_task_status(slug="slug")
+        initiator = fake_user()
+        task_id = uuid4().hex
+        worker_key = 'oasis/worker/{}.log'.format(uuid4().hex)
+
+        with TemporaryDirectory() as d:
+            with override_settings(MEDIA_ROOT=d):
+                stored = fake_related_file()
+                with patch('src.server.oasisapi.analyses.v2_api.tasks.store_file', return_value=stored) as store_file_mock:
+                    subtask_error_log(status.analysis.pk, initiator.pk, "slug", task_id, worker_key)
+
+                store_file_mock.assert_called_once_with(worker_key, 'text/plain', initiator, filename=f'{task_id}-output.log')
+                status.refresh_from_db()
+                self.assertEqual(status.output_log, stored)
 
 
 class RecordSubTaskFailure(TestCase):
@@ -498,3 +536,35 @@ class ChordErrorCallback(TestCase):
             self.assertEqual(cancelled.start_time, _now - datetime.timedelta(minutes=10))
             self.assertEqual(cancelled.end_time, _now - datetime.timedelta(minutes=1))
             self.assertEqual(cancelled.status, AnalysisTaskStatus.status_choices.CANCELLED)
+
+
+class StoreLookupErrorsFile(TestCase):
+    def test_parquet_reference___stored_as_parquet(self):
+        with patch('src.server.oasisapi.analyses.v2_api.tasks.store_file') as store_file_mock:
+            store_lookup_errors_file('abc123.parquet', 'user', 1)
+
+        store_file_mock.assert_called_once_with(
+            'abc123.parquet', 'application/octet-stream', 'user', filename='analysis_1_keys-errors.parquet')
+
+    def test_csv_reference___stored_as_csv(self):
+        with patch('src.server.oasisapi.analyses.v2_api.tasks.store_file') as store_file_mock:
+            store_lookup_errors_file('abc123.csv', 'user', 1)
+
+        store_file_mock.assert_called_once_with(
+            'abc123.csv', 'text/csv', 'user', filename='analysis_1_keys-errors.csv')
+
+
+class StoreLookupSuccessFile(TestCase):
+    def test_parquet_reference___stored_as_parquet(self):
+        with patch('src.server.oasisapi.analyses.v2_api.tasks.store_file') as store_file_mock:
+            store_lookup_success_file('abc123.parquet', 'user', 1)
+
+        store_file_mock.assert_called_once_with(
+            'abc123.parquet', 'application/octet-stream', 'user', filename='analysis_1_gul_summary_map.parquet')
+
+    def test_csv_reference___stored_as_csv(self):
+        with patch('src.server.oasisapi.analyses.v2_api.tasks.store_file') as store_file_mock:
+            store_lookup_success_file('abc123.csv', 'user', 1)
+
+        store_file_mock.assert_called_once_with(
+            'abc123.csv', 'text/csv', 'user', filename='analysis_1_gul_summary_map.csv')

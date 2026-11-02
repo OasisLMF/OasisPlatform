@@ -8,7 +8,7 @@ app_name = 'queue'
 v2_api_router = SimpleRouter()
 v2_api_router.include_root_view = False
 v2_api_router.register('queue', QueueViewSet, basename='queue')
-v2_api_router.register('queue-status', WebsocketViewSet, basename='queue')
+v2_api_router.register('queue-status', WebsocketViewSet, basename='queue-status')
 
 urlpatterns = [
     re_path(r'', include(v2_api_router.urls)),

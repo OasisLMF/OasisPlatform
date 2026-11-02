@@ -1,4 +1,5 @@
 import uuid
+from dataclasses import dataclass
 from importlib import import_module
 from itertools import chain as iterchain
 from math import ceil
@@ -13,10 +14,22 @@ from django.contrib.auth.models import User
 from src.conf.iniconf import settings
 from ...files.models import file_storage_link
 
+from ...celery_app_v2 import v2 as celery_app_v2
+
 if TYPE_CHECKING:
     from src.server.oasisapi.analyses.models import Analysis, AnalysisTaskStatus
 
 logger = get_task_logger(__name__)
+
+
+@dataclass
+class Stage:
+    num_chunks: int
+    run_data_uuid: str
+    statuses: List['AnalysisTaskStatus']
+    tasks: List[Signature]
+    traceback_property: str
+    failure_status: str
 
 
 class TaskParams:
@@ -251,9 +264,7 @@ class Controller:
         :return: The chain representing the running task, this has already been sent
             to the broker
         """
-        from src.server.oasisapi.analyses.models import AnalysisTaskStatus
-        analysis.sub_task_statuses.all().delete()
-        AnalysisTaskStatus.objects.create_statuses(iterchain(*statuses))
+        cls._replace_subtask_statuses(analysis, statuses)
 
         c = cls._create_chain(
             analysis,
@@ -265,6 +276,91 @@ class Controller:
         )
         task = c.delay({}, priority=analysis.priority)
         return c, task
+
+    @classmethod
+    def _replace_subtask_statuses(cls, analysis, statuses: List['AnalysisTaskStatus']):
+        from src.server.oasisapi.analyses.models import AnalysisTaskStatus
+        analysis.sub_task_statuses.all().delete()
+        AnalysisTaskStatus.objects.create_statuses(iterchain(*statuses))
+
+    @classmethod
+    def _record_subtask_ids(cls, analysis, task):
+        celery_tasks_list = cls.extract_celery_task_ids(task)
+        for sub_t in analysis.sub_task_statuses.all():
+            try:
+                sub_t.task_id = celery_tasks_list.pop()
+                sub_t.save()
+                logger.debug(f'{sub_t.name} = {sub_t.task_id}')
+            except Exception:
+                logger.exception('Failed to extract all task ids - continuing with execution')
+                logger.debug(task.status)
+                break
+
+    @classmethod
+    def _inputs_generation_stage(cls, analysis: 'Analysis', initiator: User, loc_lines: Optional[int],
+                                 analysis_finish_status='READY') -> Stage:
+        from src.server.oasisapi.analyses.models import Analysis
+
+        num_chunks = cls._get_inputs_generation_chunks(analysis, loc_lines)
+        run_data_uuid = uuid.uuid4().hex
+        statuses, tasks = cls.get_inputs_generation_tasks(analysis, initiator, run_data_uuid, num_chunks, analysis_finish_status)
+        return Stage(num_chunks, run_data_uuid, statuses, tasks,
+                     'input_generation_traceback_file', Analysis.status_choices.INPUTS_GENERATION_ERROR)
+
+    @classmethod
+    def _loss_generation_stage(cls, analysis: 'Analysis', initiator: User, events_total: Optional[int]) -> Stage:
+        from src.server.oasisapi.analyses.models import Analysis
+
+        num_chunks = cls._get_loss_generation_chunks(analysis, events_total)
+        run_data_uuid = uuid.uuid4().hex
+        statuses, tasks = cls.get_loss_generation_tasks(analysis, initiator, run_data_uuid, num_chunks)
+        return Stage(num_chunks, run_data_uuid, statuses, tasks,
+                     'run_traceback_file', Analysis.status_choices.RUN_ERROR)
+
+    @classmethod
+    def _start_stage(cls, analysis, initiator, stage: Stage) -> Tuple[chain, AsyncResult]:
+        c, task = cls._start(
+            analysis,
+            initiator,
+            stage.tasks,
+            stage.statuses,
+            stage.run_data_uuid,
+            stage.traceback_property,
+            stage.failure_status,
+        )
+        cls._record_subtask_ids(analysis, task)
+        return c, task
+
+    @classmethod
+    def _create_stage_chain(cls, analysis, initiator, stage: Stage) -> chain:
+        return cls._create_chain(
+            analysis,
+            initiator,
+            stage.tasks,
+            stage.run_data_uuid,
+            stage.traceback_property,
+            stage.failure_status,
+        )
+
+    @classmethod
+    def _join_stage_chains(cls, *stage_chains: chain) -> chain:
+        """
+        Joins stage chains into a single chain, keeping each stage's error callback
+
+        Each stage chain carries its 'handle_task_failure' errback on the chain itself, and
+        when a chord's header fails celery only calls the errbacks linked to the chord body.
+        Joining with chain(stage_a, stage_b) or stage_a | stage_b merges the next stage into
+        the body of stage_a's chord and drops the body's errbacks, so a failed lookup chunk
+        in generate_and_run never marks the analysis as failed.
+
+        Instead, unchain_tasks() copies each stage's errback onto its own tasks (and chord
+        bodies), and passing app= stops chain() merging the tasks into the chord body.
+
+        :param stage_chains: The stage chains to run in order
+        :return: The joined chain
+        """
+        tasks = [task for stage_chain in stage_chains for task in stage_chain.unchain_tasks()]
+        return chain(*tasks, app=celery_app_v2)
 
     @classmethod
     def get_generate_inputs_queue(cls, analysis: 'Analysis', initiator: User) -> str:
@@ -330,7 +426,8 @@ class Controller:
                 'Pre analysis hook',
                 'pre-analysis-hook',
                 queue,
-                TaskParams(**files_kwargs),
+                # the hook splits the exposure into one file per lookup chunk
+                TaskParams(num_chunks=num_chunks, **files_kwargs),
             ),
             cls.get_subchord_statuses_and_signature(
                 'prepare_keys_file_chunk',
@@ -403,39 +500,11 @@ class Controller:
 
         :return: The started chain
         """
-        from src.server.oasisapi.analyses.models import Analysis
+        stage = cls._inputs_generation_stage(analysis, initiator, loc_lines)
+        chain, task = cls._start_stage(analysis, initiator, stage)
+        logger.debug(f"'generate_inputs' - canvas dispatched, analyses={analysis.pk}, run_uuid={stage.run_data_uuid}")
 
-        # fetch the number of lookup chunks and store in analysis
-        num_chunks = cls._get_inputs_generation_chunks(analysis, loc_lines)
-
-        run_data_uuid = uuid.uuid4().hex
-        statuses, tasks = cls.get_inputs_generation_tasks(analysis, initiator, run_data_uuid, num_chunks)
-
-        chain, task = cls._start(
-            analysis,
-            initiator,
-            tasks,
-            statuses,
-            run_data_uuid,
-            'input_generation_traceback_file',
-            Analysis.status_choices.INPUTS_GENERATION_ERROR,
-        )
-        logger.debug(f"'generate_inputs' - canvas dispatched, analyses={analysis.pk}, run_uuid={run_data_uuid}")
-
-        # Update sub-task ids
-        celery_tasks_list = cls.extract_celery_task_ids(task)
-        for sub_t in analysis.sub_task_statuses.all():
-            try:
-                sub_t.task_id = celery_tasks_list.pop()
-                sub_t.save()
-                logger.debug(f'{sub_t.name} = {sub_t.task_id}')
-            except Exception:
-                logger.exception('Failed to extract all task ids - continuing with execution')
-                logger.debug(task.status)
-                break
-
-        # update analysis
-        analysis.lookup_chunks = num_chunks
+        analysis.lookup_chunks = stage.num_chunks
         analysis.generate_inputs_task_id = task.id
         analysis.save(update_fields=[
             "lookup_chunks",
@@ -448,11 +517,7 @@ class Controller:
     def _get_inputs_generation_chunks(cls, analysis, loc_lines):
         # loc_lines = sum(1 for line in analysis.portfolio.location_file.read())
 
-        # Get options
-        if analysis.chunking_options is not None:
-            chunking_options = analysis.chunking_options        # Use options from Analysis
-        else:
-            chunking_options = analysis.model.chunking_options  # Use defaults set on model
+        chunking_options = analysis.get_chunking_options()
 
         # Set chunks
         if chunking_options.lookup_strategy == 'FIXED_CHUNKS':
@@ -573,37 +638,11 @@ class Controller:
 
         :return: The started chain
         """
-        from src.server.oasisapi.analyses.models import Analysis
+        stage = cls._loss_generation_stage(analysis, initiator, events_total)
+        chain, task = cls._start_stage(analysis, initiator, stage)
+        logger.debug(f"'generate_losses' - canvas dispatched, analyses={analysis.pk}, run_uuid={stage.run_data_uuid}")
 
-        num_chunks = cls._get_loss_generation_chunks(analysis, events_total)
-        run_data_uuid = uuid.uuid4().hex
-        statuses, tasks = cls.get_loss_generation_tasks(analysis, initiator, run_data_uuid, num_chunks)
-
-        chain, task = cls._start(
-            analysis,
-            initiator,
-            tasks,
-            statuses,
-            run_data_uuid,
-            'run_traceback_file',
-            Analysis.status_choices.RUN_ERROR,
-        )
-        logger.debug(f"'generate_losses' - canvas dispatched, analyses={analysis.pk}, run_uuid={run_data_uuid}")
-
-        # Update sub-task ids
-        celery_tasks_list = cls.extract_celery_task_ids(task)
-        for sub_t in analysis.sub_task_statuses.all():
-            try:
-                sub_t.task_id = celery_tasks_list.pop()
-                sub_t.save()
-                logger.debug(f'{sub_t.name} = {sub_t.task_id}')
-            except Exception:
-                logger.exception('Failed to extract all task ids - continuing with execution')
-                logger.debug(task.status)
-                break
-
-        # update analysis
-        analysis.analysis_chunks = num_chunks
+        analysis.analysis_chunks = stage.num_chunks
         analysis.run_task_id = task.id
         analysis.save(update_fields=[
             "analysis_chunks",
@@ -613,11 +652,7 @@ class Controller:
 
     @classmethod
     def _get_loss_generation_chunks(cls, analysis, events_total):
-        # Get options
-        if analysis.chunking_options is not None:
-            chunking_options = analysis.chunking_options        # Use options from Analysis
-        else:
-            chunking_options = analysis.model.chunking_options  # Use defaults set on model
+        chunking_options = analysis.get_chunking_options()
 
         # fetch number of event chunks
         if chunking_options.loss_strategy == 'FIXED_CHUNKS':
@@ -629,80 +664,32 @@ class Controller:
         return num_chunks
 
     @classmethod
-    def generate_input_and_losses(cls, analysis: 'Analysis', initiator: User, loc_lines: Optional[int], events_total: int):
+    def generate_input_and_losses(cls, analysis: 'Analysis', initiator: User, loc_lines: Optional[int], events_total: Optional[int]):
         """
-        Starts the input generation chain
+        Starts the input generation chain followed by the loss generation chain
 
-        :param analysis: The analysis to start input generation for
-        :param initiator: The user starting the input generation
-        :param run_data_uuid: The suffix for the runs current data directory
+        :param analysis: The analysis to generate inputs and losses for
+        :param initiator: The user starting the tasks
+        :param loc_lines: The number of location rows, used to scale lookup chunks
+        :param events_total: The number of selected events, used to scale loss chunks
 
         :return: The started chain
         """
-        """TODO
-        Starts the loss generation chain
+        inputs = cls._inputs_generation_stage(analysis, initiator, loc_lines, 'RUN_STARTED')
+        losses = cls._loss_generation_stage(analysis, initiator, events_total)
 
-        :param analysis: The analysis to start loss generation for
-        :param initiator: The user starting the loss generation
+        analysis.lookup_chunks = inputs.num_chunks
+        analysis.analysis_chunks = losses.num_chunks
+        cls._replace_subtask_statuses(analysis, inputs.statuses + losses.statuses)
 
-        :return: The started chain
-        """
-        from src.server.oasisapi.analyses.models import Analysis
-
-        # fetch the number of lookup chunks and store in analysis
-        input_num_chunks = cls._get_inputs_generation_chunks(analysis, loc_lines)
-        # fetch number of event chunks
-        loss_num_chunks = cls._get_loss_generation_chunks(analysis, events_total)
-
-        input_run_data_uuid = uuid.uuid4().hex
-        loss_run_data_uuid = uuid.uuid4().hex
-
-        input_statuses, input_tasks = cls.get_inputs_generation_tasks(
-            analysis, initiator, input_run_data_uuid, input_num_chunks, 'RUN_STARTED')
-        loss_statuses, loss_tasks = cls.get_loss_generation_tasks(
-            analysis, initiator, loss_run_data_uuid, loss_num_chunks)
-
-        statuses = input_statuses + loss_statuses
-
-        # Add chunk info to analysis
-        analysis.lookup_chunks = input_num_chunks
-        analysis.analysis_chunks = loss_num_chunks
-
-        from src.server.oasisapi.analyses.models import AnalysisTaskStatus
-        analysis.sub_task_statuses.all().delete()
-        AnalysisTaskStatus.objects.create_statuses(iterchain(*statuses))
-
-        input_chain = cls._create_chain(
-            analysis,
-            initiator,
-            input_tasks,
-            input_run_data_uuid,
-            'input_generation_traceback_file',
-            Analysis.status_choices.INPUTS_GENERATION_ERROR)
-        loss_chain = cls._create_chain(
-            analysis,
-            initiator,
-            loss_tasks,
-            loss_run_data_uuid,
-            'run_traceback_file',
-            Analysis.status_choices.RUN_ERROR)
-
-        task = chain(input_chain, loss_chain).delay({}, priority=analysis.priority, ignore_result=True)
+        task = cls._join_stage_chains(
+            cls._create_stage_chain(analysis, initiator, inputs),
+            cls._create_stage_chain(analysis, initiator, losses),
+        ).delay({}, priority=analysis.priority, ignore_result=True)
         logger.debug(
-            f"'generate_input_and_losses' - canvas dispatched, analyses={analysis.pk}, input_run_uuid={input_run_data_uuid},"
-            f"losses_run_uuid={loss_run_data_uuid},")
-
-        # Update sub-task ids
-        celery_tasks_list = cls.extract_celery_task_ids(task)
-        for sub_t in analysis.sub_task_statuses.all():
-            try:
-                sub_t.task_id = celery_tasks_list.pop()
-                sub_t.save()
-                logger.debug(f'{sub_t.name} = {sub_t.task_id}')
-            except Exception:
-                logger.exception('Failed to extract all task ids - continuing with execution')
-                logger.debug(task.status)
-                break
+            f"'generate_input_and_losses' - canvas dispatched, analyses={analysis.pk}, input_run_uuid={inputs.run_data_uuid},"
+            f"losses_run_uuid={losses.run_data_uuid},")
+        cls._record_subtask_ids(analysis, task)
 
         analysis.generate_inputs_task_id = task.id
         analysis.run_task_id = task.id

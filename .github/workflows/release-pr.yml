@@ -109,11 +109,11 @@ jobs:
           echo ${{ inputs.release_version }} > VERSION
           git add VERSION
 
-      - name: Set up Python 3.12
+      - name: Set up Python 3.14
         if: inputs.oasislmf_version != '' || inputs.ods_tools_version != '' || inputs.odm_version != ''
         uses: actions/setup-python@v4
         with:
-          python-version: '3.12'
+          python-version: '3.14'
 
       - name: Install pip-tools
         if: inputs.oasislmf_version != '' || inputs.ods_tools_version != '' || inputs.odm_version != ''

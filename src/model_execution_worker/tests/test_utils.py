@@ -4,7 +4,7 @@ import threading
 from tempfile import TemporaryDirectory, NamedTemporaryFile
 from unittest import TestCase
 
-from src.model_execution_worker.utils import LoggingTaskContext
+from src.model_execution_worker.utils import LoggingTaskContext, get_lookup_success_file
 
 
 def _free_log_path():
@@ -186,3 +186,20 @@ class LoggingTaskContextLevelIsolation(TestCase):
                 self.assertEqual(root_logger.level, logging.WARNING)
         finally:
             root_logger.setLevel(original_level)
+
+
+class GetLookupSuccessFile(TestCase):
+    def test_no_summary_map___none_returned(self):
+        with TemporaryDirectory() as d:
+            self.assertIsNone(get_lookup_success_file(d))
+
+    def test_csv_only___csv_returned(self):
+        with TemporaryDirectory() as d:
+            open(os.path.join(d, 'gul_summary_map.csv'), 'w').close()
+            self.assertEqual(get_lookup_success_file(d), os.path.join(d, 'gul_summary_map.csv'))
+
+    def test_parquet_and_csv___parquet_returned(self):
+        with TemporaryDirectory() as d:
+            open(os.path.join(d, 'gul_summary_map.csv'), 'w').close()
+            open(os.path.join(d, 'gul_summary_map.parquet'), 'w').close()
+            self.assertEqual(get_lookup_success_file(d), os.path.join(d, 'gul_summary_map.parquet'))

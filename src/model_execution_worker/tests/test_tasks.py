@@ -144,7 +144,7 @@ class StartAnalysis(TestCase):
                     self.assertEqual(called_args.get('kernel_fifo_relative', None), params.get('kernel_fifo_relative'))
                     self.assertEqual(called_args.get('verbose', None), params.get('verbose'))
                     self.assertEqual(called_args.get('analysis_settings.json', None), params.get('analysis_settings.json'))
-                    tarfile.assert_called_once_with(mock.ANY, os.path.join(run_dir, 'output'), 'output')
+                    tarfile.assert_called_once_with(mock.ANY, os.path.join(run_dir, 'output'), 'output', compression='gz')
 
 
 class StartAnalysisTask(TestCase):
