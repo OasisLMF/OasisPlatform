@@ -237,6 +237,7 @@ class ReleaseNotesBuilder:
             linked_issues = [
                 IssueData(number=i['number'], title=i['title'], url=i['url'])
                 for i in pr['closingIssuesReferences']['nodes']
+                if i is not None    # linked issue in a repo the token can't read
             ]
             pull_requests.append(PullRequestData(
                 id=pr['number'],

@@ -19,6 +19,14 @@ from oasis_data_manager.filestore.log import set_azure_log_level, set_aws_log_le
 from ....conf import iniconf  # noqa
 from ....conf.base import *
 
+# Use PyMySQL as the MySQL driver when mysqlclient isn't installed (e.g. the api_server image,
+# which has no system libmariadb). PyMySQL reports itself as MySQLdb 1.4.6, which Django accepts.
+try:
+    import MySQLdb  # noqa: F401
+except ImportError:
+    import pymysql
+    pymysql.install_as_MySQLdb()
+
 
 IN_TEST = 'test' in sys.argv or 'test' in sys.argv[0]
 

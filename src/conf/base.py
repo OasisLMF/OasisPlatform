@@ -1,5 +1,5 @@
 import ssl
-import urllib
+import urllib.parse
 from src.conf.iniconf import settings
 
 #: Celery config - IP address of the server running RabbitMQ and Celery

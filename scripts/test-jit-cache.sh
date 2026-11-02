@@ -30,11 +30,14 @@ import sys
 import traceback
 from oasislmf.warmup import warmup
 
-errors = warmup(max_workers=1)
-for name, err in errors.items():
-    print(f'TASK FAILED: {name}', file=sys.stderr)
-    traceback.print_exception(type(err), err, err.__traceback__, file=sys.stderr)
-sys.exit(1 if errors else 0)
+# Guard required on Python 3.14+, the default multiprocessing start method is 'forkserver'
+# which re-imports this script in the warmup worker processes
+if __name__ == '__main__':
+    errors = warmup(max_workers=1)
+    for name, err in errors.items():
+        print(f'TASK FAILED: {name}', file=sys.stderr)
+        traceback.print_exception(type(err), err, err.__traceback__, file=sys.stderr)
+    sys.exit(1 if errors else 0)
 PYEOF
 
 docker run --rm \

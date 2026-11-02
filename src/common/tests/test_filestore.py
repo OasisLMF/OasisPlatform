@@ -1,5 +1,6 @@
 import os
 from configparser import ConfigParser
+from contextlib import nullcontext
 from types import SimpleNamespace
 from unittest import TestCase
 from unittest.mock import patch
@@ -7,7 +8,7 @@ from unittest.mock import patch
 from oasis_data_manager.filestore.backends.azure_abfs import AzureABFSStorage
 
 from src.common.filestore.azure import ContainerRootedAzureStorage
-from src.common.filestore.filestore import get_filestore, remote_subdir
+from src.common.filestore.filestore import get_archive_compression, get_filestore, remote_subdir
 
 
 class RemoteSubdir(TestCase):
@@ -95,3 +96,53 @@ class AzureWorkerFilestore(TestCase):
         with patch.object(AzureABFSStorage, '__init__', return_value=None) as init:
             get_filestore(self._settings(AWS_LOG_LEVEL='WARNING'))
             self.assertEqual(init.call_args.kwargs['azure_log_level'], 'WARNING')
+
+
+class ArchiveOptions(TestCase):
+    """ Directory archives default to fast gzip; level and zstd threads are tunable per deployment """
+
+    def _settings(self, **options):
+        config = ConfigParser()
+        config['worker'] = {'STORAGE_TYPE': 'local-fs', 'MEDIA_ROOT': '/tmp', **options}
+        return config
+
+    def test_no_archive_settings___format_defaults_are_used(self):
+        filestore = get_filestore(self._settings())
+
+        self.assertEqual(filestore.archive_compression, 'gz')
+        self.assertIsNone(filestore.archive_compresslevel)
+        self.assertEqual(filestore.archive_threads, -1)
+
+    def test_archive_settings___passed_to_filestore(self):
+        filestore = get_filestore(self._settings(ARCHIVE_COMPRESSION_LEVEL='6', ARCHIVE_COMPRESSION_THREADS='4'))
+
+        self.assertEqual(filestore.archive_compresslevel, 6)
+        self.assertEqual(filestore.archive_threads, 4)
+
+
+class ArchiveCompressionType(TestCase):
+    """ ARCHIVE_COMPRESSION_TYPE is passed to each directory `put`, never set as the filestore default """
+
+    def _settings(self, **options):
+        config = ConfigParser()
+        config['worker'] = {'STORAGE_TYPE': 'local-fs', 'MEDIA_ROOT': '/tmp', **options}
+        return config
+
+    def test_not_set___gzip(self):
+        self.assertEqual(get_archive_compression(self._settings()), 'gz')
+
+    def test_zst___read_case_insensitively(self):
+        self.assertEqual(get_archive_compression(self._settings(ARCHIVE_COMPRESSION_TYPE='ZST')), 'zst')
+
+    def test_zst___surrounding_whitespace_is_ignored(self):
+        self.assertEqual(get_archive_compression(self._settings(ARCHIVE_COMPRESSION_TYPE=' zst ')), 'zst')
+
+    def test_unknown_value___falls_back_to_gzip(self):
+        for value in ['zstd', 'gzip', 'tar.zst', 'none', '']:
+            with self.subTest(value=value), self.assertLogs(level='WARNING') if value else nullcontext():
+                self.assertEqual(get_archive_compression(self._settings(ARCHIVE_COMPRESSION_TYPE=value)), 'gz')
+
+    def test_zst___filestore_default_stays_gzip(self):
+        filestore = get_filestore(self._settings(ARCHIVE_COMPRESSION_TYPE='zst'))
+
+        self.assertEqual(filestore.archive_compression, 'gz')

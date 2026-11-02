@@ -1,4 +1,4 @@
-from unittest.mock import Mock, MagicMock, patch
+from unittest.mock import ANY, Mock, MagicMock, patch
 from uuid import uuid4
 
 from django.test import TestCase
@@ -6,8 +6,17 @@ from django.test import TestCase
 from src.server.oasisapi.analyses.v2_api.task_controller import TaskParams, Controller
 from src.server.oasisapi.analyses.v2_api.tests.fakes import fake_analysis
 from src.server.oasisapi.auth.tests.fakes import fake_user
-from celery import signature
+from celery import signature, chord
 from src.server.oasisapi.analyses.v2_api.tasks import record_sub_task_failure, record_sub_task_success
+
+
+def _failure_statuses(sig):
+    """failure_status of every 'handle_task_failure' errback linked to a signature"""
+    return [
+        errback['kwargs']['failure_status']
+        for errback in sig.options.get('link_error', [])
+        if errback['task'] == 'handle_task_failure'
+    ]
 
 
 class FakeChord:
@@ -191,7 +200,7 @@ class TaskController(TestCase):
         mock_subtask_2 = MagicMock()
         analysis.sub_task_statuses = MagicMock()
         analysis.sub_task_statuses.all.return_value = [mock_subtask_1, mock_subtask_2]
-        input_chain, loss_chain = Mock(), Mock()
+        input_chain, loss_chain = MagicMock(), MagicMock()
         calls = {}
 
         class MockController(Controller):
@@ -225,11 +234,14 @@ class TaskController(TestCase):
             def extract_celery_task_ids(cls, *args):
                 return ['id_2', 'id_1']
 
+        input_chain.unchain_tasks.return_value = ['input_task_1', 'input_task_2']
+        loss_chain.unchain_tasks.return_value = ['loss_task_1']
+
         with patch("src.server.oasisapi.analyses.v2_api.task_controller.chain") as mock_chain:
             mock_chain.return_value.delay.return_value = Mock(id='test_task_id')
             MockController.generate_input_and_losses(analysis, initiator, loc_lines=10, events_total=100)
 
-        mock_chain.assert_called_once_with(input_chain, loss_chain)
+        mock_chain.assert_called_once_with('input_task_1', 'input_task_2', 'loss_task_1', app=ANY)
         mock_chain.return_value.delay.assert_called_once_with({}, priority=3, ignore_result=True)
         self.assertEqual(calls['statuses'], ['input_status', 'loss_status'])
         self.assertEqual(calls['inputs_finish_status'], 'RUN_STARTED')
@@ -248,3 +260,33 @@ class TaskController(TestCase):
             "generate_inputs_task_id",
             "run_task_id"
         ])
+
+    def test_join_stage_chains___every_task_keeps_its_stage_failure_handler(self):
+        analysis = fake_analysis(pk=7)
+        initiator = fake_user(pk=3)
+
+        lookup = chord([signature('prepare_keys_file_chunk') for _ in range(2)], body=signature('collect_keys'))
+        inputs = Controller._create_chain(
+            analysis, initiator,
+            [signature('prepare_input_generation_params'), lookup, signature('write_input_files')],
+            'inputs_uuid', 'input_generation_traceback_file', 'INPUTS_GENERATION_ERROR',
+        )
+        losses = Controller._create_chain(
+            analysis, initiator,
+            [signature('prepare_losses_generation_params'), signature('generate_losses_chunk')],
+            'losses_uuid', 'run_traceback_file', 'RUN_ERROR',
+        )
+
+        joined = Controller._join_stage_chains(inputs, losses)
+
+        # The losses stage must not be merged into the lookup chord's body
+        self.assertEqual(
+            [t.task for t in joined.tasks],
+            ['prepare_input_generation_params', 'celery.chord', 'prepare_losses_generation_params', 'generate_losses_chunk'],
+        )
+        # A chord header failure only calls the errbacks linked to its body, so check the
+        # body rather than the chord itself
+        self.assertEqual(
+            [_failure_statuses(t.body if isinstance(t, chord) else t) for t in joined.tasks],
+            [['INPUTS_GENERATION_ERROR']] * 2 + [['RUN_ERROR']] * 2,
+        )
