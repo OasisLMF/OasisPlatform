@@ -28,3 +28,7 @@ sqlparams>=6.0,<7.0
 sqlparse>=0.0,<1.0
 aiohttp>=3.13.3,<4
 urllib3 >=2.6.3,<3.0
+
+# Issue 2240 - Remove when resolved
+numpy<2.5
+numba<=0.65.1
