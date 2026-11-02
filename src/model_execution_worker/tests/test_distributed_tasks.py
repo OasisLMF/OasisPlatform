@@ -484,7 +484,7 @@ class GenerateLossesOutputCombineFiles(TestCase):
                 patch('src.model_execution_worker.distributed_tasks.settings.get', side_effect=settings_get), \
                 patch('src.model_execution_worker.distributed_tasks.notify_api_task_started'), \
                 patch('src.model_execution_worker.distributed_tasks.filestore') as filestore_mock, \
-                patch('oasislmf.manager.OasisManager'):
+                patch('oasislmf.manager.OasisManager') as self.manager_mock:
             filestore_mock.put.side_effect = lambda ref, filename=None, **kw: filename or f'{os.path.basename(str(ref))}.tar.gz'
             result = generate_losses_output.run(params, analysis_id=1, run_data_uuid='run-uuid', slug='generate-losses-output')
 
