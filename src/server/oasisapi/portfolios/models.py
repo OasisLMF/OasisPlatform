@@ -283,13 +283,18 @@ class PortfolioStatus(TimeStampedModel):
 
 @receiver(post_delete, sender=Portfolio)
 def delete_connected_files(sender, instance, **kwargs):
-    """ Post delete handler to clear out any dangaling analyses files
+    """ Post delete handler to clear out any dangaling portfolio files
     """
     delete_related_files(instance, [
         'accounts_file',
         'location_file',
         'reinsurance_info_file',
         'reinsurance_scope_file',
+        'exposure_run_file',
+        'transform_file',
+        'mapping_file',
+        'run_errors_file',
+        'currency_conversion_json',
     ])
 
 
