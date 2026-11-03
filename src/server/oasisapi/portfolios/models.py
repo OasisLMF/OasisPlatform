@@ -13,7 +13,7 @@ from rest_framework.reverse import reverse
 from rest_framework.exceptions import ValidationError
 from celery import chain
 
-from ..files.models import RelatedFile, related_file_row_count
+from ..files.models import RelatedFile, delete_related_files, related_file_row_count
 from src.server.oasisapi.celery_app_v2 import v2 as celery_app_v2
 from .v2_api.tasks import record_exposure_output, record_validation_output, record_transform_output
 
@@ -285,16 +285,12 @@ class PortfolioStatus(TimeStampedModel):
 def delete_connected_files(sender, instance, **kwargs):
     """ Post delete handler to clear out any dangaling analyses files
     """
-    files_for_removal = [
+    delete_related_files(instance, [
         'accounts_file',
         'location_file',
         'reinsurance_info_file',
         'reinsurance_scope_file',
-    ]
-    for ref in files_for_removal:
-        file_ref = getattr(instance, ref)
-        if file_ref:
-            file_ref.delete()
+    ])
 
 
 def csv_into_currency_conversion_json(csv_file):
