@@ -1,6 +1,5 @@
 from django.conf import settings
 from django.contrib.auth.models import Group
-from django.core.exceptions import ObjectDoesNotExist
 from django.utils.translation import gettext_lazy as _
 from django.db import models
 from django.db.models.signals import post_delete, post_save
@@ -9,7 +8,7 @@ from model_utils.models import TimeStampedModel
 from model_utils.choices import Choices
 from rest_framework.reverse import reverse
 
-from ..files.models import RelatedFile
+from ..files.models import RelatedFile, delete_related_files
 from ..data_files.models import DataFile
 from ..permissions.group_auth import resolve_user
 
@@ -256,13 +255,11 @@ def create_default_scaling_options(sender, instance, **kwargs):
 def delete_connected_files(sender, instance, **kwargs):
     """ Post delete handler to clear out any dangaling analyses files
     """
-    files_for_removal = [
-        'resource_file',
-    ]
-    for ref in files_for_removal:
-        try:
-            file_ref = getattr(instance, ref)
-            if file_ref:
-                file_ref.delete()
-        except ObjectDoesNotExist:
-            pass
+    delete_related_files(instance, ['resource_file'])
+
+
+@receiver(post_delete, sender=SettingsTemplate)
+def delete_settings_template_file(sender, instance, **kwargs):
+    """ Post delete handler to clear out the settings template's stored file
+    """
+    delete_related_files(instance, ['file'])
