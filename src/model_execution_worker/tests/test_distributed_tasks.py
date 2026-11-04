@@ -484,7 +484,7 @@ class GenerateLossesOutputCombineFiles(TestCase):
                 patch('src.model_execution_worker.distributed_tasks.settings.get', side_effect=settings_get), \
                 patch('src.model_execution_worker.distributed_tasks.notify_api_task_started'), \
                 patch('src.model_execution_worker.distributed_tasks.filestore') as filestore_mock, \
-                patch('oasislmf.manager.OasisManager'):
+                patch('oasislmf.manager.OasisManager') as self.manager_mock:
             filestore_mock.put.side_effect = lambda ref, filename=None, **kw: filename or f'{os.path.basename(str(ref))}.tar.gz'
             result = generate_losses_output.run(params, analysis_id=1, run_data_uuid='run-uuid', slug='generate-losses-output')
 
@@ -520,6 +520,13 @@ class GenerateLossesOutputCombineFiles(TestCase):
 
             self.assertFalse(Path(model_run_dir, 'output', 'combine').exists())
             self.assertIn('output_location', result)
+
+    def test_outputs_run___analysis_pk_is_passed_for_progress_updates(self):
+        with TemporaryDirectory() as run_dir:
+            self._run_generate_losses_output(run_dir, input_location='stored-inputs.tar.gz')
+
+            output_kwargs = self.manager_mock.return_value.generate_losses_output.call_args.kwargs
+            self.assertEqual(output_kwargs['analysis_pk'], 1)
 
 
 class WriteInputFiles(TestCase):

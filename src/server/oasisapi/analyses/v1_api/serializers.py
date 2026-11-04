@@ -25,6 +25,10 @@ class AnalysisListSerializer(serializers.Serializer):
     complex_model_data_files = serializers.SerializerMethodField(read_only=True)
     num_events_total = serializers.CharField(read_only=True)
     num_events_complete = serializers.CharField(read_only=True)
+    num_gul_processes = serializers.CharField(read_only=True)
+    num_gul_ready = serializers.CharField(read_only=True)
+    num_outputs_total = serializers.CharField(read_only=True)
+    num_outputs_complete = serializers.CharField(read_only=True)
 
     # file fields
     input_file = serializers.SerializerMethodField(read_only=True)
@@ -151,6 +155,10 @@ class AnalysisSerializer(serializers.ModelSerializer):
             'storage_links',
             'num_events_complete',
             'num_events_total',
+            'num_gul_processes',
+            'num_gul_ready',
+            'num_outputs_total',
+            'num_outputs_complete',
         )
 
     @extend_schema_field(serializers.URLField(allow_null=True))
