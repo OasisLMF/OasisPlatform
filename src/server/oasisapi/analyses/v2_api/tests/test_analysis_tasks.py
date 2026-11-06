@@ -19,6 +19,7 @@ from ...models import Analysis, AnalysisTaskStatus
 from ....auth.tests.fakes import fake_user
 from ....files.v2_api.tests.fakes import fake_related_file
 from ...v2_api.tasks import (
+    record_input_files,
     chord_error_callback, handle_task_failure, record_sub_task_failure, record_sub_task_success, record_sub_task_start,
     start_input_and_loss_generation_task, start_loss_generation_task, start_input_generation_task, subtask_error_log,
     store_lookup_errors_file, store_lookup_success_file,
@@ -145,6 +146,33 @@ class GenerateInputsSuccess(TestCase):
 
             self.assertEqual(analysis.status, analysis.status_choices.READY)
             self.assertTrue(isinstance(analysis.task_finished, datetime.datetime))
+
+
+class RecordInputFiles(TestCase):
+    """Status set once input generation is recorded (record_input_files)."""
+
+    def record(self, **kwargs):
+        initiator = fake_user()
+        analysis = fake_analysis(status=Analysis.status_choices.INPUTS_GENERATION_STARTED)
+        tasks = 'src.server.oasisapi.analyses.v2_api.tasks'
+        with (TemporaryDirectory() as d,
+              override_settings(MEDIA_ROOT=d),
+              patch(f'{tasks}.record_sub_task_start'),
+              patch(f'{tasks}.store_archive', return_value=None),
+              patch(f'{tasks}.store_lookup_errors_file', return_value=None),
+              patch(f'{tasks}.store_lookup_success_file', return_value=None),
+              patch(f'{tasks}.store_file', return_value=None)):
+            record_input_files({'output_location': 'inputs.tar.gz'}, analysis_id=analysis.pk,
+                               initiator_id=initiator.pk, slug='record-input-files', **kwargs)
+        analysis.refresh_from_db()
+        return analysis
+
+    def test_input_generation_finishes_ready(self):
+        self.assertEqual(self.record().status, Analysis.status_choices.READY)
+
+    def test_generate_and_run_moves_straight_to_run_started(self):
+        analysis = self.record(analysis_finish_status=Analysis.status_choices.RUN_STARTED)
+        self.assertEqual(analysis.status, Analysis.status_choices.RUN_STARTED)
 
 
 class GenerateInputsFailure(TestCase):
