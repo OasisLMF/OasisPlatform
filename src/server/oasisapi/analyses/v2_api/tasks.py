@@ -313,7 +313,7 @@ def record_input_files(self, result, analysis_id=None, initiator_id=None, run_da
     analysis.task_finished = timezone.now()
     initiator = get_user_model().objects.get(pk=initiator_id)
 
-    analysis.status = Analysis.status_choices.READY
+    analysis.status = analysis_finish_status
     analysis.input_file = store_archive(input_location, initiator, f'analysis_{analysis_id}_inputs')
     analysis.lookup_errors_file = store_lookup_errors_file(lookup_error_fp, initiator, analysis_id)
     analysis.lookup_success_file = store_lookup_success_file(lookup_success_fp, initiator, analysis_id)
