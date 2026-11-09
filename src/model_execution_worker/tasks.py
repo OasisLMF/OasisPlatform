@@ -5,7 +5,6 @@ import json
 import logging
 import os
 import pathlib
-import sys
 import time
 
 import fasteners
@@ -26,6 +25,7 @@ from ..common.filestore.filestore import get_archive_compression, get_filestore
 from ..conf import celeryconf_v1 as celery_conf
 from ..conf.iniconf import settings, settings_local
 
+from . import task_cancel
 from .celery_error_handler import OasisWorkerTask
 from .utils import (
     LoggingTaskContext,
@@ -240,7 +240,8 @@ def start_analysis_task(self, analysis_pk, input_location, analysis_settings, co
             )
 
         except Terminated:
-            sys.exit('Task aborted')
+            task_logger.info('Task aborted')
+            raise
         except Exception:
             task_logger.exception("Model execution task failed.")
             raise
@@ -345,6 +346,7 @@ def start_analysis(analysis_settings, input_location, complex_data_files=None, *
             OasisManager().generate_oasis_losses(**params)
             returncode = 0
         except Exception:
+            task_cancel.raise_if_cancelled()
             task_logger.exception("Error occured in 'generate_oasis_losses':")
             returncode = 1
 
@@ -487,6 +489,7 @@ def generate_input(self,
             notify_api_status_v1(analysis_pk, 'INPUTS_GENERATION_NO_KEYS')
             returncode = 1
         except Exception:
+            task_cancel.raise_if_cancelled()
             task_logger.exception("Error occured in 'generate_oasis_files':")
             returncode = 1
 
