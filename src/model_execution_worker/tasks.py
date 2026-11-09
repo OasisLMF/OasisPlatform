@@ -27,6 +27,7 @@ from ..conf.iniconf import settings, settings_local
 
 from . import task_cancel
 from .celery_error_handler import OasisWorkerTask
+from .isolated import run_oasis_manager
 from .utils import (
     LoggingTaskContext,
     log_params,
@@ -343,7 +344,7 @@ def start_analysis(analysis_settings, input_location, complex_data_files=None, *
 
         # Run generate losses
         try:
-            OasisManager().generate_oasis_losses(**params)
+            run_oasis_manager('generate_oasis_losses', **params)
             returncode = 0
         except Exception:
             task_cancel.raise_if_cancelled()
@@ -482,7 +483,7 @@ def generate_input(self,
                 json.dump(params, f, indent=4)
 
         try:
-            OasisManager().generate_oasis_files(**params)
+            run_oasis_manager('generate_oasis_files', **params)
             returncode = 0
         except OasisExceptionNoKeys:
             task_logger.exception("Error occured in 'generate_oasis_files':")
