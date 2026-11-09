@@ -53,6 +53,34 @@ class RunIsolatedTests(TestCase):
         with self.assertRaises(isolated.IsolatedProcessError):
             isolated.run_isolated(f'{TARGETS}:hard_exit')
 
+    def test_exception_that_cannot_be_unpickled___details_are_kept(self):
+        with self.assertRaises(isolated.IsolatedProcessError) as ctx:
+            isolated.run_isolated(f'{TARGETS}:raise_client_error')
+        msg = str(ctx.exception)
+        self.assertIn('ClientLookupError: location 42: peril code not supported', msg)
+        self.assertIn('could not be unpickled', msg)
+        self.assertIn('in raise_client_error', msg)  # child traceback
+
+    def test_exception_that_cannot_be_pickled___details_are_kept(self):
+        with self.assertRaises(isolated.IsolatedProcessError) as ctx:
+            isolated.run_isolated(f'{TARGETS}:raise_unpicklable')
+        msg = str(ctx.exception)
+        self.assertIn('_Unpicklable: holds a file handle', msg)
+        self.assertIn('could not be pickled', msg)
+        self.assertIn('in raise_unpicklable', msg)
+
+    def test_result_that_cannot_be_pickled___raises(self):
+        with self.assertRaises(isolated.IsolatedProcessError) as ctx:
+            isolated.run_isolated(f'{TARGETS}:return_unpicklable')
+        self.assertIn('could not be pickled', str(ctx.exception))
+
+    def test_prefork_pool_child___runs_in_process(self):
+        with mock.patch.object(isolated, '_in_prefork_child', False):
+            isolated._mark_prefork_child()  # what celery's worker_process_init does in prefork children
+            self.assertFalse(isolated.isolation_enabled())
+            self.assertEqual(isolated.run_isolated(f'{TARGETS}:add', 1)['pid'], os.getpid())
+        self.assertTrue(isolated.isolation_enabled())
+
     def test_logs_and_output_reach_the_calling_thread(self):
         handler = _ListHandler()
         handler.addFilter(lambda r: r.thread == threading.get_ident())

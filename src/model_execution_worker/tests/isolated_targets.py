@@ -20,6 +20,31 @@ def hard_exit():
     os._exit(3)
 
 
+class ClientLookupError(Exception):
+    """Like a client lookup's exception: a custom __init__ breaks unpickling."""
+
+    def __init__(self, loc_id, reason):
+        super().__init__(f'location {loc_id}: {reason}')
+        self.loc_id = loc_id
+
+
+def raise_client_error():
+    raise ClientLookupError(42, 'peril code not supported')
+
+
+class _Unpicklable(Exception):
+    def __reduce__(self):
+        raise TypeError('cannot pickle this')
+
+
+def raise_unpicklable():
+    raise _Unpicklable('holds a file handle')
+
+
+def return_unpicklable():
+    return lambda: None
+
+
 def log_and_print():
     logging.getLogger('oasislmf').info('info from child')
     logging.getLogger('oasislmf').debug('debug from child')

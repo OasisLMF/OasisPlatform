@@ -1,28 +1,36 @@
 """Run heavy worker calls in a separate, killable process.
 
-Work done inside a celery task's own thread (or greenlet) can't be stopped
-when the task is cancelled: python has no safe way to kill a thread, and only
-the prefork pool can signal the process running a task. `run_isolated` runs a
-call in a fresh python process started in its own session, so on cancellation
-the whole process group - the call itself, its multiprocessing workers and any
-bash/ktools pipelines - is killed, whatever the celery pool type.
+With the in-process celery pools (threads, gevent, eventlet) a task runs in the
+worker's own process, so work done in the task's thread/greenlet can't be
+stopped when the task is cancelled - python has no safe way to kill a thread.
+`run_isolated` runs a call in a fresh python process started in its own
+session, so on cancellation the whole process group - the call itself, its
+multiprocessing workers and any bash/ktools pipelines - is killed.
 
-The child is a normal (non-daemonic) process, so the call can start its own
-processes even when the worker uses prefork.
+The prefork pool doesn't need this (celery terminates the pool process running
+the task), so under prefork calls run in-process as before.
 
 Cancellation is detected while waiting for the child:
-  * threads / gevent / eventlet pools: the task id appears in
+  * threads / gevent / eventlet: the task id appears in
     `celery.worker.state.revoked` (see `task_cancel`).
-  * prefork: celery SIGTERMs the pool process, raising SystemExit in the wait.
-  * gevent: `revoke(terminate=True)` raises GreenletExit in the wait.
+  * gevent: `revoke(terminate=True)` also raises GreenletExit in the wait.
 
 Log records from the child are sent back over its stdout pipe and re-emitted
 in the task's thread so they reach the task log handlers; anything else the
 child writes (to stdout or stderr) arrives on its stderr pipe and is logged
 too. Both are `Popen` pipes, so reads are cooperative under gevent/eventlet.
 
+Results and errors come back in two parts: a JSON summary (status, exception
+type, message and formatted traceback) that can always be read, and a
+best-effort pickle of the return value / exception object. If an exception
+can't be unpickled in the worker (e.g. a client lookup's exception class with a
+custom __init__, or from a module only the child can import) an
+`IsolatedProcessError` carrying the original type, message and traceback is
+raised instead, so the error is never lost.
+
 Set `OASIS_WORKER_ISOLATED_EXECUTION=False` to run calls in-process instead.
 """
+import json
 import importlib
 import logging
 import logging.handlers
@@ -38,6 +46,7 @@ import threading
 import traceback
 
 from celery.exceptions import Terminated
+from celery.signals import worker_process_init
 
 from ..conf.iniconf import settings
 from . import task_cancel
@@ -65,7 +74,19 @@ def _worker_setting(option, default):
     return default if value in (None, '') else value
 
 
+_in_prefork_child = False
+
+
+@worker_process_init.connect
+def _mark_prefork_child(**kwargs):
+    # only sent in the child processes of the prefork pool
+    global _in_prefork_child
+    _in_prefork_child = True
+
+
 def isolation_enabled():
+    if _in_prefork_child:
+        return False  # prefork cancels tasks itself, no need for the extra process
     return str(_worker_setting('ISOLATED_EXECUTION', True)).strip().lower() in ('1', 'true', 'yes', 'on')
 
 
@@ -248,20 +269,35 @@ class _IsolatedCall:
     def _result(self, result_fp):
         rc = self.proc.returncode
         try:
-            with open(result_fp, 'rb') as f:
-                status, value, tb = pickle.load(f)
-        except FileNotFoundError:
+            with open(result_fp + '.json') as f:
+                summary = json.load(f)
+        except (OSError, ValueError):
             raise IsolatedProcessError(f'Isolated process for {self.target} exited with code {rc} without a result')
-        except Exception as e:
-            raise IsolatedProcessError(f'Could not load result of {self.target}: {e!r}')
-        if status == 'ok':
+
+        value, load_error = None, summary.get('pickle_error')
+        if load_error is None:
+            try:
+                with open(result_fp, 'rb') as f:
+                    value = pickle.load(f)
+            except Exception as e:
+                load_error = f'could not be unpickled in the worker: {e!r}'
+
+        if summary['status'] == 'ok':
+            if load_error:
+                raise IsolatedProcessError(f'Result of {self.target} {load_error}')
             return value
+
         if isinstance(value, BaseException):
             if value.__traceback__ is None:
                 # tracebacks are only pickled when tblib's support is installed (oasislmf does)
-                value.add_note(f'--- traceback in isolated process ---\n{tb}')
+                value.add_note(f'--- traceback in isolated process ---\n{summary["traceback"]}')
             raise value
-        raise IsolatedProcessError(f'{self.target} failed in isolated process:\n{tb}')
+        # the original exception object couldn't be passed back: keep its details
+        raise IsolatedProcessError(
+            f'{summary["exc_type"]}: {summary["exc_message"]}\n'
+            f'(exception {load_error or "not available"})\n'
+            f'--- traceback in isolated process ---\n{summary["traceback"]}'
+        )
 
 
 # --------------------------------------------------------------------------- child
@@ -331,17 +367,40 @@ def _child_main(payload_fp, result_fp, parent_pid):
         logging.getLogger(name or None).setLevel(level)
 
     try:
-        result = ('ok', _resolve(payload['target'])(*payload['args'], **payload['kwargs']), None)
+        value = _resolve(payload['target'])(*payload['args'], **payload['kwargs'])
+        summary = {'status': 'ok'}
     except BaseException as e:
-        result = ('error', e, traceback.format_exc())
-
-    try:
-        data = pickle.dumps(result)
-    except Exception:
-        data = pickle.dumps(('error', None, result[2] or f'unpicklable result: {result[1]!r}'))
-    with open(result_fp, 'wb') as f:
-        f.write(data)
+        value = e
+        summary = {
+            'status': 'error',
+            'exc_type': f'{type(e).__module__}.{type(e).__qualname__}',
+            'exc_message': _safe_str(e),
+            'traceback': traceback.format_exc(),
+        }
+    _write_result(result_fp, summary, value)
     logging.shutdown()
+
+
+def _safe_str(obj):
+    try:
+        return str(obj)
+    except Exception:
+        return f'<unprintable {type(obj).__name__}>'
+
+
+def _write_result(result_fp, summary, value):
+    """Pickle `value` best-effort, then write the always-readable JSON summary."""
+    try:
+        data = pickle.dumps(value)
+    except Exception as e:
+        data = None
+        summary['pickle_error'] = f'could not be pickled in the isolated process: {_safe_str(e)}'
+    if data is not None:
+        with open(result_fp, 'wb') as f:
+            f.write(data)
+    # written last: the parent treats a missing summary as "no result"
+    with open(result_fp + '.json', 'w') as f:
+        json.dump(summary, f)
 
 
 if __name__ == '__main__':
