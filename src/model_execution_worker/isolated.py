@@ -257,7 +257,9 @@ class _IsolatedCall:
         if status == 'ok':
             return value
         if isinstance(value, BaseException):
-            value.add_note(f'--- traceback in isolated process ---\n{tb}')
+            if value.__traceback__ is None:
+                # tracebacks are only pickled when tblib's support is installed (oasislmf does)
+                value.add_note(f'--- traceback in isolated process ---\n{tb}')
             raise value
         raise IsolatedProcessError(f'{self.target} failed in isolated process:\n{tb}')
 

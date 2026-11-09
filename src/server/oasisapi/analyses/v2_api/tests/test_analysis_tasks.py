@@ -5,6 +5,7 @@ from unittest.mock import Mock, patch
 from uuid import uuid4
 
 from backports.tempfile import TemporaryDirectory
+from celery.exceptions import Terminated
 from django.test import override_settings
 from django.utils.timezone import now
 from freezegun import freeze_time
@@ -317,6 +318,32 @@ class RecordSubTaskFailure(TestCase):
             self.assertEqual(status.status, AnalysisTaskStatus.status_choices.ERROR)
             self.assertEqual(status.end_time, _now)
             self.assertEqual(status.error_log.read().decode(), error_content)
+
+    def _record_failure(self, status, *args):
+        task_request_mock = Mock()
+        task_request_mock.parent_id = uuid4().hex
+        with (TemporaryDirectory() as d,
+              patch('celery.app.task.Context', return_value=task_request_mock),
+              override_settings(MEDIA_ROOT=d)):
+            record_sub_task_failure(*args, analysis_id=status.analysis.pk, initiator_id=status.task_id, task_slug="hello")
+        status.refresh_from_db()
+
+    def test_task_terminated_by_cancellation___status_is_cancelled(self):
+        status = fake_analysis_task_status(analysis=fake_analysis(), slug="hello")
+        tb = 'Traceback (most recent call last):\n  ...\nbilliard.exceptions.Terminated: Task abc cancelled\n'
+        self._record_failure(status, None, None, tb)
+        self.assertEqual(status.status, AnalysisTaskStatus.status_choices.CANCELLED)
+
+    def test_terminated_exception_passed_to_errback___status_is_cancelled(self):
+        status = fake_analysis_task_status(analysis=fake_analysis(), slug="hello")
+        self._record_failure(status, None, Terminated('Task abc cancelled'), 'Traceback ...')
+        self.assertEqual(status.status, AnalysisTaskStatus.status_choices.CANCELLED)
+
+    def test_error_after_subtask_was_cancelled___cancelled_status_is_kept(self):
+        status = fake_analysis_task_status(
+            analysis=fake_analysis(), slug="hello", status=AnalysisTaskStatus.status_choices.CANCELLED)
+        self._record_failure(status, None, None, 'Traceback ...\nValueError: oops\n')
+        self.assertEqual(status.status, AnalysisTaskStatus.status_choices.CANCELLED)
 
 
 class HandleTaskFailure(TestCase):

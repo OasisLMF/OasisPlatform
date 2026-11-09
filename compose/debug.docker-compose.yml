@@ -29,6 +29,13 @@ x-shared-env: &shared-env
   OASIS_CELERY_DB_PORT: 5432
   OASIS_TASK_CONTROLLER_QUEUE: task-controller
 
+# Model worker celery options, set from the shell, e.g.
+#   OASIS_CELERY_EXTRA_ARGS="--pool threads" OASIS_CELERY_CONCURRENCY=2 ./scripts/deploy.sh
+x-worker-celery-env: &worker-celery-env
+  OASIS_CELERY_EXTRA_ARGS: ${OASIS_CELERY_EXTRA_ARGS:-}
+  OASIS_CELERY_CONCURRENCY: ${OASIS_CELERY_CONCURRENCY:-}
+  OASIS_WORKER_ISOLATED_EXECUTION: ${OASIS_WORKER_ISOLATED_EXECUTION:-True}
+
 x-oasis-env-v1: &oasis-env-v1
   OASIS_DEBUG: ${DEBUG:-0}
   OASIS_RABBIT_HOST: broker
@@ -143,7 +150,7 @@ services:
      - celery-db
      - broker:mybroker
     environment:
-     <<: *shared-env
+     <<: [*shared-env, *worker-celery-env]
      OASIS_MODEL_SUPPLIER_ID: OasisLMF
      OASIS_MODEL_ID: PiWind
      OASIS_MODEL_VERSION_ID: 'v1'
@@ -163,7 +170,7 @@ services:
      - celery-db
      - broker:mybroker
     environment:
-     <<: *shared-env
+     <<: [*shared-env, *worker-celery-env]
      OASIS_MODEL_SUPPLIER_ID: OasisLMF
      OASIS_MODEL_ID: PiWind
      OASIS_MODEL_VERSION_ID: 'v2'
