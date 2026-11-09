@@ -39,9 +39,20 @@ from ..conf.iniconf import settings
 
 logger = logging.getLogger(__name__)
 
-# seconds; override with OASIS_WORKER_TASK_CANCEL_POLL_INTERVAL / OASIS_WORKER_TASK_CANCEL_KILL_TIMEOUT
-POLL_INTERVAL = settings.getint('worker', 'TASK_CANCEL_POLL_INTERVAL', fallback=2)
-KILL_TIMEOUT = settings.getint('worker', 'TASK_CANCEL_KILL_TIMEOUT', fallback=10)
+
+def setting_seconds(option, default):
+    """A [worker] setting in seconds (OASIS_WORKER_<OPTION> env var or conf.ini), float allowed."""
+    value = os.environ.get(f'OASIS_WORKER_{option}') or settings.get('worker', option, fallback=None)
+    try:
+        return float(value) if value not in (None, '') else default
+    except ValueError:
+        logger.warning('Invalid value %r for %s, using %s', value, option, default)
+        return default
+
+
+# how often a revoke is checked for, and how long processes get after SIGTERM before SIGKILL
+POLL_INTERVAL = setting_seconds('TASK_CANCEL_POLL_INTERVAL', 2)
+KILL_TIMEOUT = setting_seconds('TASK_CANCEL_KILL_TIMEOUT', 10)
 
 
 class _RunningTask:

@@ -28,7 +28,7 @@ from ..common.filestore.filestore import get_archive_compression, get_filestore,
 from ..conf import celeryconf_v2 as celery_conf
 from ..conf.iniconf import settings, settings_local
 from .celery_error_handler import OasisWorkerTask
-from .isolated import run_isolated, run_oasis_manager
+from .oasis_cli import run_oasis_manager
 
 from .utils import (
     LoggingTaskContext,
@@ -634,10 +634,7 @@ def get_keys_format(params):
 
 
 def run_lookup_chunk(params, num_chunks, chunk_idx, chunk_target_dir):
-    """Run the keys lookup for one chunk, writing keys files to `chunk_target_dir`.
-
-    Module level so `prepare_keys_file_chunk` can run it in an isolated process.
-    """
+    """Run the keys lookup for one chunk, writing keys files to `chunk_target_dir`."""
     _, lookup = OasisLookupFactory.create(
         lookup_config_fp=params.get('lookup_config_json', None),
         model_keys_data_path=params.get('lookup_data_dir', None),
@@ -688,7 +685,7 @@ def prepare_keys_file_chunk(
         chunk_target_dir = os.path.join(chunk_tmp_dir, f'lookup-{chunk_idx + 1}')
         Path(chunk_target_dir).mkdir(parents=True, exist_ok=True)
 
-        run_isolated(f'{__name__}:run_lookup_chunk', params, num_chunks, chunk_idx, chunk_target_dir)
+        run_lookup_chunk(params, num_chunks, chunk_idx, chunk_target_dir)
 
         # Store chunks
         params['chunk_keys'] = filestore.put(

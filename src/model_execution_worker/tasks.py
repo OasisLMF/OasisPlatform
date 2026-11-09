@@ -27,7 +27,7 @@ from ..conf.iniconf import settings, settings_local
 
 from . import task_cancel
 from .celery_error_handler import OasisWorkerTask
-from .isolated import run_oasis_manager
+from .oasis_cli import run_oasis_manager
 from .utils import (
     LoggingTaskContext,
     log_params,
