@@ -2,7 +2,7 @@ import logging
 from celery import Task, signature
 from celery.exceptions import WorkerLostError, MaxRetriesExceededError, Terminated
 
-from .oasis_cli import is_cancelled, raise_if_cancelled
+from .oasis_subprocess_runner import is_cancelled, raise_if_cancelled
 from .utils import (
     notify_api_status_v1,
     notify_api_status_v2,
@@ -19,7 +19,7 @@ class OasisWorkerTask(Task):
         callbacks) instead of reporting success or a retryable failure.
 
         On threads/gevent/eventlet workers a revoke can't stop the task itself, only
-        the oasislmf CLI run (see `oasis_cli`), so the task can still finish or fail.
+        the oasislmf subprocess (see `oasis_subprocess_runner`), so the task can still finish or fail.
         """
         task_id = self.request.id
         try:

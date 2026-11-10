@@ -28,7 +28,6 @@ from ..common.filestore.filestore import get_archive_compression, get_filestore,
 from ..conf import celeryconf_v2 as celery_conf
 from ..conf.iniconf import settings, settings_local
 from .celery_error_handler import OasisWorkerTask
-from .oasis_cli import run_oasis_manager
 
 from .utils import (
     LoggingTaskContext,
@@ -44,6 +43,7 @@ from .utils import (
     unwrap_task_args,
     notify_api_status_v2,
     get_lookup_success_file,
+    run_oasis,
 )
 
 # Set before importing polars - it sizes its thread pool from host CPU count
@@ -572,8 +572,7 @@ def pre_analysis_hook(self,
     with TemporaryDir() as hook_target_dir:
         if params.get('exposure_pre_analysis_module'):
             params['oasis_files_dir'] = hook_target_dir
-            from oasislmf.manager import OasisManager
-            pre_hook_output = OasisManager().exposure_pre_analysis(**params)
+            pre_hook_output = run_oasis('exposure_pre_analysis', **params)
             files_modified = pre_hook_output.get('modified', {})
 
             # store updated files
@@ -843,9 +842,8 @@ def write_input_files(self, params, run_data_uuid=None, analysis_id=None, initia
     params['keys_data_path'] = os.path.join(params['target_dir'], f'keys.{keys_ext}')
     params['keys_errors_path'] = os.path.join(params['target_dir'], f'keys-errors.{keys_ext}')
     params['oasis_files_dir'] = params['target_dir']
-    from oasislmf.manager import OasisManager
     try:
-        OasisManager().generate_files(**params)
+        run_oasis('generate_files', **params)
     except OasisExceptionNoKeys:
         notify_api_status_v2(analysis_id, 'INPUTS_GENERATION_NO_KEYS')
         raise
@@ -853,7 +851,7 @@ def write_input_files(self, params, run_data_uuid=None, analysis_id=None, initia
     # Optional step (Post file generation Hook)
     if params.get('post_file_gen_module', None):
         logger.info(f"post_generation_hook: running {params.get('post_file_gen_module')}")
-        run_oasis_manager('post_file_gen', **params)
+        run_oasis('post_file_gen', **params)
 
     # clear out user-data,
     # these files should not be sorted in the generated inputs tar
@@ -1067,13 +1065,12 @@ def prepare_losses_generation_directory(self, params, analysis_id=None, slug=Non
             f.flush()
         params['model_storage_json'] = f.name if model_storage else None
 
-        from oasislmf.manager import OasisManager
-        params['analysis_settings'] = OasisManager().generate_losses_dir(**params)
+        params['analysis_settings'] = run_oasis('generate_losses_dir', **params)
 
         # Optional step (Pre losses hook) --- Before or after 'generate_losses_dir' ??
         if params.get('pre_loss_module', None):
             logger.info(f"pre_losses_hook: running {params.get('pre_loss_module')}")
-            run_oasis_manager('pre_loss', **params)
+            run_oasis('pre_loss', **params)
 
         params['run_location'] = filestore.put(
             params['model_run_dir'],
@@ -1130,7 +1127,7 @@ def generate_losses_chunk(self, params, chunk_idx, num_chunks, analysis_id=None,
 
         chunk_params['model_storage_json'] = f.name if model_storage else None
         Path(chunk_params['kernel_work_dir']).mkdir(parents=True, exist_ok=True)
-        run_oasis_manager('generate_losses_partial', **chunk_params)
+        run_oasis('generate_losses_partial', **chunk_params)
 
         return {
             **params,
@@ -1176,10 +1173,10 @@ def generate_losses_output(self, params, analysis_id=None, slug=None, **kwargs):
             merge_dirs(d, abs_log_dir)
 
     # Exec losses
-    run_oasis_manager('generate_losses_output', **res)
+    run_oasis('generate_losses_output', **res)
     if res.get('post_analysis_module', None):
         logger.info(f"post_losses_hook: running {res.get('post_analysis_module')}")
-        run_oasis_manager('post_analysis', **res)
+        run_oasis('post_analysis', **res)
 
     # store additional files needed for combine run
     occ_path = os.path.join(res['model_run_dir'], 'input', 'occurrence.bin')

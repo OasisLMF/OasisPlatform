@@ -12,6 +12,7 @@ __all__ = [
     'config_strip_default_exposure',
     'unwrap_task_args',
     'get_lookup_success_file',
+    'run_oasis',
 
     'notify_api_status_v1',
     'notify_api_status_v2',
@@ -36,6 +37,7 @@ from ods_tools import __version__ as ods_version
 from oasislmf.utils.exceptions import OasisException
 
 from ..common.data import ORIGINAL_FILENAME, STORED_FILENAME
+from .oasis_subprocess_runner import run_in_subprocess, subprocess_enabled
 import requests
 
 
@@ -43,6 +45,19 @@ logger = logging.getLogger(__name__)
 
 
 # Send notification back to the API Once task is read from Queue
+def run_oasis(method, **kwargs):
+    """Run `OasisManager().<method>(**kwargs)`.
+
+    On threads/gevent/eventlet workers (or when `OASIS_WORKER_SUBPROCESS_EXECUTION`
+    says so) it runs in a separate, killable process, so cancelling the task stops it
+    (see `oasis_subprocess_runner`). Otherwise it's called in-process.
+    """
+    if subprocess_enabled():
+        return run_in_subprocess(method, kwargs)
+    from oasislmf.manager import OasisManager
+    return getattr(OasisManager(), method)(**kwargs)
+
+
 def notify_api_status_v1(analysis_pk, task_status):
     logger.info("Notify API: analysis_id={}, status={}".format(
         analysis_pk,

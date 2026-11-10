@@ -26,7 +26,7 @@ from ..conf import celeryconf_v1 as celery_conf
 from ..conf.iniconf import settings, settings_local
 
 from .celery_error_handler import OasisWorkerTask
-from .oasis_cli import raise_if_cancelled, run_oasis_manager
+from .oasis_subprocess_runner import raise_if_cancelled
 from .utils import (
     LoggingTaskContext,
     log_params,
@@ -39,6 +39,7 @@ from .utils import (
     config_strip_default_exposure,
     notify_api_status_v1,
     get_lookup_success_file,
+    run_oasis,
 )
 
 '''
@@ -343,7 +344,7 @@ def start_analysis(analysis_settings, input_location, complex_data_files=None, *
 
         # Run generate losses
         try:
-            run_oasis_manager('generate_oasis_losses', **params)
+            run_oasis('generate_oasis_losses', **params)
             returncode = 0
         except Exception:
             raise_if_cancelled()
@@ -482,7 +483,7 @@ def generate_input(self,
                 json.dump(params, f, indent=4)
 
         try:
-            run_oasis_manager('generate_oasis_files', **params)
+            run_oasis('generate_oasis_files', **params)
             returncode = 0
         except OasisExceptionNoKeys:
             task_logger.exception("Error occured in 'generate_oasis_files':")
