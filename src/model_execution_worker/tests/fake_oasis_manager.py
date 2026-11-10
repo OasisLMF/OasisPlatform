@@ -12,6 +12,10 @@ from oasislmf.utils.exceptions import OasisExceptionNoKeys
 logger = logging.getLogger('oasislmf.fake')
 
 
+def add(a, b):
+    return {'sum': a + b, 'pid': os.getpid()}
+
+
 class FakeManager:
 
     def ok(self, **kwargs):

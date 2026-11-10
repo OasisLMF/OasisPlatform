@@ -1,19 +1,19 @@
-"""Call OasisManager methods, in a separate process when cancellation needs it.
+"""Run OasisManager methods and other worker functions in a separate, killable process.
 
 With the in-process celery pools (threads, gevent, eventlet) a task runs in the
 worker's own process, so work done in the task's thread/greenlet can't be
-stopped when the task is cancelled. For those pools `utils.run_oasis` runs the
-OasisManager method in a fresh Python process in its own session instead, and on
-cancellation kills the whole process group - the child, its multiprocessing
-workers and any bash/ktools pipelines.
+stopped when the task is cancelled. For those pools `utils.run_oasis` (OasisManager
+methods) and `utils.run_function` (e.g. the keys lookup helpers in utils) run the
+call in a fresh Python process in its own session instead, and on cancellation
+kill the whole process group - the child, its multiprocessing workers and any
+bash/ktools pipelines.
 
-The child is this module run with `-m` (see `child_main`). It calls the same
-`OasisManager().<method>(**kwargs)` as the in-process path, so the only oasislmf
-interface relied on is the manager's methods. Request and result are JSON files;
-exceptions come back as text (type names, message, traceback), so client
-exceptions that can't be pickled or imported in the worker keep their traceback.
+The child is this module run with `-m` (see `child_main`). It makes the same call
+as the in-process path. Request and result are JSON files; exceptions come back
+as text (type names, message, traceback), so client exceptions that can't be
+pickled or imported in the worker keep their traceback.
 
-Elsewhere (prefork, which already cancels tasks itself) the method is called
+Elsewhere (prefork, which already cancels tasks itself) the call is made
 directly, as before.
 
 `OASIS_WORKER_SUBPROCESS_EXECUTION` (or `SUBPROCESS_EXECUTION` in conf.ini):
@@ -71,7 +71,7 @@ KILL_TIMEOUT = setting_seconds('TASK_CANCEL_KILL_TIMEOUT', 10)
 
 
 class OasisRunnerError(OasisException):
-    """An OasisManager method run in a subprocess failed."""
+    """A function or OasisManager method run in a subprocess failed."""
 
 
 def _current_task_id():
@@ -148,19 +148,22 @@ def _log_level():
     return level if level in ('DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL') else 'INFO'
 
 
-def run_in_subprocess(method, kwargs):
-    """Run `OasisManager().<method>(**kwargs)` in a child process, stopping it if the task is cancelled.
+def run_in_subprocess(target, kwargs, method=None):
+    """Run `target(**kwargs)` in a child process, stopping it if the task is cancelled.
 
-    Returns the method's return value (converted to JSON: paths and other non-JSON
-    values come back as strings).
+    `target` is a `'package.module:name'` import path to a function, or to a class
+    when `method` is given (`target().<method>(**kwargs)`, e.g. an OasisManager method).
+    `kwargs` must be JSON serialisable (paths and other non-JSON values are sent as
+    strings). Returns the return value, converted the same way.
     """
     task_id = _current_task_id()
+    label = f"{target.rsplit(':', 1)[-1].rsplit('.', 1)[-1]}.{method}" if method else target
 
     with tempfile.TemporaryDirectory(prefix='oasis-subprocess-') as tmp:
         request_fp = os.path.join(tmp, 'request.json')
         result_fp = os.path.join(tmp, 'result.json')
         with open(request_fp, 'w') as f:
-            json.dump({'manager': MANAGER, 'method': method, 'kwargs': kwargs, 'log_level': _log_level()},
+            json.dump({'target': target, 'method': method, 'kwargs': kwargs, 'log_level': _log_level()},
                       f, default=str)
 
         proc = subprocess.Popen(
@@ -168,7 +171,7 @@ def run_in_subprocess(method, kwargs):
             stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
             env=_child_env(), start_new_session=True,
         )
-        logger.info('Running OasisManager.%s in subprocess (pid %s)', method, proc.pid)
+        logger.info('Running %s in subprocess (pid %s)', label, proc.pid)
 
         lines, tail = queue.Queue(), deque(maxlen=_OUTPUT_TAIL)
         reader = threading.Thread(target=_read_lines, args=(proc.stdout, lines), daemon=True)
@@ -188,13 +191,13 @@ def run_in_subprocess(method, kwargs):
 
     if result is None:
         raise OasisRunnerError(
-            f'OasisManager.{method} exited with code {proc.returncode} without a result:\n' + '\n'.join(tail))
+            f'{label} exited with code {proc.returncode} without a result:\n' + '\n'.join(tail))
     if result['ok']:
         return result['value']
     if _NO_KEYS_TYPE in result['types']:
         raise OasisExceptionNoKeys(result['message'])
     raise OasisRunnerError(
-        f"OasisManager.{method} failed with {result['types'][0]}: {result['message']}\n\n"
+        f"{label} failed with {result['types'][0]}: {result['message']}\n\n"
         f"Traceback from the subprocess:\n{result['traceback']}")
 
 
@@ -293,8 +296,10 @@ def _class_name(cls):
 
 def _run_request(request):
     try:
-        manager = load_object(request['manager'])()
-        value = getattr(manager, request['method'])(**request['kwargs'])
+        func = load_object(request['target'])
+        if request.get('method'):
+            func = getattr(func(), request['method'])
+        value = func(**request['kwargs'])
         return {'ok': True, 'value': value}
     except Exception as exc:
         return {
@@ -306,7 +311,7 @@ def _run_request(request):
 
 
 def child_main(request_fp, result_fp):
-    """Run the requested OasisManager method and write its result (see `run_in_subprocess`)."""
+    """Run the requested function or method and write its result (see `run_in_subprocess`)."""
     with open(request_fp) as f:
         request = json.load(f)
     logging.basicConfig(level=request.get('log_level', 'INFO'), stream=sys.stdout,

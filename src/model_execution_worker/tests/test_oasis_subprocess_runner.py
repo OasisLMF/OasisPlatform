@@ -17,6 +17,7 @@ from oasislmf.utils.exceptions import OasisExceptionNoKeys
 from src.model_execution_worker import oasis_subprocess_runner, utils
 
 FAKE_MANAGER = 'src.model_execution_worker.tests.fake_oasis_manager:FakeManager'
+FAKE_FUNCTION = 'src.model_execution_worker.tests.fake_oasis_manager:add'
 
 
 def _alive(pid):
@@ -76,8 +77,24 @@ class RoutingTests(TestCase):
                 mock.patch('oasislmf.manager.OasisManager') as manager, \
                 mock.patch.object(utils, 'run_in_subprocess', return_value={'settings': 1}) as run_in_subprocess:
             self.assertEqual(utils.run_oasis('generate_losses_dir', a=1), {'settings': 1})
-        run_in_subprocess.assert_called_once_with('generate_losses_dir', {'a': 1})
+        run_in_subprocess.assert_called_once_with(oasis_subprocess_runner.MANAGER, {'a': 1}, method='generate_losses_dir')
         manager.assert_not_called()
+
+    def test_run_function___in_process_gets_in_process_only_kwargs(self):
+        func = mock.Mock(__module__='some.module', __qualname__='func', return_value=3)
+        with mock.patch.object(oasis_subprocess_runner, '_pool_in_process', False), \
+                mock.patch.object(utils, 'run_in_subprocess') as run_in_subprocess:
+            self.assertEqual(utils.run_function(func, in_process_only={'filestore': 'fs'}, a=1), 3)
+        func.assert_called_once_with(a=1, filestore='fs')
+        run_in_subprocess.assert_not_called()
+
+    def test_run_function___subprocess_gets_import_path_and_json_kwargs_only(self):
+        func = mock.Mock(__module__='some.module', __qualname__='func')
+        with mock.patch.object(oasis_subprocess_runner, '_pool_in_process', True), \
+                mock.patch.object(utils, 'run_in_subprocess', return_value=3) as run_in_subprocess:
+            self.assertEqual(utils.run_function(func, in_process_only={'filestore': 'fs'}, a=1), 3)
+        run_in_subprocess.assert_called_once_with('some.module:func', {'a': 1})
+        func.assert_not_called()
 
     def test_env_override(self):
         with mock.patch.object(oasis_subprocess_runner, '_pool_in_process', False):
@@ -90,7 +107,6 @@ class RoutingTests(TestCase):
                 self.assertTrue(oasis_subprocess_runner.subprocess_enabled())
 
 
-@mock.patch.object(oasis_subprocess_runner, 'MANAGER', FAKE_MANAGER)
 @mock.patch.dict(os.environ, {'OASIS_WORKER_TASK_CANCEL_POLL_INTERVAL': '0.2',
                               'OASIS_WORKER_TASK_CANCEL_KILL_TIMEOUT': '2'})
 class RunInSubprocessTests(TestCase):
@@ -112,37 +128,42 @@ class RunInSubprocessTests(TestCase):
         output_logger.setLevel(logging.INFO)
         try:
             with mock.patch.object(oasis_subprocess_runner, '_log_level', return_value='INFO'):
-                result = oasis_subprocess_runner.run_in_subprocess('ok', {'model_run_dir': '/tmp/x', 'n': 2})
+                result = oasis_subprocess_runner.run_in_subprocess(FAKE_MANAGER, {'model_run_dir': '/tmp/x', 'n': 2}, method='ok')
         finally:
             output_logger.removeHandler(handler)
             output_logger.setLevel(old_level)
         self.assertEqual(result, {'kwargs': {'model_run_dir': '/tmp/x', 'n': 2}, 'path': '/tmp/x'})
         self.assertIn('running ok', handler.messages)
 
+    def test_function_target___runs_in_child_and_returns_value(self):
+        result = oasis_subprocess_runner.run_in_subprocess(FAKE_FUNCTION, {'a': 2, 'b': 3})
+        self.assertEqual(result['sum'], 5)
+        self.assertNotEqual(result['pid'], os.getpid())
+
     def test_failure___raises_with_type_and_child_traceback(self):
         with self.assertRaises(oasis_subprocess_runner.OasisRunnerError) as ctx:
-            oasis_subprocess_runner.run_in_subprocess('fail', {})
+            oasis_subprocess_runner.run_in_subprocess(FAKE_MANAGER, {}, method='fail')
         self.assertIn('builtins.ValueError: Something went wrong', str(ctx.exception))
         self.assertIn('fake_oasis_manager.py', str(ctx.exception))
 
     def test_client_exception_that_cant_be_imported___keeps_message_and_traceback(self):
         with self.assertRaises(oasis_subprocess_runner.OasisRunnerError) as ctx:
-            oasis_subprocess_runner.run_in_subprocess('client_error', {})
+            oasis_subprocess_runner.run_in_subprocess(FAKE_MANAGER, {}, method='client_error')
         self.assertIn('ClientLookupError: bad lookup data', str(ctx.exception))
         self.assertIn('raise ClientLookupError', str(ctx.exception))
 
     def test_no_keys___raises_oasis_no_keys_exception(self):
         with self.assertRaises(OasisExceptionNoKeys):
-            oasis_subprocess_runner.run_in_subprocess('no_keys', {})
+            oasis_subprocess_runner.run_in_subprocess(FAKE_MANAGER, {}, method='no_keys')
 
     def test_child_dies_without_result___raises_with_exit_code_and_output(self):
         with self.assertRaises(oasis_subprocess_runner.OasisRunnerError) as ctx:
-            oasis_subprocess_runner.run_in_subprocess('crash', {})
+            oasis_subprocess_runner.run_in_subprocess(FAKE_MANAGER, {}, method='crash')
         self.assertIn('exited with code 9 without a result', str(ctx.exception))
         self.assertIn('about to crash', str(ctx.exception))
 
     def test_background_process_left_after_success___is_stopped(self):
-        oasis_subprocess_runner.run_in_subprocess('leave_background', {'pid_file': self.pid_file})
+        oasis_subprocess_runner.run_in_subprocess(FAKE_MANAGER, {'pid_file': self.pid_file}, method='leave_background')
         self.assertTrue(_wait_for_file(self.pid_file))
         pid = int(open(self.pid_file).read())
         self.assertFalse(_alive(pid))
@@ -152,7 +173,7 @@ class RunInSubprocessTests(TestCase):
 
         def task_thread():
             try:
-                oasis_subprocess_runner.run_in_subprocess('busy', {'pid_file': self.pid_file})
+                oasis_subprocess_runner.run_in_subprocess(FAKE_MANAGER, {'pid_file': self.pid_file}, method='busy')
             except BaseException as e:
                 outcome['exc'] = e
 
