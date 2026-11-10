@@ -572,7 +572,8 @@ def pre_analysis_hook(self,
     with TemporaryDir() as hook_target_dir:
         if params.get('exposure_pre_analysis_module'):
             params['oasis_files_dir'] = hook_target_dir
-            pre_hook_output = run_oasis_manager('exposure_pre_analysis', **params)
+            from oasislmf.manager import OasisManager
+            pre_hook_output = OasisManager().exposure_pre_analysis(**params)
             files_modified = pre_hook_output.get('modified', {})
 
             # store updated files
@@ -633,41 +634,6 @@ def get_keys_format(params):
     return keys_format, KEYS_FORMAT_EXT[keys_format]
 
 
-def run_lookup_chunk(params, num_chunks, chunk_idx, chunk_target_dir):
-    """Run the keys lookup for one chunk, writing keys files to `chunk_target_dir`."""
-    _, lookup = OasisLookupFactory.create(
-        lookup_config_fp=params.get('lookup_config_json', None),
-        model_keys_data_path=params.get('lookup_data_dir', None),
-        model_version_file_path=params.get('model_version_csv', None),
-        lookup_module_path=params.get('lookup_module_path', None),
-        complex_lookup_config_fp=params.get('lookup_complex_config_json', None),
-        user_data_dir=params.get('user_data_dir', None),
-        output_directory=chunk_target_dir,
-    )
-
-    sar_df = load_subject_at_risk_chunk(params, num_chunks, chunk_idx)
-
-    # With no location file the chunk count isn't capped by the row count
-    # (see `_get_inputs_generation_chunks`), so a chunk can be empty. Skip the
-    # lookup, `collect_keys` merges whatever the other chunks produced.
-    if sar_df.empty:
-        logger.info(f'Lookup chunk {chunk_idx + 1}/{num_chunks} is empty --skipped--')
-        return
-
-    keys_format, keys_ext = get_keys_format(params)
-    lookup.generate_key_files(
-        location_fp=None,
-        location_df=sar_df,
-        successes_fp=os.path.join(chunk_target_dir, f'keys.{keys_ext}'),
-        errors_fp=os.path.join(chunk_target_dir, f'keys-errors.{keys_ext}'),
-        output_format=keys_format,
-        keys_success_msg=False,
-        multiproc_enabled=params.get('lookup_multiprocessing', False),
-        multiproc_num_cores=params.get('lookup_num_processes', -1),
-        multiproc_num_partitions=params.get('lookup_num_chunks', -1),
-    )
-
-
 @app.task(bind=True, name='prepare_keys_file_chunk', **celery_conf.worker_task_kwargs)
 @keys_generation_task
 def prepare_keys_file_chunk(
@@ -685,7 +651,38 @@ def prepare_keys_file_chunk(
         chunk_target_dir = os.path.join(chunk_tmp_dir, f'lookup-{chunk_idx + 1}')
         Path(chunk_target_dir).mkdir(parents=True, exist_ok=True)
 
-        run_lookup_chunk(params, num_chunks, chunk_idx, chunk_target_dir)
+        _, lookup = OasisLookupFactory.create(
+            lookup_config_fp=params.get('lookup_config_json', None),
+            model_keys_data_path=params.get('lookup_data_dir', None),
+            model_version_file_path=params.get('model_version_csv', None),
+            lookup_module_path=params.get('lookup_module_path', None),
+            complex_lookup_config_fp=params.get('lookup_complex_config_json', None),
+            user_data_dir=params.get('user_data_dir', None),
+            output_directory=chunk_target_dir,
+        )
+
+        sar_df = load_subject_at_risk_chunk(params, num_chunks, chunk_idx)
+
+        # With no location file the chunk count isn't capped by the row count
+        # (see `_get_inputs_generation_chunks`), so a chunk can be empty. Skip the
+        # lookup, `collect_keys` merges whatever the other chunks produced.
+        if sar_df.empty:
+            logger.info(f'Lookup chunk {chunk_idx + 1}/{num_chunks} is empty --skipped--')
+        else:
+            keys_format, keys_ext = get_keys_format(params)
+            chunk_keys_fp = os.path.join(chunk_target_dir, f'keys.{keys_ext}')
+            chunk_keys_errors_fp = os.path.join(chunk_target_dir, f'keys-errors.{keys_ext}')
+            lookup.generate_key_files(
+                location_fp=None,
+                location_df=sar_df,
+                successes_fp=chunk_keys_fp,
+                errors_fp=chunk_keys_errors_fp,
+                output_format=keys_format,
+                keys_success_msg=False,
+                multiproc_enabled=params.get('lookup_multiprocessing', False),
+                multiproc_num_cores=params.get('lookup_num_processes', -1),
+                multiproc_num_partitions=params.get('lookup_num_chunks', -1),
+            )
 
         # Store chunks
         params['chunk_keys'] = filestore.put(
@@ -846,8 +843,9 @@ def write_input_files(self, params, run_data_uuid=None, analysis_id=None, initia
     params['keys_data_path'] = os.path.join(params['target_dir'], f'keys.{keys_ext}')
     params['keys_errors_path'] = os.path.join(params['target_dir'], f'keys-errors.{keys_ext}')
     params['oasis_files_dir'] = params['target_dir']
+    from oasislmf.manager import OasisManager
     try:
-        run_oasis_manager('generate_files', **params)
+        OasisManager().generate_files(**params)
     except OasisExceptionNoKeys:
         notify_api_status_v2(analysis_id, 'INPUTS_GENERATION_NO_KEYS')
         raise
@@ -1069,7 +1067,8 @@ def prepare_losses_generation_directory(self, params, analysis_id=None, slug=Non
             f.flush()
         params['model_storage_json'] = f.name if model_storage else None
 
-        params['analysis_settings'] = run_oasis_manager('generate_losses_dir', **params)
+        from oasislmf.manager import OasisManager
+        params['analysis_settings'] = OasisManager().generate_losses_dir(**params)
 
         # Optional step (Pre losses hook) --- Before or after 'generate_losses_dir' ??
         if params.get('pre_loss_module', None):

@@ -1,7 +1,6 @@
 import json
 import logging
 import os
-import signal
 import sys
 import tempfile
 import threading
@@ -174,14 +173,3 @@ class RunCliTests(TestCase):
         self.assertIsInstance(outcome.get('exc'), Terminated)
         for name, pid in pids.items():
             self.assertFalse(_alive(pid), f'{name} ({pid}) still running after cancel')
-
-    def test_cancel_where_process_is_killed_by_someone_else_first___still_terminated(self):
-        # e.g. the task_cancel watcher killing it before run_cli's own poll sees the revoke
-        with mock.patch.object(celery, 'current_task', mock.Mock(request=mock.Mock(id='cli-tid'))):
-            t, pids, outcome = self._run_busy_in_thread()
-            worker_state.revoked.add('cli-tid')
-            os.killpg(pids['cli'], signal.SIGKILL)
-            t.join(20)
-        self.assertIsInstance(outcome.get('exc'), Terminated)
-        for name, pid in pids.items():
-            self.assertFalse(_alive(pid), name)

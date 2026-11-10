@@ -2,7 +2,7 @@ import logging
 from celery import Task, signature
 from celery.exceptions import WorkerLostError, MaxRetriesExceededError, Terminated
 
-from . import task_cancel
+from .oasis_cli import is_cancelled, raise_if_cancelled
 from .utils import (
     notify_api_status_v1,
     notify_api_status_v2,
@@ -15,39 +15,27 @@ logger = logging.getLogger(__name__)
 class OasisWorkerTask(Task):
 
     def __call__(self, *args, **kwargs):
-        """ Run the task with cancellation support (see `task_cancel`).
+        """ Make sure a cancelled task ends with `Terminated` (ignored by the error
+        callbacks) instead of reporting success or a retryable failure.
 
-        Records the thread running the task so a revoke can kill the processes it
-        started, and makes sure a cancelled task ends with `Terminated` (ignored by
-        the error callbacks) instead of reporting success or a retryable failure.
+        On threads/gevent/eventlet workers a revoke can't stop the task itself, only
+        the oasislmf CLI run (see `oasis_cli`), so the task can still finish or fail.
         """
         task_id = self.request.id
-        task_cancel.register(task_id)
         try:
             result = super().__call__(*args, **kwargs)
         except Terminated:
-            task_cancel.cleanup_task_processes(task_id)
             raise
         except Exception as exc:
-            if task_cancel.is_cancelled(task_id):
-                # e.g. oasislmf failing because its bash run was killed
-                task_cancel.cleanup_task_processes(task_id)
+            if is_cancelled(task_id):
                 raise Terminated(f'Task {task_id} cancelled') from exc
             raise
-        except BaseException:
-            # SystemExit (prefork SIGTERM), GreenletExit (gevent kill): don't orphan children
-            task_cancel.cleanup_task_processes(task_id)
-            raise
-        finally:
-            task_cancel.unregister(task_id)
-
-        if task_cancel.is_cancelled(task_id):
-            raise Terminated(f'Task {task_id} cancelled')
+        raise_if_cancelled(task_id)
         return result
 
     def retry(self, *args, **kwargs):
         # `autoretry_for=(Exception,)` would otherwise requeue a cancelled task
-        task_cancel.raise_if_cancelled(self.request.id)
+        raise_if_cancelled(self.request.id)
         return super().retry(*args, **kwargs)
 
     def before_start(self, task_id, args, kwargs):

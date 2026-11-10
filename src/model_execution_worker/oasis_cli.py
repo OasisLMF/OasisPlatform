@@ -29,13 +29,50 @@ from collections import deque
 from celery.concurrency import ALIASES
 from celery.exceptions import Terminated
 from celery.signals import worker_init
+from celery.worker import state as worker_state
 from oasislmf.utils.exceptions import OasisException, OasisExceptionNoKeys
 
 from ..conf.iniconf import settings
-from . import task_cancel
 
 logger = logging.getLogger(__name__)
 cli_logger = logging.getLogger('oasislmf.cli')
+
+
+def setting_seconds(option, default):
+    """A [worker] setting in seconds (OASIS_WORKER_<OPTION> env var or conf.ini), float allowed."""
+    value = os.environ.get(f'OASIS_WORKER_{option}') or settings.get('worker', option, fallback=None)
+    try:
+        return float(value) if value not in (None, '') else default
+    except ValueError:
+        logger.warning('Invalid value %r for %s, using %s', value, option, default)
+        return default
+
+
+# how often a running CLI checks for a revoke, and how long it gets after SIGTERM before SIGKILL
+POLL_INTERVAL = setting_seconds('TASK_CANCEL_POLL_INTERVAL', 2)
+KILL_TIMEOUT = setting_seconds('TASK_CANCEL_KILL_TIMEOUT', 10)
+
+
+def _current_task_id():
+    from celery import current_task
+    return getattr(getattr(current_task, 'request', None), 'id', None)
+
+
+def is_cancelled(task_id=None):
+    """True if `task_id` (default: the current task) has been revoked on this worker.
+
+    Celery adds the id to `worker_state.revoked` before it tries to terminate the
+    task, so this works for the in-process pools even though terminating fails there.
+    """
+    task_id = task_id or _current_task_id()
+    return bool(task_id) and task_id in worker_state.revoked
+
+
+def raise_if_cancelled(task_id=None):
+    task_id = task_id or _current_task_id()
+    if is_cancelled(task_id):
+        raise Terminated(f'Task {task_id} cancelled')
+
 
 # OasisManager method -> `oasislmf model` sub-command (calls whose return value isn't used)
 CLI_COMMANDS = {
@@ -112,8 +149,7 @@ def _cli_argv(command, config_fp):
 
 def run_cli(command, params):
     """Run `oasislmf model <command>` with `params` as its config, stopping it if the task is cancelled."""
-    from celery import current_task
-    task_id = getattr(getattr(current_task, 'request', None), 'id', None)
+    task_id = _current_task_id()
 
     with tempfile.TemporaryDirectory(prefix='oasis-cli-') as tmp:
         config_fp = os.path.join(tmp, 'oasislmf.json')
@@ -139,8 +175,7 @@ def run_cli(command, params):
             reader.join(5)
             _emit(lines, tail)
 
-    if cancelled or (task_id and task_cancel.is_cancelled(task_id)):
-        # re-checked: the task_cancel watcher may have killed the process first
+    if cancelled:
         raise Terminated(f'Task {task_id} cancelled')
     if proc.returncode != 0:
         output = '\n'.join(tail)
@@ -150,7 +185,7 @@ def run_cli(command, params):
 
 
 def _wait(proc, task_id, lines, tail):
-    interval = task_cancel.setting_seconds('TASK_CANCEL_POLL_INTERVAL', task_cancel.POLL_INTERVAL)
+    interval = setting_seconds('TASK_CANCEL_POLL_INTERVAL', POLL_INTERVAL)
     while True:
         try:
             proc.wait(timeout=interval)
@@ -158,7 +193,7 @@ def _wait(proc, task_id, lines, tail):
         except subprocess.TimeoutExpired:
             pass
         _emit(lines, tail)
-        if task_id and task_cancel.is_cancelled(task_id):
+        if is_cancelled(task_id):
             logger.info('Task %s cancelled: stopping oasislmf (process group %s)', task_id, proc.pid)
             return True
 
@@ -198,7 +233,7 @@ def stop_process_group(proc, timeout=None):
     Only signals a group that still has members, and waits for the whole group
     (not just the leader) before escalating.
     """
-    timeout = task_cancel.setting_seconds('TASK_CANCEL_KILL_TIMEOUT', task_cancel.KILL_TIMEOUT) if timeout is None else timeout
+    timeout = setting_seconds('TASK_CANCEL_KILL_TIMEOUT', KILL_TIMEOUT) if timeout is None else timeout
     pgid = proc.pid
     proc.poll()  # reap the leader if it has exited, so it doesn't count as alive
     if not _group_alive(pgid):
