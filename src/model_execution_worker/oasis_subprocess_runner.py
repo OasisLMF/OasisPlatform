@@ -37,7 +37,7 @@ from collections import deque
 
 from celery.concurrency import ALIASES
 from celery.exceptions import Terminated
-from celery.signals import worker_init
+from celery.signals import worker_init, worker_ready
 from celery.worker import state as worker_state
 from oasislmf.utils.exceptions import OasisException, OasisExceptionNoKeys
 
@@ -97,6 +97,7 @@ def raise_if_cancelled(task_id=None):
 
 
 _pool_in_process = False
+_pool_cls = None
 
 _TRUE_VALUES = ('1', 'true', 'yes', 'on')
 _FALSE_VALUES = ('0', 'false', 'no', 'off')
@@ -105,11 +106,16 @@ _warned_values = set()
 
 @worker_init.connect
 def _record_worker_pool(sender=None, **kwargs):
-    global _pool_in_process
-    pool_cls = getattr(sender, 'pool_cls', None)
-    _pool_in_process = _is_in_process_pool(pool_cls)
+    global _pool_in_process, _pool_cls
+    _pool_cls = getattr(sender, 'pool_cls', None)
+    _pool_in_process = _is_in_process_pool(_pool_cls)
+
+
+@worker_ready.connect
+def _log_subprocess_execution(**kwargs):
+    # logged here, not on worker_init: celery sets up logging after sending worker_init
     logger.info('Subprocess execution: %s (pool=%s, SUBPROCESS_EXECUTION=%s)',
-                'on' if subprocess_enabled() else 'off', _pool_name(pool_cls), _setting())
+                'on' if subprocess_enabled() else 'off', _pool_name(_pool_cls), _setting())
 
 
 def _pool_name(pool_cls):

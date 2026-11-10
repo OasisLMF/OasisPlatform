@@ -136,6 +136,7 @@ class RoutingTests(TestCase):
                 mock.patch.object(oasis_subprocess_runner, '_pool_in_process', False), \
                 self.assertLogs(oasis_subprocess_runner.logger, 'INFO') as logs:
             oasis_subprocess_runner._record_worker_pool(sender=mock.Mock(pool_cls='threads'))
+            oasis_subprocess_runner._log_subprocess_execution()
         self.assertIn('Subprocess execution: on (pool=threads, SUBPROCESS_EXECUTION=auto)', logs.output[0])
 
 
