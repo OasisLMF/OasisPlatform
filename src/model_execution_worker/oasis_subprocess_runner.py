@@ -16,9 +16,10 @@ pickled or imported in the worker keep their traceback.
 Elsewhere (prefork, which already cancels tasks itself) the call is made
 directly, as before.
 
-`OASIS_WORKER_SUBPROCESS_EXECUTION` (or `SUBPROCESS_EXECUTION` in conf.ini):
-`auto` (default, subprocess only on threads/gevent/eventlet workers), `true`
-(always) or `false` (never).
+`OASIS_WORKER_SUBPROCESS_EXECUTION` env var (or `SUBPROCESS_EXECUTION` in the
+[worker] section of conf.ini): `auto` (default: on for threads/gevent/eventlet
+workers, off for prefork and solo), `true` or `false` (forced, whatever the pool).
+The worker logs which applies when it starts.
 """
 import importlib
 import json
@@ -97,11 +98,24 @@ def raise_if_cancelled(task_id=None):
 
 _pool_in_process = False
 
+_TRUE_VALUES = ('1', 'true', 'yes', 'on')
+_FALSE_VALUES = ('0', 'false', 'no', 'off')
+_warned_values = set()
+
 
 @worker_init.connect
 def _record_worker_pool(sender=None, **kwargs):
     global _pool_in_process
-    _pool_in_process = _is_in_process_pool(getattr(sender, 'pool_cls', None))
+    pool_cls = getattr(sender, 'pool_cls', None)
+    _pool_in_process = _is_in_process_pool(pool_cls)
+    logger.info('Subprocess execution: %s (pool=%s, SUBPROCESS_EXECUTION=%s)',
+                'on' if subprocess_enabled() else 'off', _pool_name(pool_cls), _setting())
+
+
+def _pool_name(pool_cls):
+    if isinstance(pool_cls, str) or pool_cls is None:
+        return pool_cls
+    return f'{pool_cls.__module__}.{pool_cls.__qualname__}'
 
 
 def _is_in_process_pool(pool_cls):
@@ -112,16 +126,26 @@ def _is_in_process_pool(pool_cls):
     return module in IN_PROCESS_POOLS
 
 
-_INI_SUBPROCESS_EXECUTION = settings.get('worker', 'SUBPROCESS_EXECUTION', fallback=None)
+def _setting():
+    """The [worker] SUBPROCESS_EXECUTION setting: the OASIS_WORKER_SUBPROCESS_EXECUTION
+    env var, else conf.ini, else 'auto'. Read on every call."""
+    return str(settings.get('worker', 'SUBPROCESS_EXECUTION', fallback='auto') or 'auto').strip().lower()
 
 
 def subprocess_enabled():
-    mode = os.environ.get('OASIS_WORKER_SUBPROCESS_EXECUTION', _INI_SUBPROCESS_EXECUTION) or 'auto'
-    mode = str(mode).strip().lower()
-    if mode in ('1', 'true', 'yes', 'on'):
+    """Whether OasisManager calls (and `utils.run_function` calls) run in a subprocess.
+
+    `auto` (default): on for the threads/gevent/eventlet pools, off otherwise
+    (prefork, solo). `true` / `false` force it on or off whatever the pool.
+    """
+    mode = _setting()
+    if mode in _TRUE_VALUES:
         return True
-    if mode in ('0', 'false', 'no', 'off'):
+    if mode in _FALSE_VALUES:
         return False
+    if mode != 'auto' and mode not in _warned_values:
+        _warned_values.add(mode)
+        logger.warning("Unknown SUBPROCESS_EXECUTION value %r, using 'auto' (expected auto, true or false)", mode)
     return _pool_in_process
 
 

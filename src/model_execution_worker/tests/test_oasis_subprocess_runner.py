@@ -96,15 +96,47 @@ class RoutingTests(TestCase):
         run_in_subprocess.assert_called_once_with('some.module:func', {'a': 1})
         func.assert_not_called()
 
-    def test_env_override(self):
-        with mock.patch.object(oasis_subprocess_runner, '_pool_in_process', False):
-            with mock.patch.dict(os.environ, {'OASIS_WORKER_SUBPROCESS_EXECUTION': 'true'}):
-                self.assertTrue(oasis_subprocess_runner.subprocess_enabled())
-        with mock.patch.object(oasis_subprocess_runner, '_pool_in_process', True):
-            with mock.patch.dict(os.environ, {'OASIS_WORKER_SUBPROCESS_EXECUTION': 'false'}):
-                self.assertFalse(oasis_subprocess_runner.subprocess_enabled())
-            with mock.patch.dict(os.environ, {'OASIS_WORKER_SUBPROCESS_EXECUTION': 'auto'}):
-                self.assertTrue(oasis_subprocess_runner.subprocess_enabled())
+    def _enabled(self, setting, pool_in_process):
+        env = {k: v for k, v in os.environ.items() if k != 'OASIS_WORKER_SUBPROCESS_EXECUTION'}
+        if setting is not None:
+            env['OASIS_WORKER_SUBPROCESS_EXECUTION'] = setting
+        with mock.patch.dict(os.environ, env, clear=True), \
+                mock.patch.object(oasis_subprocess_runner, '_pool_in_process', pool_in_process):
+            return oasis_subprocess_runner.subprocess_enabled()
+
+    def test_default___on_for_in_process_pools_only(self):
+        for setting in (None, '', 'auto', ' AUTO '):
+            self.assertTrue(self._enabled(setting, pool_in_process=True), setting)
+            self.assertFalse(self._enabled(setting, pool_in_process=False), setting)
+
+    def test_env_var___overrides_the_pool(self):
+        for setting in ('true', 'True', '1', 'yes', 'on'):
+            self.assertTrue(self._enabled(setting, pool_in_process=False), setting)
+        for setting in ('false', 'FALSE', '0', 'no', 'off'):
+            self.assertFalse(self._enabled(setting, pool_in_process=True), setting)
+
+    def test_conf_ini_setting___used_when_env_var_not_set(self):
+        oasis_subprocess_runner.settings.set('worker', 'SUBPROCESS_EXECUTION', 'true')
+        try:
+            self.assertTrue(self._enabled(None, pool_in_process=False))
+            self.assertFalse(self._enabled('false', pool_in_process=False))  # env var wins
+        finally:
+            oasis_subprocess_runner.settings.remove_option('worker', 'SUBPROCESS_EXECUTION')
+
+    def test_unknown_value___warns_once_and_uses_pool_default(self):
+        with mock.patch.object(oasis_subprocess_runner, '_warned_values', set()), \
+                self.assertLogs(oasis_subprocess_runner.logger, 'WARNING') as logs:
+            self.assertTrue(self._enabled('ture', pool_in_process=True))
+            self.assertFalse(self._enabled('ture', pool_in_process=False))
+        self.assertEqual(len(logs.records), 1)
+        self.assertIn("'ture'", logs.output[0])
+
+    def test_worker_start___logs_the_decision(self):
+        with mock.patch.dict(os.environ, {'OASIS_WORKER_SUBPROCESS_EXECUTION': 'auto'}), \
+                mock.patch.object(oasis_subprocess_runner, '_pool_in_process', False), \
+                self.assertLogs(oasis_subprocess_runner.logger, 'INFO') as logs:
+            oasis_subprocess_runner._record_worker_pool(sender=mock.Mock(pool_cls='threads'))
+        self.assertIn('Subprocess execution: on (pool=threads, SUBPROCESS_EXECUTION=auto)', logs.output[0])
 
 
 @mock.patch.dict(os.environ, {'OASIS_WORKER_TASK_CANCEL_POLL_INTERVAL': '0.2',
