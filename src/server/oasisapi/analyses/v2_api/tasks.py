@@ -506,35 +506,24 @@ def set_subtask_status(self, analysis_id, initiator_id, task_slug, subtask_statu
         )
 
 
-def _is_cancellation(args, tb):
-    """ True if the errback is for a sub-task that ended because it was cancelled
-        (the worker raises celery's `Terminated` when a running task is revoked).
-    """
-    from celery.exceptions import Terminated
-    if len(args) == 3 and isinstance(args[1], Terminated):
-        return True
-    last_line = tb.strip().splitlines()[-1] if tb and tb.strip() else ''
-    return last_line.split(':', 1)[0].endswith('.Terminated')
-
-
 @celery_app_v2.task(bind=True, name='record_sub_task_failure')
 def record_sub_task_failure(self, *args, analysis_id=None, initiator_id=None, task_slug=None):
     tb = _traceback_from_errback_args(*args)
     task_id = self.request.parent_id
 
-    subtask_qs = AnalysisTaskStatus.objects.filter(slug=task_slug, analysis_id=analysis_id)
-    if _is_cancellation(args, tb):
-        new_status = AnalysisTaskStatus.status_choices.CANCELLED
-    else:
-        new_status = AnalysisTaskStatus.status_choices.ERROR
-        # 'cancel_subtasks' may already have marked it cancelled, don't overwrite that
-        subtask_qs = subtask_qs.exclude(status=AnalysisTaskStatus.status_choices.CANCELLED)
+    # 'cancel_subtasks' may already have marked it cancelled, don't overwrite that
+    subtask_qs = AnalysisTaskStatus.objects.filter(
+        slug=task_slug,
+        analysis_id=analysis_id,
+    ).exclude(status=AnalysisTaskStatus.status_choices.CANCELLED)
+    if not subtask_qs.exists():
+        return
 
     with TemporaryFile() as tmp_file:
         tmp_file.write(tb.encode('utf-8'))
         subtask_qs.update(
             task_id=task_id,
-            status=new_status,
+            status=AnalysisTaskStatus.status_choices.ERROR,
             end_time=timezone.now(),
             error_log=RelatedFile.objects.create(
                 file=File(tmp_file, name='{}.log'.format(uuid.uuid4())),

@@ -131,6 +131,16 @@ class RoutingTests(TestCase):
         self.assertEqual(len(logs.records), 1)
         self.assertIn("'ture'", logs.output[0])
 
+    def test_setting_seconds___env_var_then_default_and_invalid_value_warns(self):
+        with mock.patch.dict(os.environ, {'OASIS_WORKER_TASK_CANCEL_KILL_TIMEOUT': '2.5'}):
+            self.assertEqual(oasis_subprocess_runner.setting_seconds('TASK_CANCEL_KILL_TIMEOUT', 10), 2.5)
+        env = {k: v for k, v in os.environ.items() if k != 'OASIS_WORKER_TASK_CANCEL_KILL_TIMEOUT'}
+        with mock.patch.dict(os.environ, env, clear=True):
+            self.assertEqual(oasis_subprocess_runner.setting_seconds('TASK_CANCEL_KILL_TIMEOUT', 10), 10)
+        with mock.patch.dict(os.environ, {'OASIS_WORKER_TASK_CANCEL_KILL_TIMEOUT': 'ten'}), \
+                self.assertLogs(oasis_subprocess_runner.logger, 'WARNING'):
+            self.assertEqual(oasis_subprocess_runner.setting_seconds('TASK_CANCEL_KILL_TIMEOUT', 10), 10)
+
     def test_worker_start___logs_the_decision(self):
         with mock.patch.dict(os.environ, {'OASIS_WORKER_SUBPROCESS_EXECUTION': 'auto'}), \
                 mock.patch.object(oasis_subprocess_runner, '_pool_in_process', False), \
@@ -223,3 +233,14 @@ class RunInSubprocessTests(TestCase):
         self.assertIsInstance(outcome.get('exc'), Terminated)
         for name, pid in pids.items():
             self.assertFalse(_alive(pid), f'{name} ({pid}) still running after cancel')
+
+
+class StopProcessGroupTests(TestCase):
+
+    def test_group_exits_between_check_and_sigterm___no_error(self):
+        proc = mock.Mock(pid=12345)
+        with mock.patch.object(oasis_subprocess_runner, '_group_alive', return_value=True), \
+                mock.patch.object(oasis_subprocess_runner.os, 'killpg', side_effect=ProcessLookupError) as killpg:
+            oasis_subprocess_runner.stop_process_group(proc)
+        killpg.assert_called_once_with(12345, oasis_subprocess_runner.signal.SIGTERM)
+        proc.wait.assert_called_once_with()

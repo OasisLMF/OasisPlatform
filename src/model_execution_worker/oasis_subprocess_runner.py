@@ -56,19 +56,20 @@ _NO_KEYS_TYPE = f'{OasisExceptionNoKeys.__module__}.{OasisExceptionNoKeys.__qual
 _OUTPUT_TAIL = 50
 
 
+# how often a running child checks for a revoke, and how long it gets after SIGTERM before SIGKILL
+DEFAULT_POLL_INTERVAL = 2
+DEFAULT_KILL_TIMEOUT = 10
+
+
 def setting_seconds(option, default):
-    """A [worker] setting in seconds (OASIS_WORKER_<OPTION> env var or conf.ini), float allowed."""
-    value = os.environ.get(f'OASIS_WORKER_{option}') or settings.get('worker', option, fallback=None)
+    """A [worker] setting in seconds, float allowed: the OASIS_WORKER_<OPTION> env var,
+    else conf.ini, else `default`. Read on every call."""
+    value = settings.get('worker', option, fallback=None)
     try:
         return float(value) if value not in (None, '') else default
     except ValueError:
         logger.warning('Invalid value %r for %s, using %s', value, option, default)
         return default
-
-
-# how often a running child checks for a revoke, and how long it gets after SIGTERM before SIGKILL
-POLL_INTERVAL = setting_seconds('TASK_CANCEL_POLL_INTERVAL', 2)
-KILL_TIMEOUT = setting_seconds('TASK_CANCEL_KILL_TIMEOUT', 10)
 
 
 class OasisRunnerError(OasisException):
@@ -240,7 +241,7 @@ def _read_result(result_fp):
 
 
 def _wait(proc, task_id, lines, tail):
-    interval = setting_seconds('TASK_CANCEL_POLL_INTERVAL', POLL_INTERVAL)
+    interval = setting_seconds('TASK_CANCEL_POLL_INTERVAL', DEFAULT_POLL_INTERVAL)
     while True:
         try:
             proc.wait(timeout=interval)
@@ -282,18 +283,24 @@ def _group_alive(pgid):
         return False
 
 
-def stop_process_group(proc, timeout=None):
-    """SIGTERM every process left in `proc`'s group, SIGKILL whatever remains after `timeout`.
+def stop_process_group(proc):
+    """SIGTERM every process left in `proc`'s group, SIGKILL whatever remains after
+    TASK_CANCEL_KILL_TIMEOUT seconds.
 
     Only signals a group that still has members, and waits for the whole group
     (not just the leader) before escalating.
     """
-    timeout = setting_seconds('TASK_CANCEL_KILL_TIMEOUT', KILL_TIMEOUT) if timeout is None else timeout
+    timeout = setting_seconds('TASK_CANCEL_KILL_TIMEOUT', DEFAULT_KILL_TIMEOUT)
     pgid = proc.pid
     proc.poll()  # reap the leader if it has exited, so it doesn't count as alive
     if not _group_alive(pgid):
         return
-    os.killpg(pgid, signal.SIGTERM)
+    try:
+        os.killpg(pgid, signal.SIGTERM)
+    except ProcessLookupError:
+        # the group emptied after the check above
+        proc.wait()
+        return
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
         proc.poll()
