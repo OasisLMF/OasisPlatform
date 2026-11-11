@@ -1000,13 +1000,6 @@ def generate_losses_output(self, params, analysis_id=None, slug=None, **kwargs):
             filestore.extract(p['chunk_work_location'], d, p['storage_subdir'])
             merge_dirs(d, abs_work_dir)
 
-    # Exec losses
-    from oasislmf.manager import OasisManager
-    OasisManager().generate_losses_output(**res)
-    if res.get('post_analysis_module', None):
-        logger.info(f"post_losses_hook: running {res.get('post_analysis_module')}")
-        OasisManager().post_analysis(**res)
-
     # collect run logs
     abs_log_dir = os.path.join(res['model_run_dir'], 'log')
     Path(abs_log_dir).mkdir(exist_ok=True, parents=True)
@@ -1014,6 +1007,13 @@ def generate_losses_output(self, params, analysis_id=None, slug=None, **kwargs):
         with TemporaryDir() as d:
             filestore.extract(p['chunk_log_location'], d, p['storage_subdir'])
             merge_dirs(d, abs_log_dir)
+
+    # Exec losses
+    from oasislmf.manager import OasisManager
+    OasisManager().generate_losses_output(**res)
+    if res.get('post_analysis_module', None):
+        logger.info(f"post_losses_hook: running {res.get('post_analysis_module')}")
+        OasisManager().post_analysis(**res)
 
     return {
         **res,
