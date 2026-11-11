@@ -396,7 +396,7 @@ jobs:
     - name: Setup python
       uses: actions/setup-python@v4
       with:
-        python-version: '3.9'
+        python-version: '3.12'
 
     - name: Setup Changelog builder
       working-directory: ${{ env.dir_platform  }}
