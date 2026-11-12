@@ -98,7 +98,7 @@ fastparquet==2024.11.0
     # via
     #   oasis-data-manager
     #   oasislmf
-filelock==3.19.1
+filelock==4.2.10
     # via -r requirements-worker.in
 forex-python==1.9.2
     # via oasislmf

@@ -222,7 +222,7 @@ fastparquet==2024.11.0
     # via
     #   oasis-data-manager
     #   oasislmf
-filelock==3.32.7
+filelock==4.2.10
     # via
     #   -r ./requirements-worker.in
     #   python-discovery
@@ -660,7 +660,7 @@ vine==5.1.0
     #   amqp
     #   celery
     #   kombu
-virtualenv==21.14.9
+virtualenv==21.14.13
     # via tox
 waitress==3.0.2
     # via webtest
