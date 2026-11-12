@@ -2,7 +2,7 @@
 #    uv pip compile --python-version 3.12 --no-strip-extras kubernetes/worker-controller/requirements.in --output-file kubernetes/worker-controller/requirements.txt
 aiohappyeyeballs==2.6.1
     # via aiohttp
-aiohttp==3.14.3
+aiohttp==3.14.4
     # via
     #   -r kubernetes/worker-controller/requirements.in
     #   kubernetes-asyncio
@@ -52,5 +52,5 @@ urllib3==2.8.0
     #   kubernetes-asyncio
 websockets==13.1
     # via -r kubernetes/worker-controller/requirements.in
-yarl==1.20.1
+yarl==1.25.1
     # via aiohttp
