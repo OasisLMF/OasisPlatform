@@ -164,7 +164,7 @@ decorator==5.2.1
     # via
     #   ipdb
     #   ipython
-distlib==0.4.0
+distlib==0.4.4
     # via virtualenv
 django==5.2.17
     # via
@@ -222,9 +222,10 @@ fastparquet==2024.11.0
     # via
     #   oasis-data-manager
     #   oasislmf
-filelock==3.19.1
+filelock==3.32.7
     # via
     #   -r ./requirements-worker.in
+    #   python-discovery
     #   tox
     #   virtualenv
 flake8==7.3.0
@@ -379,7 +380,7 @@ ods-tools==4.0.6
     # via
     #   -r ./requirements-server.in
     #   oasislmf
-packaging==25.0
+packaging==26.3
     # via
     #   build
     #   drf-yasg
@@ -392,6 +393,7 @@ packaging==25.0
     #   pyproject-api
     #   pytest
     #   tox
+    #   virtualenv
     #   wheel
 pandas==2.3.2
     # via
@@ -413,7 +415,7 @@ pip==26.2.1
     # via pip-tools
 pip-tools==7.5.0
     # via -r requirements.in
-platformdirs==4.3.8
+platformdirs==4.14.5
     # via
     #   tox
     #   virtualenv
@@ -514,6 +516,8 @@ python-dateutil==2.9.0.post0
     #   celery
     #   freezegun
     #   pandas
+python-discovery==1.9.5
+    # via virtualenv
 pytz==2025.2
     # via
     #   djangorestframework
@@ -656,7 +660,7 @@ vine==5.1.0
     #   amqp
     #   celery
     #   kombu
-virtualenv==20.34.0
+virtualenv==21.14.9
     # via tox
 waitress==3.0.2
     # via webtest
