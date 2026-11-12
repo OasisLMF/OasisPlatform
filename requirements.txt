@@ -59,7 +59,7 @@ celery==5.6.3
     #   -r ./requirements-server.in
     #   -r ./requirements-worker.in
     #   django-celery-results
-certifi==2026.6.17
+certifi==2026.10.18
     # via
     #   pyogrio
     #   pyproj
@@ -187,7 +187,7 @@ fastparquet==2026.5.0
     # via
     #   oasis-data-manager
     #   oasislmf
-filelock==3.29.4
+filelock==4.2.10
     # via
     #   -r ./requirements-worker.in
     #   python-discovery
@@ -284,7 +284,7 @@ msal==1.37.0
     #   msal-extensions
 msal-extensions==1.3.1
     # via azure-identity
-msgpack==1.2.1
+msgpack==1.2.3
     # via
     #   channels-redis
     #   oasislmf
@@ -325,7 +325,7 @@ ods-tools==3.2.10
     #   -r ./requirements-server.in
     #   -r ./requirements-worker.in
     #   oasislmf
-packaging==26.2
+packaging==26.3
     # via
     #   build
     #   drf-yasg
@@ -339,6 +339,7 @@ packaging==26.2
     #   pyproject-api
     #   pytest
     #   tox
+    #   virtualenv
     #   wheel
 pandas==2.3.3
     # via
@@ -363,7 +364,6 @@ pip-tools==7.5.3
     # via -r requirements.in
 platformdirs==4.10.0
     # via
-    #   python-discovery
     #   tox
     #   virtualenv
 pluggy==1.6.0
@@ -399,7 +399,7 @@ pygments==2.20.0
     #   ipython
     #   ipython-pygments-lexers
     #   pytest
-pyjwt[crypto]==2.13.0
+pyjwt[crypto]==2.14.0
     # via
     #   djangorestframework-simplejwt
     #   msal
@@ -440,7 +440,7 @@ python-dateutil==2.9.0.post0
     #   celery
     #   freezegun
     #   pandas
-python-discovery==1.4.2
+python-discovery==1.9.5
     # via
     #   tox
     #   virtualenv
@@ -535,7 +535,7 @@ traitlets==5.15.1
     # via
     #   ipython
     #   matplotlib-inline
-twisted==26.4.0
+twisted==26.10.0rc1
     # via -r requirements.in
 typing-extensions==4.15.0
     # via
@@ -558,7 +558,7 @@ uritemplate==4.2.0
     # via
     #   coreapi
     #   drf-yasg
-urllib3==2.7.0
+urllib3==2.8.0
     # via
     #   botocore
     #   requests
@@ -567,7 +567,7 @@ vine==5.1.0
     #   amqp
     #   celery
     #   kombu
-virtualenv==21.5.1
+virtualenv==21.14.13
     # via tox
 waitress==3.0.2
     # via webtest
