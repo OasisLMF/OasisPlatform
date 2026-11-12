@@ -6,7 +6,7 @@ aiobotocore==2.24.1
     # via s3fs
 aiohappyeyeballs==2.6.1
     # via aiohttp
-aiohttp==3.14.3
+aiohttp==3.14.4
     # via
     #   adlfs
     #   aiobotocore
@@ -53,7 +53,7 @@ botocore==1.39.11
     #   s3transfer
 celery==5.5.3
     # via -r requirements-worker.in
-certifi==2025.8.3
+certifi==2026.10.18
     # via
     #   pyogrio
     #   pyproj
@@ -98,7 +98,7 @@ fastparquet==2024.11.0
     # via
     #   oasis-data-manager
     #   oasislmf
-filelock==3.19.1
+filelock==4.2.10
     # via -r requirements-worker.in
 forex-python==1.9.2
     # via oasislmf
@@ -106,7 +106,7 @@ frozenlist==1.7.0
     # via
     #   aiohttp
     #   aiosignal
-fsspec==2024.12.0
+fsspec==2026.9.0
     # via
     #   adlfs
     #   fastparquet
@@ -152,7 +152,7 @@ msal==1.39.0
     #   msal-extensions
 msal-extensions==1.3.1
     # via azure-identity
-msgpack==1.2.1
+msgpack==1.2.3
     # via oasislmf
 multidict==6.6.4
     # via
@@ -229,7 +229,7 @@ pycparser==2.22
     # via cffi
 pygments==2.19.2
     # via pytest
-pyjwt[crypto]==2.13.0
+pyjwt[crypto]==2.15.0
     # via
     #   msal
     #   redis
@@ -277,7 +277,7 @@ rpds-py==0.27.0
     #   referencing
 rtree==1.4.1
     # via oasislmf
-s3fs==2024.12.0
+s3fs==2026.9.0
     # via -r requirements-worker.in
 s3transfer==0.13.1
     # via boto3
@@ -331,7 +331,7 @@ tzdata==2025.2
     # via
     #   kombu
     #   pandas
-urllib3==2.7.0
+urllib3==2.8.0
     # via
     #   botocore
     #   requests
@@ -348,5 +348,5 @@ wrapt==1.17.3
     # via aiobotocore
 xxhash==3.6.0
     # via oasis-data-manager
-yarl==1.20.1
+yarl==1.25.1
     # via aiohttp
