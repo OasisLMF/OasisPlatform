@@ -251,7 +251,7 @@ pyasn1-modules==0.4.2
     # via service-identity
 pycparser==2.22
     # via cffi
-pyjwt[crypto]==2.14.0
+pyjwt[crypto]==2.15.0
     # via
     #   djangorestframework-simplejwt
     #   msal

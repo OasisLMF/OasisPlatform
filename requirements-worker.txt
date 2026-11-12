@@ -229,7 +229,7 @@ pycparser==2.22
     # via cffi
 pygments==2.19.2
     # via pytest
-pyjwt[crypto]==2.14.0
+pyjwt[crypto]==2.15.0
     # via
     #   msal
     #   redis
