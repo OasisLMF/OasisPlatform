@@ -1,0 +1,2 @@
+# Django GeoDjango RCE - fixed in 5.2.17/6.0.8, GeoDjango (django.contrib.gis) not used
+CVE-2026-15307
