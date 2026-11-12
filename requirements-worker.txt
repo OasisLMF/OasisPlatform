@@ -53,7 +53,7 @@ botocore==1.39.11
     #   s3transfer
 celery==5.5.3
     # via -r requirements-worker.in
-certifi==2025.8.3
+certifi==2026.10.18
     # via
     #   pyogrio
     #   pyproj
@@ -152,7 +152,7 @@ msal==1.39.0
     #   msal-extensions
 msal-extensions==1.3.1
     # via azure-identity
-msgpack==1.2.1
+msgpack==1.2.3
     # via oasislmf
 multidict==6.6.4
     # via
@@ -229,7 +229,7 @@ pycparser==2.22
     # via cffi
 pygments==2.19.2
     # via pytest
-pyjwt[crypto]==2.13.0
+pyjwt[crypto]==2.14.0
     # via
     #   msal
     #   redis
@@ -331,7 +331,7 @@ tzdata==2025.2
     # via
     #   kombu
     #   pandas
-urllib3==2.7.0
+urllib3==2.8.0
     # via
     #   botocore
     #   requests

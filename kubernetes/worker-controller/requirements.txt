@@ -10,7 +10,7 @@ aiosignal==1.4.0
     # via aiohttp
 attrs==25.3.0
     # via aiohttp
-certifi==2025.8.3
+certifi==2026.10.18
     # via kubernetes-asyncio
 frozenlist==1.7.0
     # via
@@ -46,7 +46,7 @@ typing-extensions==4.15.0
     # via
     #   aiohttp
     #   aiosignal
-urllib3==2.7.0
+urllib3==2.8.0
     # via
     #   -r kubernetes/worker-controller/requirements.in
     #   kubernetes-asyncio
