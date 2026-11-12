@@ -106,7 +106,7 @@ frozenlist==1.7.0
     # via
     #   aiohttp
     #   aiosignal
-fsspec==2024.12.0
+fsspec==2026.9.0
     # via
     #   adlfs
     #   fastparquet
@@ -277,7 +277,7 @@ rpds-py==0.27.0
     #   referencing
 rtree==1.4.1
     # via oasislmf
-s3fs==2024.12.0
+s3fs==2026.9.0
     # via -r requirements-worker.in
 s3transfer==0.13.1
     # via boto3
