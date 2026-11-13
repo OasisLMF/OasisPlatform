@@ -362,8 +362,6 @@ pathlib2==2.3.7.post1
     #   -r requirements-worker.in
 pexpect==4.9.0
     # via ipython
-pip==26.2.1
-    # via pip-tools
 pip-tools==7.5.3
     # via -r requirements.in
 platformdirs==4.10.0
@@ -493,14 +491,6 @@ scipy==1.17.1
     #   -r requirements-worker.in
     #   oasislmf
     #   scikit-learn
-service-identity==24.2.0
-    # via twisted
-setuptools==80.10.2
-    # via
-    #   -r ./requirements-server.in
-    #   autobahn
-    #   incremental
-    #   pip-tools
 shapely==2.1.2
     # via
     #   geopandas
@@ -593,3 +583,7 @@ xxhash==3.8.0
     # via oasis-data-manager
 zope-interface==8.5
     # via twisted
+
+# The following packages are considered to be unsafe in a requirements file:
+# pip
+# setuptools
