@@ -10,7 +10,7 @@ aiobotocore==2.24.1
     # via s3fs
 aiohappyeyeballs==2.6.1
     # via aiohttp
-aiohttp==3.13.3
+aiohttp==3.14.4
     # via
     #   adlfs
     #   aiobotocore
@@ -91,7 +91,7 @@ celery==5.5.3
     #   -r requirements-server.in
     #   -r requirements-worker.in
     #   django-celery-results
-certifi==2025.8.3
+certifi==2026.10.18
     # via
     #   pyogrio
     #   pyproj
@@ -150,7 +150,7 @@ coverage[toml]==7.10.4
     #   pytest-cov
 cramjam==2.11.0
     # via fastparquet
-cryptography==49.0.0
+cryptography==50.0.0
     # via
     #   -r requirements.in
     #   autobahn
@@ -168,9 +168,9 @@ decorator==5.2.1
     # via
     #   ipdb
     #   ipython
-distlib==0.4.0
+distlib==0.4.4
     # via virtualenv
-django==5.2.15
+django==5.2.17
     # via
     #   -r requirements-server.in
     #   channels
@@ -226,9 +226,10 @@ fastparquet==2024.11.0
     # via
     #   oasis-data-manager
     #   oasislmf
-filelock==3.19.1
+filelock==4.2.10
     # via
     #   -r requirements-worker.in
+    #   python-discovery
     #   tox
     #   virtualenv
 flake8==7.3.0
@@ -241,7 +242,7 @@ frozenlist==1.7.0
     # via
     #   aiohttp
     #   aiosignal
-fsspec==2024.12.0
+fsspec==2026.9.0
     # via
     #   adlfs
     #   fastparquet
@@ -253,7 +254,7 @@ greenlet==3.2.4
     # via sqlalchemy
 gunicorn==23.0.0
     # via -r requirements-server.in
-httplib2==0.22.0
+httplib2==0.32.0
     # via pyrabbit
 hyperlink==21.0.0
     # via
@@ -337,7 +338,7 @@ msal==1.37.0
     #   msal-extensions
 msal-extensions==1.3.1
     # via azure-identity
-msgpack==1.2.1
+msgpack==1.2.3
     # via
     #   -r requirements.in
     #   channels-redis
@@ -377,13 +378,13 @@ oasis-data-manager==0.2.0
     #   -r requirements-worker.in
     #   oasislmf
     #   ods-tools
-oasislmf[extra]==2.4.13
+oasislmf[extra]==2.4.14
     # via -r requirements-worker.in
 ods-tools==4.0.6
     # via
     #   -r requirements-server.in
     #   oasislmf
-packaging==25.0
+packaging==26.3
     # via
     #   build
     #   drf-yasg
@@ -396,6 +397,7 @@ packaging==25.0
     #   pyproject-api
     #   pytest
     #   tox
+    #   virtualenv
     #   wheel
 pandas==2.3.2
     # via
@@ -415,7 +417,7 @@ pexpect==4.9.0
     # via ipython
 pip-tools==7.5.0
     # via -r requirements.in
-platformdirs==4.3.8
+platformdirs==4.14.5
     # via
     #   tox
     #   virtualenv
@@ -447,11 +449,11 @@ ptyprocess==0.7.0
     # via pexpect
 pure-eval==0.2.3
     # via stack-data
-pyarrow==24.0.0
+pyarrow==25.0.1
     # via
     #   -r requirements-server.in
     #   oasislmf
-pyasn1==0.6.3
+pyasn1==0.6.5
     # via
     #   -r requirements.in
     #   pyasn1-modules
@@ -469,7 +471,7 @@ pygments==2.19.2
     #   ipython
     #   ipython-pygments-lexers
     #   pytest
-pyjwt[crypto]==2.13.0
+pyjwt[crypto]==2.15.0
     # via
     #   -r requirements.in
     #   djangorestframework-simplejwt
@@ -483,7 +485,7 @@ pyodbc==5.2.0
     # via -r requirements-worker.in
 pyogrio==0.11.1
     # via geopandas
-pyopenssl==26.3.0
+pyopenssl==26.4.0
     # via
     #   -r requirements.in
     #   twisted
@@ -516,6 +518,8 @@ python-dateutil==2.9.0.post0
     #   celery
     #   freezegun
     #   pandas
+python-discovery==1.9.5
+    # via virtualenv
 pytz==2025.2
     # via
     #   djangorestframework
@@ -556,7 +560,7 @@ ruamel-yaml==0.18.15
     # via drf-yasg
 ruamel-yaml-clib==0.2.12
     # via ruamel-yaml
-s3fs==2024.12.0
+s3fs==2026.9.0
     # via -r requirements-worker.in
 s3transfer==0.13.1
     # via boto3
@@ -590,7 +594,7 @@ sqlalchemy==2.0.43
     #   -r requirements-worker.in
 sqlparams==6.2.0
     # via -r requirements-worker.in
-sqlparse==0.5.3
+sqlparse==0.6.0
     # via
     #   -r requirements-worker.in
     #   django
@@ -613,7 +617,7 @@ traitlets==5.14.3
     # via
     #   ipython
     #   matplotlib-inline
-twisted[tls]==26.4.0
+twisted[tls]==26.10.0rc1
     # via
     #   -r requirements.in
     #   daphne
@@ -621,6 +625,7 @@ txaio==25.6.1
     # via autobahn
 typing-extensions==4.14.1
     # via
+    #   aiohttp
     #   aiosignal
     #   azure-core
     #   azure-identity
@@ -641,7 +646,7 @@ uritemplate==4.2.0
     # via
     #   coreapi
     #   drf-yasg
-urllib3==2.7.0
+urllib3==2.8.0
     # via
     #   -r requirements.in
     #   botocore
@@ -651,7 +656,7 @@ vine==5.1.0
     #   amqp
     #   celery
     #   kombu
-virtualenv==20.34.0
+virtualenv==21.14.13
     # via tox
 waitress==3.0.2
     # via webtest
@@ -671,9 +676,9 @@ wrapt==1.17.3
     # via aiobotocore
 xxhash==3.6.0
     # via oasis-data-manager
-yarl==1.20.1
+yarl==1.25.1
     # via aiohttp
-zope-interface==7.2
+zope-interface==8.7
     # via twisted
 
 # The following packages are considered to be unsafe in a requirements file:

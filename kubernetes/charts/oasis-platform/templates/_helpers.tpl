@@ -217,6 +217,8 @@ Init container to wait for a service to become available (tcp check only) based 
 {{- $root := (index . 0) -}}
 - name: init-tcp-wait-by-secret
   image: {{ $root.Values.modelImages.init.image }}:{{ $root.Values.modelImages.init.version }}
+  securityContext:
+    readOnlyRootFilesystem: true
   env:
     {{- range $index, $name := slice . 1 }}
     - name: SERVICE_NAME_{{ $index }}
@@ -272,4 +274,36 @@ Set affinity if enabled
 affinity:
   {{- toYaml .Values.affinity | nindent 2 }}
 {{- end -}}
+{{- end -}}
+
+{{/*
+Disable automounting of the pod's ServiceAccount API credentials.
+Pods that genuinely need Kubernetes API access mount the token explicitly instead (see h.projectedServiceAccountToken).
+*/}}
+{{- define "h.disableTokenAutomount" -}}
+automountServiceAccountToken: false
+{{- end -}}
+
+{{/*
+Explicitly project the ServiceAccount token (plus CA cert and namespace) for pods that need Kubernetes API access,
+in place of relying on automountServiceAccountToken.
+*/}}
+{{- define "h.projectedServiceAccountToken" -}}
+- name: kube-api-access
+  projected:
+    defaultMode: 420
+    sources:
+      - serviceAccountToken:
+          expirationSeconds: 3607
+          path: token
+      - configMap:
+          name: kube-root-ca.crt
+          items:
+            - key: ca.crt
+              path: ca.crt
+      - downwardAPI:
+          items:
+            - path: namespace
+              fieldRef:
+                fieldPath: metadata.namespace
 {{- end -}}

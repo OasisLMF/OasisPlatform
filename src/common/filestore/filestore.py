@@ -31,7 +31,7 @@ def get_filestore(settings, section='worker', raise_error=True) -> Union[BaseSto
                 'AWS_BUCKET_ACL',
                 fallback=settings.get(section, 'AWS_DEFAULT_ACL', fallback=None),
             ),
-            querystring_auth=settings.getboolean(section, 'AWS_QUERYSTRING_AUTH', fallback=False),
+            querystring_auth=settings.getboolean(section, 'AWS_QUERYSTRING_AUTH', fallback=True),
             querystring_expire=settings.get(section, 'AWS_QUERYSTRING_EXPIRE', fallback=604800),
             reduced_redundancy=settings.getboolean(section, 'AWS_REDUCED_REDUNDANCY', fallback=False),
             location=settings.get(section, 'AWS_LOCATION', fallback=''),

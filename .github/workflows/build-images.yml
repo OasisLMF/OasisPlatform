@@ -59,9 +59,6 @@ on:
       worker_image:
         description:
         value:  'coreoasis/github-actions:model_worker-${{ github.sha }}'
-      worker_deb_image:
-        description:
-        value:  'coreoasis/github-actions:model_worker_deb-${{ github.sha }}'
       worker_controller_image:
         description:
         value:  'coreoasis/github-actions:worker_controller-${{ github.sha }}'
@@ -80,8 +77,9 @@ jobs:
     name: Docker build
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
-        image: [worker, worker_deb, server, worker_controller]
+        image: [worker, server, worker_controller]
         include:
 
         - image: server
@@ -98,14 +96,6 @@ jobs:
           report: 'worker-scan.sarif'
           dive: 'worker-layers.txt'
           exit-code: '1'
-          context: '.'
-
-        - image: worker_deb
-          tag:  'model_worker_deb-${{ github.sha }}'
-          file: 'Dockerfile.model_worker_debian'
-          report: 'worker-deb-scan.sarif'
-          dive: 'worker-deb-layers.txt'
-          exit-code: '0' # scan but don't fail
           context: '.'
 
         - image: worker_controller

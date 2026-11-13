@@ -1,0 +1,4 @@
+# djangorestframework - fixed in 3.18.2, 2.4.x capped at <3.15.0 (requirements-server.in)
+CVE-2026-114136
+CVE-2026-114137
+CVE-2026-114138

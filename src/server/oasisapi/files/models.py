@@ -87,7 +87,7 @@ def file_storage_link(storage_obj, fullpath=False):
 
     storage_file = (
         storage_obj.converted_file
-        if storage_obj.converted_file and storage_obj.conversion_status == RelatedFile.ConversionState.DONE else
+        if storage_obj.converted_file and storage_obj.conversion_state == RelatedFile.ConversionState.DONE else
         storage_obj.file
     )
 

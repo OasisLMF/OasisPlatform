@@ -34,7 +34,7 @@ pymysql>=1.0,<2.0
 pyrabbit>=1.0,<2.0
 redis>=5.0,<6.0
 sqlalchemy>=2.0,<3.0
-setuptools
+setuptools<81  # drf-yasg 1.21.5 imports pkg_resources (removed in setuptools 82)
 mysqlclient>=2.0,<3.0
 whitenoise>=6.0,<7.0
 azure-identity>=1.0,<2.0

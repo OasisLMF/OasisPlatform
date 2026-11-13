@@ -11,6 +11,10 @@ __all__ = [
     'prepare_complex_model_file_inputs',
     'config_strip_default_exposure',
     'unwrap_task_args',
+    'run_oasis',
+    'run_function',
+    'load_location_data',
+    'generate_chunk_keys',
 
     'notify_api_status_v1',
     'notify_api_status_v2',
@@ -20,29 +24,54 @@ __all__ = [
 import logging
 import json
 import os
-import re
+import pathlib
 import tempfile
 import shutil
-import subprocess
 from datetime import datetime
 from copy import deepcopy
 from celery import signature
 
+import numpy as np
 from pathlib2 import Path
 from oasislmf import __version__ as mdk_version
 from ods_tools import __version__ as ods_version
 from oasislmf.utils.exceptions import OasisException
 
 from ..common.data import ORIGINAL_FILENAME, STORED_FILENAME
-import boto3
-from urllib.parse import urlparse
-from ..conf.iniconf import settings
+from .oasis_subprocess_runner import MANAGER, run_in_subprocess, subprocess_enabled
+import requests
 
 
 logger = logging.getLogger(__name__)
 
 
 # Send notification back to the API Once task is read from Queue
+def run_oasis(method, **kwargs):
+    """Run `OasisManager().<method>(**kwargs)`.
+
+    On threads/gevent/eventlet workers (or when `OASIS_WORKER_SUBPROCESS_EXECUTION`
+    says so) it runs in a separate, killable process, so cancelling the task stops it
+    (see `oasis_subprocess_runner`). Otherwise it's called in-process.
+    """
+    if subprocess_enabled():
+        return run_in_subprocess(MANAGER, kwargs, method=method)
+    from oasislmf.manager import OasisManager
+    return getattr(OasisManager(), method)(**kwargs)
+
+
+def run_function(func, in_process_only=None, **kwargs):
+    """ Call `func(**kwargs)`, in a separate killable process when `subprocess_enabled()`
+        (like `run_oasis`). `func` must be importable without the celery app (e.g. from
+        this module) and `kwargs` JSON serialisable.
+
+        `in_process_only`: extra kwargs only passed when `func` is called in-process.
+        `func` must default them itself.
+    """
+    if subprocess_enabled():
+        return run_in_subprocess(f'{func.__module__}:{func.__qualname__}', kwargs)
+    return func(**kwargs, **(in_process_only or {}))
+
+
 def notify_api_status_v1(analysis_pk, task_status):
     logger.info("Notify API: analysis_id={}, status={}".format(
         analysis_pk,
@@ -228,22 +257,10 @@ def get_oed_version():
         return None
 
 
-def get_ktools_version():
-    ktool_ver_str = subprocess.getoutput('fmcalc -v')
-
-    # Match version x.x.x , x.x or x
-    reg_pattern = "(\d+\.)?(\d+\.)?(\d+)"
-    match_ver = re.search(reg_pattern, ktool_ver_str)
-
-    if match_ver:
-        ktool_ver_str = match_ver[0]
-    return ktool_ver_str
-
-
 def get_worker_versions():
     """ Search and return the versions of Oasis components
     """
-    ktool_ver_str = get_ktools_version()
+    ktool_ver_str = 'pytools'
     plat_ver_file = '/home/worker/VERSION'
     oed_schma_ver = get_oed_version()
 
@@ -347,22 +364,22 @@ def update_params(params, given_params):
 def copy_or_download(source, destination):
     """
     Gets files needed into the storage they need to be in.
+
+    Local storage backends hand back a filesystem path, which is copied directly.
+    Remote backends (S3, Azure, GCS, ...) hand back a pre-authenticated HTTP(S) URL
+    (e.g. an S3 presigned URL or Azure SAS URL), which is fetched with a plain GET
+    rather than a backend-specific SDK call.
     """
     if not source:
         return
     if not source.startswith("http"):
         shutil.copy2(source, destination)
         return
-    s3 = boto3.client(
-        "s3",
-        endpoint_url="http://localstack-s3:4572",
-        aws_access_key_id=settings.get('worker', 'AWS_ACCESS_KEY_ID', fallback='None'),
-        aws_secret_access_key=settings.get('worker', 'AWS_SECRET_ACCESS_KEY', fallback=None),
-    )
-    parsed_url = urlparse(source)
-    bucket_name = parsed_url.path.split('/')[1]
-    key = "/".join(parsed_url.path.split('/')[2:])
-    s3.download_file(bucket_name, key, destination)
+    with requests.get(source, stream=True) as response:
+        response.raise_for_status()
+        with open(destination, "wb") as f:
+            for chunk in response.iter_content(chunk_size=8192):
+                f.write(chunk)
 
 
 def get_destination_file(filename, destination_dir, destination_title):
@@ -389,3 +406,65 @@ def get_all_files(loc_filepath, acc_filepath, ri_filepath, rl_filepath, temp_dir
         rl_temp = get_destination_file(rl_filepath, temp_dir, "ri_scope")
         copy_or_download(rl_filepath, rl_temp)
     return (loc_temp, acc_temp, ri_temp, rl_temp)
+
+
+# --- keys generation (lookup) helpers, used by distributed_tasks ------------ #
+# Kept free of the celery app so they can also run in a subprocess (`run_function`).
+
+def load_location_data(loc_filepath, oed_schema_info=None):
+    """ Returns location file as DataFrame
+
+    Returns a DataFrame of Loaction data with 'loc_id' row assgined
+    """
+    from ods_tools.oed.exposure import OedExposure
+    exposure = OedExposure(
+        location=pathlib.Path(os.path.abspath(loc_filepath)),
+        oed_schema_info=oed_schema_info or os.environ.get("OASIS_OED_SCHEMA_INFO", None))
+
+    try:
+        # Oasislmf 2.4.x
+        from oasislmf.utils.data import prepare_oed_exposure
+        prepare_oed_exposure(exposure)
+        return exposure.location.dataframe
+    except ImportError:
+        # Fallback Oasislmf LTS 2.3.x, LTS 1.28.x
+        from oasislmf.utils.data import prepare_location_df
+        exposure.location.dataframe = prepare_location_df(exposure.location.dataframe)
+        return exposure.location.dataframe
+
+
+def generate_chunk_keys(params, num_chunks, chunk_idx, chunk_target_dir):
+    """ Run the keys lookup for one chunk of the exposure, writing its keys files
+        to `chunk_target_dir` (the body of the 'prepare_keys_file_chunk' task).
+    """
+    from oasislmf.preparation.lookup import OasisLookupFactory
+    _, lookup = OasisLookupFactory.create(
+        lookup_config_fp=params.get('lookup_config_json', None),
+        model_keys_data_path=params.get('lookup_data_dir', None),
+        model_version_file_path=params.get('model_version_csv', None),
+        lookup_module_path=params.get('lookup_module_path', None),
+        complex_lookup_config_fp=params.get('lookup_complex_config_json', None),
+        user_data_dir=params.get('user_data_dir', None),
+        output_directory=chunk_target_dir,
+    )
+
+    location_df = load_location_data(
+        loc_filepath=params['oed_location_csv'],
+        oed_schema_info=params.get('oed_schema_info', None)
+    )
+    location_df = np.array_split(location_df, num_chunks)[chunk_idx]
+    location_df.reset_index(drop=True, inplace=True)
+
+    chunk_keys_fp = os.path.join(chunk_target_dir, 'keys.csv')
+    chunk_keys_errors_fp = os.path.join(chunk_target_dir, 'keys-errors.csv')
+    lookup.generate_key_files(
+        location_fp=None,
+        location_df=location_df,
+        successes_fp=chunk_keys_fp,
+        errors_fp=chunk_keys_errors_fp,
+        output_format='oasis',
+        keys_success_msg=False,
+        multiproc_enabled=params.get('lookup_multiprocessing', False),
+        multiproc_num_cores=params.get('lookup_num_processes', -1),
+        multiproc_num_partitions=params.get('lookup_num_chunks', -1),
+    )
