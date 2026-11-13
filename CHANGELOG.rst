@@ -1,6 +1,18 @@
 OasisPlatform Changelog
 =======================
 
+`2.4.14`_
+ ---------
+* [#1472](https://github.com/OasisLMF/OasisPlatform/pull/1472) - Fix generate_and_run not marking analysis failed on lookup chunk errors
+* [#1383](https://github.com/OasisLMF/OasisPlatform/pull/1383) - Fix resource monitor for V2 worker runs
+* [#1447](https://github.com/OasisLMF/OasisPlatform/pull/1447) - CVE and CI fixes for 2.4
+* [#1413](https://github.com/OasisLMF/OasisPlatform/pull/1417) - Running a Portfolio validation fails with HTTP 500
+* [#1512](https://github.com/OasisLMF/OasisPlatform/pull/1512) - Release/2.4.14 update pins
+* [#1517](https://github.com/OasisLMF/OasisPlatform/pull/1517) - Restore setuptools pin and ignore setuptools GHSA
+* [#1458](https://github.com/OasisLMF/OasisPlatform/pull/1458) - Error loading settings file on Input gen crash
+* [#1438](https://github.com/OasisLMF/OasisPlatform/pull/1438) - (2.4.x Backport) Helm: enforce read-only root filesystem and explicit SA token mountin…
+.. _`2.4.14`:  https://github.com/OasisLMF/OasisPlatform/compare/2.4.13...2.4.14
+
 `2.4.13`_
  ---------
 * [#1408](https://github.com/OasisLMF/OasisPlatform/pull/1409) - Worker monitor failed to report Input generation error
