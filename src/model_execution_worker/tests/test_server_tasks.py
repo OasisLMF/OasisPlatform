@@ -2,7 +2,6 @@ import shutil
 from tempfile import TemporaryDirectory
 import pytest
 import filecmp
-import pandas as pd
 import os
 from pathlib import Path
 
@@ -36,19 +35,6 @@ EXPECTED_ALL_USD = os.path.join(TEST_DIR, "inputs", "expected_output_all_usd.csv
 EXPECTED_ACC_LOC_EXPOSURE = os.path.join(TEST_DIR, "inputs", "expected_output_acc_loc.csv")
 EXPECTED_ACC_LOC_USD = os.path.join(TEST_DIR, "inputs", "expected_output_acc_loc_usd.csv")
 EXPECTED_LOSS_HALF = os.path.join(TEST_DIR, "inputs", "expected_loss_factor_half.csv")
-
-
-def assert_exposure_output_matches(output_fp, expected_fp):
-    """
-    Compare exposure run CSVs with a float tolerance, oasislmf may write GUL
-    losses as float32 or float64 depending on version, so a byte compare is too strict.
-    """
-    pd.testing.assert_frame_equal(
-        pd.read_csv(output_fp),
-        pd.read_csv(expected_fp),
-        check_dtype=False,
-        rtol=1e-6,
-    )
 
 
 class PortfolioValidation(TestCase):
@@ -322,7 +308,7 @@ class ExposureRun(TestCase):
 
     def test_run_exposure_run_output_no_conversion(self):
         def side_effect(arg):
-            assert_exposure_output_matches("outfile.csv", EXPECTED_ACC_LOC_EXPOSURE)
+            assert filecmp.cmp("outfile.csv", EXPECTED_ACC_LOC_EXPOSURE)
 
         with patch('src.model_execution_worker.server_tasks.get_filestore') as mock_filestore:
             mock_store = MagicMock()
@@ -333,7 +319,7 @@ class ExposureRun(TestCase):
 
     def test_run_exposure_run_output_with_conversion(self):
         def side_effect(arg):
-            assert_exposure_output_matches("outfile.csv", EXPECTED_ACC_LOC_USD)
+            assert filecmp.cmp("outfile.csv", EXPECTED_ACC_LOC_USD)
 
         with patch('src.model_execution_worker.server_tasks.get_filestore') as mock_filestore:
             mock_store = MagicMock()
@@ -344,7 +330,7 @@ class ExposureRun(TestCase):
 
     def test_run_exposure_run_output_ri_rl_no_conversion(self):
         def side_effect(arg):
-            assert_exposure_output_matches("outfile.csv", EXPECTED_ALL_EXPOSURE)
+            assert filecmp.cmp("outfile.csv", EXPECTED_ALL_EXPOSURE)
 
         with patch('src.model_execution_worker.server_tasks.get_filestore') as mock_filestore:
             mock_store = MagicMock()
@@ -355,7 +341,7 @@ class ExposureRun(TestCase):
 
     def test_run_exposure_run_output_ri_rl_with_conversion(self):
         def side_effect(arg):
-            assert_exposure_output_matches("outfile.csv", EXPECTED_ALL_USD)
+            assert filecmp.cmp("outfile.csv", EXPECTED_ALL_USD)
 
         with patch('src.model_execution_worker.server_tasks.get_filestore') as mock_filestore:
             mock_store = MagicMock()
@@ -387,7 +373,7 @@ class ExposureRun(TestCase):
 
     def test_run_with_different_parameters(self):
         def side_effect(arg):
-            assert_exposure_output_matches("outfile.csv", EXPECTED_LOSS_HALF)
+            assert filecmp.cmp("outfile.csv", EXPECTED_LOSS_HALF)
 
         with patch('src.model_execution_worker.server_tasks.get_filestore') as mock_filestore:
             mock_store = MagicMock()
