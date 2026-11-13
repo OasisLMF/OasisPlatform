@@ -484,6 +484,7 @@ def test_update_params_disaggregation(given_params, expected):
     assert 'do_disaggregation' not in params
 
 
+@pytest.mark.usefixtures("update_expected")
 class Transform(TestCase):
     def test_chain_creation(self):
         mock_portfolio = MagicMock()
@@ -536,7 +537,7 @@ class Transform(TestCase):
         expected_output = os.path.join(TRANSFORM_DIR, "expected_output.csv")
         with patch('src.model_execution_worker.server_tasks.get_filestore') as mock_filestore:
             def side_effect(arg):
-                assert filecmp.cmp(os.path.join(TRANSFORM_DIR, "output.csv"), expected_output)
+                assert_matches_expected(os.path.join(TRANSFORM_DIR, "output.csv"), expected_output, self.update_expected)
                 return "Hello World"
 
             mock_store = MagicMock()
