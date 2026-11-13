@@ -116,6 +116,29 @@ class MergeCsvStreaming(TestCase):
                 self.assertEqual(merged['id'].to_list(), [1])
                 self.assertEqual(merged['value'].to_list(), ['x'])
 
+    def test_int_and_float_chunks___values_are_not_rewritten(self):
+        with TemporaryDirectory() as tmp_dir:
+            chunk_a = Path(tmp_dir, 'a.csv')
+            chunk_b = Path(tmp_dir, 'b.csv')
+            output_file = Path(tmp_dir, 'merged.csv')
+            chunk_a.write_text('id,value\n1,1\n')
+            chunk_b.write_text('id,value\n2,1.5\n')
+
+            _merge_csv_streaming([chunk_a, chunk_b], output_file)
+
+            self.assertEqual(output_file.read_text(), 'id,value\n1,1\n2,1.5\n')
+
+    def test_non_numeric_value_past_inference_window___merges(self):
+        with TemporaryDirectory() as tmp_dir:
+            chunk_a = Path(tmp_dir, 'a.csv')
+            output_file = Path(tmp_dir, 'merged.csv')
+            numeric_rows = ''.join(f'{i},{i}\n' for i in range(150))
+            chunk_a.write_text('id,value\n' + numeric_rows + '150,abc\n')
+
+            _merge_csv_streaming([chunk_a], output_file)
+
+            self.assertEqual(output_file.read_text(), chunk_a.read_text())
+
     def test_all_chunks_empty___no_output_file_is_written(self):
         with TemporaryDirectory() as tmp_dir:
             empty_chunk = Path(tmp_dir, 'empty.csv')

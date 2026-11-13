@@ -708,11 +708,13 @@ def _merge_csv_streaming(paths, output_file):
         logger.warning(f"All files were empty: {paths}. --skipped--")
         return
 
+    # Read every column as text: per-file type inference breaks on header-only
+    # chunks (all-String), rewrites values across chunks (1 -> 1.0) and fails on
+    # values past the inference window. CSV in, CSV out, so text passes through as-is.
     # diagonal concat: chunk files' column sets aren't always identical.
-    # relaxed: a header-only chunk scans as all-String, so dtypes can differ too.
-    lazy_frames = [pl.scan_csv(path) for path in non_empty_paths]
+    lazy_frames = [pl.scan_csv(path, infer_schema=False) for path in non_empty_paths]
     (
-        pl.concat(lazy_frames, how='diagonal_relaxed')
+        pl.concat(lazy_frames, how='diagonal')
         .unique(keep='first', maintain_order=True)
         .sink_csv(str(output_file))
     )
