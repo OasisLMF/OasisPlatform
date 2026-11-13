@@ -6,8 +6,17 @@ from django.test import TestCase
 from src.server.oasisapi.analyses.v2_api.task_controller import TaskParams, Controller
 from src.server.oasisapi.analyses.v2_api.tests.fakes import fake_analysis
 from src.server.oasisapi.auth.tests.fakes import fake_user
-from celery import signature
+from celery import signature, chord
 from src.server.oasisapi.analyses.v2_api.tasks import record_sub_task_failure, record_sub_task_success
+
+
+def _failure_statuses(sig):
+    """failure_status of every 'handle_task_failure' errback linked to a signature"""
+    return [
+        errback['kwargs']['failure_status']
+        for errback in sig.options.get('link_error', [])
+        if errback['task'] == 'handle_task_failure'
+    ]
 
 
 class FakeChord:
@@ -181,3 +190,33 @@ class TaskController(TestCase):
             "analysis_chunks",
             "run_task_id"
         ])
+
+    def test_join_stage_chains___every_task_keeps_its_stage_failure_handler(self):
+        analysis = fake_analysis(pk=7)
+        initiator = fake_user(pk=3)
+
+        lookup = chord([signature('prepare_keys_file_chunk') for _ in range(2)], body=signature('collect_keys'))
+        inputs = Controller._create_chain(
+            analysis, initiator,
+            [signature('prepare_input_generation_params'), lookup, signature('write_input_files')],
+            'inputs_uuid', 'input_generation_traceback_file', 'INPUTS_GENERATION_ERROR',
+        )
+        losses = Controller._create_chain(
+            analysis, initiator,
+            [signature('prepare_losses_generation_params'), signature('generate_losses_chunk')],
+            'losses_uuid', 'run_traceback_file', 'RUN_ERROR',
+        )
+
+        joined = Controller._join_stage_chains(inputs, losses)
+
+        # The losses stage must not be merged into the lookup chord's body
+        self.assertEqual(
+            [t.task for t in joined.tasks],
+            ['prepare_input_generation_params', 'celery.chord', 'prepare_losses_generation_params', 'generate_losses_chunk'],
+        )
+        # A chord header failure only calls the errbacks linked to its body, so check the
+        # body rather than the chord itself
+        self.assertEqual(
+            [_failure_statuses(t.body if isinstance(t, chord) else t) for t in joined.tasks],
+            [['INPUTS_GENERATION_ERROR']] * 2 + [['RUN_ERROR']] * 2,
+        )

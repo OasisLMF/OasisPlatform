@@ -339,7 +339,6 @@ class ReleaseNotesBuilder(object):
         plat_header.append('## Docker Images (Platform)\n')
         plat_header.append(f'* [coreoasis/api_server:{t_plat}](https://hub.docker.com/r/coreoasis/api_server/tags?name={t_plat})\n')
         plat_header.append(f'* [coreoasis/model_worker:{t_plat}](https://hub.docker.com/r/coreoasis/model_worker/tags?name={t_plat})\n')
-        plat_header.append(f'* [coreoasis/model_worker:{t_plat}-debian](https://hub.docker.com/r/coreoasis/model_worker/tags?name={t_plat}-debian)\n')
         plat_header.append(f'* [coreoasis/piwind_worker:{t_plat}](https://hub.docker.com/r/coreoasis/piwind_worker/tags?name={t_plat})\n')
         plat_header.append('## Docker Images (User Interface)\n')
         plat_header.append(f'* [coreoasis/oasisui_app:{t_ui}](https://hub.docker.com/r/coreoasis/oasisui_app/tags?name={t_ui})\n')
