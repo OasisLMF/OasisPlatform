@@ -12,21 +12,23 @@ from pathlib2 import Path
 
 from oasis_data_manager.filestore.backends.local import LocalStorage
 
-from src.model_execution_worker.distributed_tasks import (
+from src.model_execution_worker.utils import (
     load_subject_at_risk_chunk,
     load_subject_at_risk_data,
     store_subject_at_risk_chunks,
     merge_dataframes,
     split_subject_at_risk_data,
-    merge_chunk_log_storage,
     _merge_csv_streaming,
     _merge_parquet_streaming,
     take_first,
+    get_keys_format,
+)
+from src.model_execution_worker.distributed_tasks import (
+    merge_chunk_log_storage,
     handle_task_failure,
     generate_losses_output,
     prepare_losses_generation_directory,
     write_input_files,
-    get_keys_format,
     pre_analysis_hook,
 )
 
@@ -195,9 +197,9 @@ class MergeParquetStreaming(TestCase):
 
 class MergeDataframes(TestCase):
     def test_empty_path_list___warns_and_returns_without_dispatching(self):
-        with patch('src.model_execution_worker.distributed_tasks._merge_csv_streaming') as csv_mock, \
-                patch('src.model_execution_worker.distributed_tasks._merge_parquet_streaming') as parquet_mock, \
-                patch('src.model_execution_worker.distributed_tasks.logger') as logger_mock:
+        with patch('src.model_execution_worker.utils._merge_csv_streaming') as csv_mock, \
+                patch('src.model_execution_worker.utils._merge_parquet_streaming') as parquet_mock, \
+                patch('src.model_execution_worker.utils.logger') as logger_mock:
             merge_dataframes([], 'output.csv', 'csv')
 
             csv_mock.assert_not_called()
@@ -205,16 +207,16 @@ class MergeDataframes(TestCase):
             logger_mock.warning.assert_called_once()
 
     def test_csv_file_type___dispatches_to_csv_streaming(self):
-        with patch('src.model_execution_worker.distributed_tasks._merge_csv_streaming') as csv_mock, \
-                patch('src.model_execution_worker.distributed_tasks._merge_parquet_streaming') as parquet_mock:
+        with patch('src.model_execution_worker.utils._merge_csv_streaming') as csv_mock, \
+                patch('src.model_execution_worker.utils._merge_parquet_streaming') as parquet_mock:
             merge_dataframes(['a.csv'], 'output.csv', 'csv')
 
             csv_mock.assert_called_once_with(['a.csv'], 'output.csv')
             parquet_mock.assert_not_called()
 
     def test_parquet_file_type___dispatches_to_parquet_streaming(self):
-        with patch('src.model_execution_worker.distributed_tasks._merge_csv_streaming') as csv_mock, \
-                patch('src.model_execution_worker.distributed_tasks._merge_parquet_streaming') as parquet_mock:
+        with patch('src.model_execution_worker.utils._merge_csv_streaming') as csv_mock, \
+                patch('src.model_execution_worker.utils._merge_parquet_streaming') as parquet_mock:
             merge_dataframes(['a.parquet'], 'output.parquet', 'parquet')
 
             parquet_mock.assert_called_once_with(['a.parquet'], 'output.parquet')
@@ -309,16 +311,15 @@ class SubjectAtRiskChunkFiles(TestCase):
             os.makedirs(os.path.join(tmp_dir, 'media', self.params['storage_subdir']))
             split_dir = os.path.join(tmp_dir, 'split')
             os.makedirs(split_dir)
-            with patch('src.model_execution_worker.distributed_tasks.filestore', storage):
-                self.params['sar_chunks'] = store_subject_at_risk_chunks(self.params, num_chunks, split_dir)
-                with patch('src.model_execution_worker.distributed_tasks.load_subject_at_risk_data') as full_load, \
-                        patch.object(storage, 'get') as storage_get:
-                    chunks = []
-                    for idx in range(num_chunks):
-                        chunks.append(load_subject_at_risk_chunk(self.params, num_chunks, idx))
-                    full_load.assert_not_called()
-                    # 'get' leaves a copy in the data cache on S3 / Azure
-                    storage_get.assert_not_called()
+            self.params['sar_chunks'] = store_subject_at_risk_chunks(self.params, num_chunks, split_dir, filestore=storage)
+            with patch('src.model_execution_worker.utils.load_subject_at_risk_data') as full_load, \
+                    patch.object(storage, 'get') as storage_get:
+                chunks = []
+                for idx in range(num_chunks):
+                    chunks.append(load_subject_at_risk_chunk(self.params, num_chunks, idx, filestore=storage))
+                full_load.assert_not_called()
+                # 'get' leaves a copy in the data cache on S3 / Azure
+                storage_get.assert_not_called()
             self.assertEqual(os.listdir(split_dir), [])
         return chunks
 
