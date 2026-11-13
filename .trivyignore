@@ -7,3 +7,7 @@ CVE-2026-15307
 CVE-2026-114136
 CVE-2026-114137
 CVE-2026-114138
+
+# setuptools - LOW, fixed in 84.1.0; 2.4.x needs setuptools<81 for drf-yasg pkg_resources
+GHSA-xmj3-9gf7-h52w
+CVE-2026-59890

@@ -262,6 +262,13 @@ ruamel-yaml==0.19.1
     # via drf-yasg
 s3transfer==0.19.0
     # via boto3
+service-identity==24.2.0
+    # via twisted
+setuptools==80.10.2
+    # via
+    #   -r requirements-server.in
+    #   autobahn
+    #   incremental
 six==1.17.0
     # via
     #   pathlib2
@@ -305,6 +312,5 @@ whitenoise==6.12.0
     # via -r requirements-server.in
 xxhash==3.8.0
     # via oasis-data-manager
-
-# The following packages are considered to be unsafe in a requirements file:
-# setuptools
+zope-interface==8.7
+    # via twisted
