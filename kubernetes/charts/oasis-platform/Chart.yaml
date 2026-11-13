@@ -1,6 +1,6 @@
 apiVersion: v2
 name: oasis
-version: 0.1.1
+version: 2.3.22
 type: application
 description: Deploys the Oasis Platform
 
