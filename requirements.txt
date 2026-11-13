@@ -415,6 +415,8 @@ pathlib2==2.3.7.post1
     #   -r requirements-worker.in
 pexpect==4.9.0
     # via ipython
+pip==26.2.1
+    # via pip-tools
 pip-tools==7.5.0
     # via -r requirements.in
 platformdirs==4.14.5
@@ -572,6 +574,12 @@ scipy==1.16.1
     #   scikit-learn
 service-identity==24.2.0
     # via twisted
+setuptools==80.10.2
+    # via
+    #   -r ./requirements-server.in
+    #   autobahn
+    #   incremental
+    #   pip-tools
 shapely==2.1.1
     # via
     #   geopandas
@@ -680,7 +688,3 @@ yarl==1.25.1
     # via aiohttp
 zope-interface==8.7
     # via twisted
-
-# The following packages are considered to be unsafe in a requirements file:
-# pip
-# setuptools
