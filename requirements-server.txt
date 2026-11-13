@@ -304,11 +304,6 @@ s3transfer==0.13.1
     # via boto3
 service-identity==24.2.0
     # via twisted
-setuptools==80.10.2
-    # via
-    #   -r requirements-server.in
-    #   autobahn
-    #   incremental
 six==1.17.0
     # via
     #   pathlib2
@@ -362,3 +357,6 @@ xxhash==3.6.0
     # via oasis-data-manager
 zope-interface==8.7
     # via twisted
+
+# The following packages are considered to be unsafe in a requirements file:
+# setuptools
