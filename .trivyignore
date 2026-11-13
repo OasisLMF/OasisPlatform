@@ -2,3 +2,8 @@
 CVE-2025-64459
 CVE-2025-57833
 CVE-2025-64458
+CVE-2026-15307
+# djangorestframework - fixed in 3.18.2, needs Django >=4.2 (2.3.x is on Django 3.2)
+CVE-2026-114136
+CVE-2026-114137
+CVE-2026-114138
