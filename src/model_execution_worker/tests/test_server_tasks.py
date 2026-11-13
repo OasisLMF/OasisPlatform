@@ -37,6 +37,22 @@ EXPECTED_ACC_LOC_USD = os.path.join(TEST_DIR, "inputs", "expected_output_acc_loc
 EXPECTED_LOSS_HALF = os.path.join(TEST_DIR, "inputs", "expected_loss_factor_half.csv")
 
 
+@pytest.fixture
+def update_expected(request):
+    request.cls.update_expected = request.config.getoption('--update-expected')
+
+
+def assert_matches_expected(output_fp, expected_fp, update_expected=False):
+    """
+    Compare an output file with its expected file, or overwrite the expected
+    file with the output when running with `pytest --update-expected`.
+    """
+    if update_expected:
+        shutil.copyfile(output_fp, expected_fp)
+    else:
+        assert filecmp.cmp(output_fp, expected_fp, shallow=False)
+
+
 class PortfolioValidation(TestCase):
     def test_chain_creation(self):
         mock_portfolio = MagicMock()
@@ -232,6 +248,7 @@ class PortfolioValidation(TestCase):
         assert validation_errors == "currency pair ('GBP', 'Emeralds') is missing"
 
 
+@pytest.mark.usefixtures("update_expected")
 class ExposureRun(TestCase):
     def test_chain_creation(self):
         mock_portfolio = MagicMock()
@@ -308,7 +325,7 @@ class ExposureRun(TestCase):
 
     def test_run_exposure_run_output_no_conversion(self):
         def side_effect(arg):
-            assert filecmp.cmp("outfile.csv", EXPECTED_ACC_LOC_EXPOSURE)
+            assert_matches_expected("outfile.csv", EXPECTED_ACC_LOC_EXPOSURE, self.update_expected)
 
         with patch('src.model_execution_worker.server_tasks.get_filestore') as mock_filestore:
             mock_store = MagicMock()
@@ -319,7 +336,7 @@ class ExposureRun(TestCase):
 
     def test_run_exposure_run_output_with_conversion(self):
         def side_effect(arg):
-            assert filecmp.cmp("outfile.csv", EXPECTED_ACC_LOC_USD)
+            assert_matches_expected("outfile.csv", EXPECTED_ACC_LOC_USD, self.update_expected)
 
         with patch('src.model_execution_worker.server_tasks.get_filestore') as mock_filestore:
             mock_store = MagicMock()
@@ -330,7 +347,7 @@ class ExposureRun(TestCase):
 
     def test_run_exposure_run_output_ri_rl_no_conversion(self):
         def side_effect(arg):
-            assert filecmp.cmp("outfile.csv", EXPECTED_ALL_EXPOSURE)
+            assert_matches_expected("outfile.csv", EXPECTED_ALL_EXPOSURE, self.update_expected)
 
         with patch('src.model_execution_worker.server_tasks.get_filestore') as mock_filestore:
             mock_store = MagicMock()
@@ -341,7 +358,7 @@ class ExposureRun(TestCase):
 
     def test_run_exposure_run_output_ri_rl_with_conversion(self):
         def side_effect(arg):
-            assert filecmp.cmp("outfile.csv", EXPECTED_ALL_USD)
+            assert_matches_expected("outfile.csv", EXPECTED_ALL_USD, self.update_expected)
 
         with patch('src.model_execution_worker.server_tasks.get_filestore') as mock_filestore:
             mock_store = MagicMock()
@@ -373,7 +390,7 @@ class ExposureRun(TestCase):
 
     def test_run_with_different_parameters(self):
         def side_effect(arg):
-            assert filecmp.cmp("outfile.csv", EXPECTED_LOSS_HALF)
+            assert_matches_expected("outfile.csv", EXPECTED_LOSS_HALF, self.update_expected)
 
         with patch('src.model_execution_worker.server_tasks.get_filestore') as mock_filestore:
             mock_store = MagicMock()
