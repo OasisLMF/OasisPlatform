@@ -214,7 +214,7 @@ pyarrow==24.0.0
     # via -r requirements-server.in
 pycparser==3.0
     # via cffi
-pyjwt[crypto]==2.14.0
+pyjwt[crypto]==2.15.0
     # via
     #   djangorestframework-simplejwt
     #   msal

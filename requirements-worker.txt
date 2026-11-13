@@ -168,7 +168,7 @@ pycparser==3.0
     # via cffi
 pygments==2.20.0
     # via pytest
-pyjwt==2.14.0
+pyjwt==2.15.0
     # via redis
 pymysql==1.2.0
     # via -r requirements-worker.in

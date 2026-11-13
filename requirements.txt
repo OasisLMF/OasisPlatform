@@ -399,7 +399,7 @@ pygments==2.20.0
     #   ipython
     #   ipython-pygments-lexers
     #   pytest
-pyjwt[crypto]==2.14.0
+pyjwt[crypto]==2.15.0
     # via
     #   djangorestframework-simplejwt
     #   msal
