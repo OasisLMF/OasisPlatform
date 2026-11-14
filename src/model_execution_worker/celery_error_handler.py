@@ -1,7 +1,9 @@
 import logging
 from celery import Task, signature
-from celery.exceptions import WorkerLostError, MaxRetriesExceededError
+from celery.exceptions import Ignore, WorkerLostError, MaxRetriesExceededError, Terminated
+from celery.signals import task_revoked
 
+from .oasis_subprocess_runner import is_cancelled, raise_if_cancelled
 from .utils import (
     notify_api_status_v1,
     notify_api_status_v2,
@@ -12,6 +14,50 @@ logger = logging.getLogger(__name__)
 
 
 class OasisWorkerTask(Task):
+
+    def __call__(self, *args, **kwargs):
+        """ Make sure a cancelled task ends as REVOKED, the same as a prefork
+        termination, instead of reporting success, a failure or a retry.
+
+        On threads/gevent/eventlet workers a revoke can't stop the task itself, only
+        the oasislmf subprocess (see `oasis_subprocess_runner`), so the task can still
+        finish or fail. Raising `Terminated` from here would make celery's tracer mark
+        it FAILURE and run every errback and `task_failure` handler. Instead mark it
+        revoked ourselves and raise `Ignore`, which skips those.
+        """
+        task_id = self.request.id
+        try:
+            result = super().__call__(*args, **kwargs)
+        except Terminated as exc:
+            self._end_cancelled(exc)
+        except Exception as exc:
+            if is_cancelled(task_id):
+                self._end_cancelled(exc)
+            raise
+        if is_cancelled(task_id):
+            self._end_cancelled()
+        return result
+
+    def _end_cancelled(self, exc=None):
+        """ What celery's worker does when prefork terminates a task
+        (`Request._announce_revoked`): store REVOKED (also failing any chord the task is
+        part of) and send `task_revoked`, then end the task without a result.
+        """
+        request = self.request
+        if request.called_directly:
+            raise Terminated(f'Task {request.id} cancelled') from exc
+        logger.info('Task %s cancelled', request.id)
+        self.backend.mark_as_revoked(
+            request.id, 'terminated', request=request,
+            store_result=not self.ignore_result or self.store_errors_even_if_ignored,
+        )
+        task_revoked.send(sender=self, request=request, terminated=True, signum=None, expired=False)
+        raise Ignore(f'Task {request.id} cancelled') from exc
+
+    def retry(self, *args, **kwargs):
+        # `autoretry_for=(Exception,)` would otherwise requeue a cancelled task
+        raise_if_cancelled(self.request.id)
+        return super().retry(*args, **kwargs)
 
     def before_start(self, task_id, args, kwargs):
         """ Only supported in celery v5.2 and above
