@@ -13,12 +13,14 @@ on:
       last_release:
         description: "Test backwards compatibility with platform ver [semvar]"
         required: false
-      piwind_branch:
-        description: "Check Results from Piwind branch [git ref]"
-        required: true
-        default: 'main'
+      models_branch:
+        description: "OasisModels branch to test with (default: main, or the matching stable/* branch) [git ref]"
+        required: false
       pytest_options:
-        description: "Pytest optional args [-k <test_name>]"
+        description: "Extra pytest args for the OasisModels platform tests [-k <test_name>]"
+        required: false
+      compat_pytest_options:
+        description: "Pytest args for the OasisPiWind compatibility checks (default: -k control_set)"
         required: false
       cve_severity:
         description: 'Severities of vulnerabilities to scanned for [LOW, MEDIUM, HIGH, CRITICAL, SKIP]'
@@ -34,7 +36,6 @@ env:
   pre_release: 'true'  # look for pre-release when testing last released platform version
   semver_major: '2'    # Search for published images but limited to {semvar_major}.x.x
   #semver_minor: '27'   # Search for published images but limited to x.{semvar_minor}.x
-  server_min_supported: '2.4.4'
 
 jobs:
   build_images:
@@ -73,17 +74,9 @@ jobs:
     runs-on: ubuntu-latest
     needs: [build_images]
     outputs:
-      pytest_opts: ${{ steps.pytest.outputs.opts }}
-      piwind_branch: ${{ steps.piwind.outputs.branch }}
+      models_branch: ${{ steps.models.outputs.branch }}
 
       release_tag: ${{ steps.released_images.outputs.prev_release_tag }}
-      release_stable_1-15: ${{ steps.released_images.outputs.stable_1-15 }}
-      release_stable_1-23: ${{ steps.released_images.outputs.stable_1-23 }}
-      release_stable_1-27: ${{ steps.released_images.outputs.stable_1-27 }}
-      release_stable_1-28: ${{ steps.released_images.outputs.stable_1-28 }}
-      release_stable_2-3: ${{ steps.released_images.outputs.stable_2-3 }}
-      release_stable_2-4: ${{ steps.released_images.outputs.stable_2-4 }}
-      server_min_supported: ${{ env.server_min_supported }}
 
       build_server_img: ${{ steps.built_images.outputs.server_img }}
       build_server_tag: ${{ steps.built_images.outputs.server_tag }}
@@ -112,51 +105,22 @@ jobs:
             echo "prev_release_tag=${{ inputs.last_release }}" >> $GITHUB_OUTPUT
           fi
 
-          # Find latest LTS from each stable branch
-          stable_1_15=$( ./scripts/find_latest.sh -j 1 -i 15 )
-          echo "stable_1-15=$stable_1_15" >> $GITHUB_OUTPUT
-
-          stable_1_23=$( ./scripts/find_latest.sh -j 1 -i 23 )
-          echo "stable_1-23=$stable_1_23" >> $GITHUB_OUTPUT
-
-          stable_1_27=$( ./scripts/find_latest.sh -j 1 -i 27 )
-          echo "stable_1-27=$stable_1_27" >> $GITHUB_OUTPUT
-
-          stable_1_28=$( ./scripts/find_latest.sh -j 1 -i 28 )
-          echo "stable_1-28=$stable_1_28" >> $GITHUB_OUTPUT
-
-          stable_2_3=$( ./scripts/find_latest.sh -j 2 -i 3 )
-          echo "stable_2-3=$stable_2_3" >> $GITHUB_OUTPUT
-
-          stable_2_4=$( ./scripts/find_latest.sh -j 2 -i 4 )
-          echo "stable_2-4=$stable_2_4" >> $GITHUB_OUTPUT
-
-      - name: Select PiWind branch
-        id: piwind
+      - name: Select OasisModels branch
+        id: models
         run: |
-          # Select matching base branch on piwind
+          # Expected results come from OasisModels main, or the stable/* branch matching the PR base / pushed branch
           if [[ "${{ github.event_name }}" = "pull_request" ]]; then
             BRANCH=${{ github.base_ref }}
-            if [[ ! $BRANCH == stable/* ]]; then
-                BRANCH='main'
-            fi
-          elif [[ "${{ github.event_name }}" = "push" ]]; then
+          else
             BRANCH=${{ github.ref_name }}
-          else
-            BRANCH=${{ inputs.piwind_branch }}
           fi
-
+          if [[ ! $BRANCH == stable/* ]]; then
+            BRANCH='main'
+          fi
+          if [[ -n "${{ inputs.models_branch }}" ]]; then
+            BRANCH="${{ inputs.models_branch }}"
+          fi
           echo "branch=$BRANCH" >> $GITHUB_OUTPUT
-
-
-      - name: Select Pytest Options
-        id: pytest
-        run: |
-          if [[ -z "${{ inputs.pytest_options }}" ]]; then
-            echo "opts='-k control_set'" >> $GITHUB_OUTPUT
-          else
-            echo "opts=${{ inputs.pytest_options }}" >> $GITHUB_OUTPUT
-          fi
 
       # Split ouput strings from build job
       - name: Load built images
@@ -172,200 +136,92 @@ jobs:
           echo "worker_img=$worker_img" >> $GITHUB_OUTPUT
           echo "worker_tag=$worker_tag" >> $GITHUB_OUTPUT
 
+  # Every enabled OasisModels test case, on the newly built images
   all_checks_v1:
     name: V1 all checks
     secrets: inherit
     needs: [setup]
-    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@main
+    uses: OasisLMF/OasisModels/.github/workflows/platform-tests.yml@main
     with:
+      models_branch: ${{ needs.setup.outputs.models_branch }}
       oasislmf_branch: ${{ github.event_name != 'workflow_dispatch' && 'main' || inputs.oasislmf_branch }}
-      piwind_branch: ${{ needs.setup.outputs.piwind_branch }}
       server_image: ${{ needs.setup.outputs.build_server_img }}
       server_tag: ${{ needs.setup.outputs.build_server_tag }}
       worker_image: ${{ needs.setup.outputs.build_worker_img }}
       worker_tag: ${{ needs.setup.outputs.build_worker_tag }}
       worker_api_ver: 'v1'
-      debug_mode: 1
-      pytest_opts: "--docker-compose=./docker/plat2-v2.docker-compose.yml ${{ needs.setup.outputs.pytest_opts }}"
+      platform_tests: 'all'
+      debug_mode: '1'
+      pytest_opts: ${{ inputs.pytest_options }}
       storage_suffix: '-all-checks-v1'
 
   all_checks_v2:
     name: V2 all checks
     secrets: inherit
     needs: [setup]
-    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@main
+    uses: OasisLMF/OasisModels/.github/workflows/platform-tests.yml@main
     with:
+      models_branch: ${{ needs.setup.outputs.models_branch }}
       oasislmf_branch: ${{ github.event_name != 'workflow_dispatch' && 'main' || inputs.oasislmf_branch }}
-      piwind_branch: ${{ needs.setup.outputs.piwind_branch }}
       server_image: ${{ needs.setup.outputs.build_server_img }}
       server_tag: ${{ needs.setup.outputs.build_server_tag }}
       worker_image: ${{ needs.setup.outputs.build_worker_img }}
       worker_tag: ${{ needs.setup.outputs.build_worker_tag }}
       worker_api_ver: 'v2'
-      debug_mode: 1
-      pytest_opts: "--docker-compose=./docker/plat2-v2.docker-compose.yml ${{ needs.setup.outputs.pytest_opts }}"
+      platform_tests: 'all'
+      debug_mode: '1'
+      pytest_opts: ${{ inputs.pytest_options }}
       storage_suffix: '-all-checks-v2'
 
+  # Everything else runs the base case only (PiWind/test_1)
   storage_s3_v1:
     name: V1 Storage Compatibility (S3)
     secrets: inherit
     needs: [setup]
-    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@main
+    uses: OasisLMF/OasisModels/.github/workflows/platform-tests.yml@main
     with:
+      models_branch: ${{ needs.setup.outputs.models_branch }}
       oasislmf_branch: ${{ github.event_name != 'workflow_dispatch' && 'main' || inputs.oasislmf_branch }}
-      piwind_branch: ${{ needs.setup.outputs.piwind_branch }}
       server_image: ${{ needs.setup.outputs.build_server_img }}
       server_tag: ${{ needs.setup.outputs.build_server_tag }}
       worker_image: ${{ needs.setup.outputs.build_worker_img }}
       worker_tag: ${{ needs.setup.outputs.build_worker_tag }}
       worker_api_ver: 'v1'
-      debug_mode: 1
-      pytest_opts: "--docker-compose=./docker/plat2-v2.s3.docker-compose.yml ${{ needs.setup.outputs.pytest_opts }}"
+      platform_tests: 'PiWind/test_1'
+      storage: 's3'
+      debug_mode: '1'
+      pytest_opts: ${{ inputs.pytest_options }}
       storage_suffix: '_s3-v1'
 
   storage_s3_v2:
     name: V2 Storage Compatibility (S3)
     secrets: inherit
     needs: [setup]
-    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@main
+    uses: OasisLMF/OasisModels/.github/workflows/platform-tests.yml@main
     with:
+      models_branch: ${{ needs.setup.outputs.models_branch }}
       oasislmf_branch: ${{ github.event_name != 'workflow_dispatch' && 'main' || inputs.oasislmf_branch }}
-      piwind_branch: ${{ needs.setup.outputs.piwind_branch }}
       server_image: ${{ needs.setup.outputs.build_server_img }}
       server_tag: ${{ needs.setup.outputs.build_server_tag }}
       worker_image: ${{ needs.setup.outputs.build_worker_img }}
       worker_tag: ${{ needs.setup.outputs.build_worker_tag }}
       worker_api_ver: 'v2'
-      debug_mode: 1
-      pytest_opts: "--docker-compose=./docker/plat2-v2.s3.docker-compose.yml ${{ needs.setup.outputs.pytest_opts }}"
+      platform_tests: 'PiWind/test_1'
+      storage: 's3'
+      debug_mode: '1'
+      pytest_opts: ${{ inputs.pytest_options }}
       storage_suffix: '_s3-v2'
 
-  stable_worker_1-15:
-    name: Test stable worker (${{ needs.setup.outputs.release_stable_1-15 }})
+  # Released platform versions against the new images (OasisPiWind), see test-compatibility.yml
+  compatibility:
+    name: Compatibility
     secrets: inherit
     needs: [setup]
-    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@stable/1.15.x
+    uses: ./.github/workflows/test-compatibility.yml
     with:
-      piwind_branch: 'stable/1.15.x'
       server_image: ${{ needs.setup.outputs.build_server_img }}
       server_tag: ${{ needs.setup.outputs.build_server_tag }}
-      worker_image: 'coreoasis/model_worker'
-      worker_tag: ${{ needs.setup.outputs.release_stable_1-15 }}
-      worker_api_ver: 'v1'
-      debug_mode: 1
-      pytest_opts: "--docker-compose=./docker/plat2-v2.docker-compose.yml ${{ needs.setup.outputs.pytest_opts }}"
-      storage_suffix: "_worker-${{ needs.setup.outputs.release_stable_1-15 }}"
-
-  stable_worker_1-23:
-    name: Test stable worker (${{ needs.setup.outputs.release_stable_1-23 }})
-    secrets: inherit
-    needs: [setup]
-    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@stable/1.23.x
-    with:
-      piwind_branch: 'stable/1.23.x'
-      server_image: ${{ needs.setup.outputs.build_server_img }}
-      server_tag: ${{ needs.setup.outputs.build_server_tag }}
-      worker_image: 'coreoasis/model_worker'
-      worker_tag: ${{ needs.setup.outputs.release_stable_1-23 }}
-      worker_api_ver: 'v1'
-      debug_mode: 1
-      pytest_opts: "--docker-compose=./docker/plat2-v2.docker-compose.yml ${{ needs.setup.outputs.pytest_opts }}"
-      storage_suffix: "_worker-${{ needs.setup.outputs.release_stable_1-23 }}"
-
-  stable_worker_1-27:
-    name: Test stable worker (${{ needs.setup.outputs.release_stable_1-27 }})
-    secrets: inherit
-    needs: [setup]
-    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@stable/1.27.x
-    with:
-      piwind_branch: 'stable/1.27.x'
-      server_image: ${{ needs.setup.outputs.build_server_img }}
-      server_tag: ${{ needs.setup.outputs.build_server_tag }}
-      worker_image: 'coreoasis/model_worker'
-      worker_tag: ${{ needs.setup.outputs.release_stable_1-27 }}
-      worker_api_ver: 'v1'
-      debug_mode: 1
-      pytest_opts: "--docker-compose=./docker/plat2-v2.docker-compose.yml ${{ needs.setup.outputs.pytest_opts }}"
-      storage_suffix: "_worker-${{ needs.setup.outputs.release_stable_1-27 }}"
-
-  stable_worker_1-28:
-    name: test stable worker (${{ needs.setup.outputs.release_stable_1-28 }})
-    secrets: inherit
-    needs: [setup]
-    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@stable/1.28.x
-    with:
-      piwind_branch: 'stable/1.28.x'
-      server_image: ${{ needs.setup.outputs.build_server_img }}
-      server_tag: ${{ needs.setup.outputs.build_server_tag }}
-      worker_image: 'coreoasis/model_worker'
-      worker_tag: ${{ needs.setup.outputs.release_stable_1-28 }}
-      worker_api_ver: 'v1'
-      debug_mode: 1
-      pytest_opts: "--docker-compose=./docker/plat2-v2.docker-compose.yml ${{ needs.setup.outputs.pytest_opts }}"
-      storage_suffix: "_worker-${{ needs.setup.outputs.release_stable_1-28 }}"
-
-  stable_worker_2-3:
-    name: test stable worker (${{ needs.setup.outputs.release_stable_2-3 }})
-    secrets: inherit
-    needs: [setup]
-    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@stable/2.3.x
-    with:
-      piwind_branch: 'stable/2.3.x'
-      server_image: ${{ needs.setup.outputs.build_server_img }}
-      server_tag: ${{ needs.setup.outputs.build_server_tag }}
-      worker_image: 'coreoasis/model_worker'
-      worker_tag: ${{ needs.setup.outputs.release_stable_2-3 }}
-      worker_api_ver: 'v2'
-      debug_mode: 1
-      pytest_opts: "--docker-compose=./docker/plat2-v2.docker-compose.yml ${{ needs.setup.outputs.pytest_opts }}"
-      storage_suffix: "_worker-${{ needs.setup.outputs.release_stable_2-3 }}"
-
-  stable_worker_2-4:
-    name: test stable worker (${{ needs.setup.outputs.release_stable_2-4 }})
-    secrets: inherit
-    needs: [setup]
-    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@main
-    with:
-      piwind_branch: 'stable/2.4.x'
-      server_image: ${{ needs.setup.outputs.build_server_img }}
-      server_tag: ${{ needs.setup.outputs.build_server_tag }}
-      worker_image: 'coreoasis/model_worker'
-      worker_tag: ${{ needs.setup.outputs.release_stable_2-4 }}
-      worker_api_ver: 'v2'
-      debug_mode: 1
-      pytest_opts: "--docker-compose=./docker/plat2-v2.docker-compose.yml ${{ needs.setup.outputs.pytest_opts }}"
-      storage_suffix: "_worker-${{ needs.setup.outputs.release_stable_2-4 }}"
-
-  stable_server_v1:
-    name: test stable server (${{ needs.setup.outputs.server_min_supported }}) v1
-    secrets: inherit
-    needs: [setup]
-    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@main
-    with:
-      oasislmf_branch: ${{ github.event_name != 'workflow_dispatch' && 'main' || inputs.oasislmf_branch }}
-      piwind_branch: 'stable/2.5.x'
-      server_image: 'coreoasis/api_server'
-      server_tag: ${{ needs.setup.outputs.server_min_supported }}
       worker_image: ${{ needs.setup.outputs.build_worker_img }}
       worker_tag: ${{ needs.setup.outputs.build_worker_tag }}
-      worker_api_ver: 'v1'
-      debug_mode: 1
-      pytest_opts: "--docker-compose=./docker/plat2-v2.docker-compose.yml ${{ needs.setup.outputs.pytest_opts }}"
-      storage_suffix: "_server-${{ needs.setup.outputs.server_min_supported }}_v1"
-
-  stable_server_v2:
-    name: test stable server (${{ needs.setup.outputs.server_min_supported }}) v2
-    secrets: inherit
-    needs: [setup]
-    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@main
-    with:
       oasislmf_branch: ${{ github.event_name != 'workflow_dispatch' && 'main' || inputs.oasislmf_branch }}
-      piwind_branch: 'stable/2.5.x'
-      server_image: 'coreoasis/api_server'
-      server_tag: ${{ needs.setup.outputs.server_min_supported }}
-      worker_image: ${{ needs.setup.outputs.build_worker_img }}
-      worker_tag: ${{ needs.setup.outputs.build_worker_tag }}
-      worker_api_ver: 'v2'
-      debug_mode: 1
-      pytest_opts: "--docker-compose=./docker/plat2-v2.docker-compose.yml ${{ needs.setup.outputs.pytest_opts }}"
-      storage_suffix: "_server-${{ needs.setup.outputs.server_min_supported }}_v2"
+      pytest_options: ${{ inputs.compat_pytest_options }}
