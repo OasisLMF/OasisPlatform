@@ -24,6 +24,7 @@ from src.server.oasisapi.files.v1_api.tests.fakes import fake_related_file
 from src.server.oasisapi.auth.tests.fakes import fake_user
 from ...models import AnalysisTaskStatus
 from ...models import Analysis
+from src.server.oasisapi.files.models import RelatedFile
 from src.server.oasisapi.analyses.v2_api.tasks import cancel_subtasks
 
 # Override default deadline for all tests to 8s
@@ -497,6 +498,84 @@ class AnalysisRun(WebTestMixin, TestCase):
                     sig.options['queue'],
                     iniconf.settings.get('worker', 'TASK_CONTROLLER_QUEUE', fallback='celery-v2')
                 )
+
+
+class AnalysisRunClearsPreviousRunOutput(WebTestMixin, TestCase):
+    """ A V2 run only stores the files it produced, so a failed run must not leave the
+        previous run's outputs/logs/traceback on the analysis looking like its own.
+    """
+
+    def _analysis_with_previous_run_output(self, **kwargs):
+        old_files = {
+            'output_file': fake_related_file(file='old output'),
+            'run_log_file': fake_related_file(file='old logs'),
+            'run_traceback_file': fake_related_file(file='old traceback'),
+        }
+        analysis = fake_analysis(
+            status=Analysis.status_choices.RUN_COMPLETED,
+            input_file=fake_related_file(),
+            settings_file=fake_related_file(),
+            **old_files,
+            **kwargs,
+        )
+        return analysis, old_files
+
+    def _assert_cleared(self, analysis, old_files):
+        analysis.refresh_from_db()
+        self.assertIsNone(analysis.output_file)
+        self.assertIsNone(analysis.run_log_file)
+        self.assertIsNone(analysis.run_traceback_file)
+        for f in old_files.values():
+            self.assertFalse(RelatedFile.objects.filter(pk=f.pk).exists())
+
+    def test_v2_run___previous_run_output_is_removed(self):
+        with TemporaryDirectory() as d, override_settings(MEDIA_ROOT=d):
+            analysis, old_files = self._analysis_with_previous_run_output()
+            task_obj = type('', (), {})()
+            task_obj.id = 'task-id'
+
+            with (
+                patch('src.server.oasisapi.analyses.models.celery_app_v2.send_task', new=MagicMock(return_value=task_obj)),
+                patch('src.server.oasisapi.analyses.models.send_task_status_message', Mock()),
+                patch('src.server.oasisapi.analyses.models.build_all_queue_status_message', Mock())
+            ):
+                analysis.run(fake_user(), run_mode_override='V2')
+
+            self._assert_cleared(analysis, old_files)
+
+    def test_v2_generate_and_run___previous_run_output_is_removed(self):
+        with TemporaryDirectory() as d, override_settings(MEDIA_ROOT=d):
+            analysis, old_files = self._analysis_with_previous_run_output(
+                portfolio=fake_portfolio(location_file=fake_related_file()),
+            )
+            analysis.model.run_mode = analysis.model.run_mode_choices.V2
+            analysis.model.save()
+            task_sig = Mock()
+            task_sig.apply_async.return_value = FakeAsyncResultFactory(target_task_id='task-id')('task-id')
+
+            with (
+                patch('src.server.oasisapi.analyses.models.Analysis.v2_start_input_and_loss_generation_signature',
+                      PropertyMock(return_value=task_sig)),
+                patch('src.server.oasisapi.analyses.models.send_task_status_message', Mock()),
+                patch('src.server.oasisapi.analyses.models.build_all_queue_status_message', Mock())
+            ):
+                analysis.generate_and_run(fake_user())
+
+            self._assert_cleared(analysis, old_files)
+
+    def test_run_rejected___previous_run_output_is_kept(self):
+        with TemporaryDirectory() as d, override_settings(MEDIA_ROOT=d):
+            analysis, old_files = self._analysis_with_previous_run_output()
+            analysis.status = Analysis.status_choices.RUN_STARTED
+            analysis.save()
+
+            with self.assertRaises(ValidationError):
+                analysis.run(fake_user(), run_mode_override='V2')
+
+            analysis.refresh_from_db()
+            self.assertEqual(analysis.run_log_file_id, old_files['run_log_file'].pk)
+            self.assertEqual(analysis.output_file_id, old_files['output_file'].pk)
+            self.assertEqual(analysis.run_traceback_file_id, old_files['run_traceback_file'].pk)
 
 
 class AnalysisGenerateInputs(WebTestMixin, TestCase):

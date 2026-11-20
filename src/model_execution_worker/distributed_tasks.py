@@ -1058,13 +1058,15 @@ def prepare_losses_generation_params(
 @app.task(bind=True, name='prepare_losses_generation_directory', **celery_conf.worker_task_kwargs)
 @loss_generation_task
 def prepare_losses_generation_directory(self, params, analysis_id=None, slug=None, **kwargs):
+    model_storage_json = params.get('model_storage_json')
     with tempfile.NamedTemporaryFile(mode="w+") as f:
-        # build the config for the file store storage
+        # The worker's model data storage (OASIS_WORKER_MODEL_DATA_*) takes precedence; when it isn't
+        # set, keep the model's own 'model_storage_json' from its oasislmf.json (same as the v1 worker)
         if model_storage:
             config = model_storage.to_config()
             json.dump(config, f)
             f.flush()
-        params['model_storage_json'] = f.name if model_storage else None
+            params['model_storage_json'] = f.name
 
         from oasislmf.manager import OasisManager
         params['analysis_settings'] = OasisManager().generate_losses_dir(**params)
@@ -1081,6 +1083,8 @@ def prepare_losses_generation_directory(self, params, analysis_id=None, slug=Non
             compression=ARCHIVE_COMPRESSION_TYPE,
         )
         params['log_location'] = filestore.put(kwargs.get('log_filename'))
+        # the temp file is removed on exit, later tasks write their own from model_storage
+        params['model_storage_json'] = model_storage_json
         return params
 
 
@@ -1121,13 +1125,13 @@ def generate_losses_chunk(self, params, chunk_idx, num_chunks, analysis_id=None,
     }
 
     with tempfile.NamedTemporaryFile(mode="w+") as f:
-        # build the config for the file store storage
+        # Worker model data storage if set, else the model's own 'model_storage_json' (see above)
         if model_storage:
             config = model_storage.to_config()
             json.dump(config, f)
             f.flush()
+            chunk_params['model_storage_json'] = f.name
 
-        chunk_params['model_storage_json'] = f.name if model_storage else None
         Path(chunk_params['kernel_work_dir']).mkdir(parents=True, exist_ok=True)
         from oasislmf.manager import OasisManager
         OasisManager().generate_losses_partial(**chunk_params)
@@ -1157,7 +1161,6 @@ def generate_losses_chunk(self, params, chunk_idx, num_chunks, analysis_id=None,
 @loss_generation_task
 def generate_losses_output(self, params, analysis_id=None, slug=None, **kwargs):
     res = {**params[0]}
-    res['model_storage_json'] = None
 
     # collect run results
     abs_work_dir = os.path.join(res['model_run_dir'], 'work')
