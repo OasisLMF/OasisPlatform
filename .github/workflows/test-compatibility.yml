@@ -70,7 +70,6 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       pytest_opts: ${{ steps.pytest.outputs.opts }}
-      release_stable_1-15: ${{ steps.released_images.outputs.stable_1-15 }}
       release_stable_1-23: ${{ steps.released_images.outputs.stable_1-23 }}
       release_stable_1-27: ${{ steps.released_images.outputs.stable_1-27 }}
       release_stable_1-28: ${{ steps.released_images.outputs.stable_1-28 }}
@@ -87,9 +86,6 @@ jobs:
       - name: Find latest release of each stable branch
         id: released_images
         run: |
-          stable_1_15=$( ./scripts/find_latest.sh -j 1 -i 15 )
-          echo "stable_1-15=$stable_1_15" >> $GITHUB_OUTPUT
-
           stable_1_23=$( ./scripts/find_latest.sh -j 1 -i 23 )
           echo "stable_1-23=$stable_1_23" >> $GITHUB_OUTPUT
 
@@ -113,22 +109,6 @@ jobs:
           else
             echo "opts=${{ inputs.pytest_options }}" >> $GITHUB_OUTPUT
           fi
-
-  stable_worker_1-15:
-    name: Test stable worker (${{ needs.setup.outputs.release_stable_1-15 }})
-    secrets: inherit
-    needs: [setup]
-    uses: OasisLMF/OasisPiWind/.github/workflows/integration.yml@stable/1.15.x
-    with:
-      piwind_branch: 'stable/1.15.x'
-      server_image: ${{ inputs.server_image }}
-      server_tag: ${{ inputs.server_tag }}
-      worker_image: 'coreoasis/model_worker'
-      worker_tag: ${{ needs.setup.outputs.release_stable_1-15 }}
-      worker_api_ver: 'v1'
-      debug_mode: 1
-      pytest_opts: "--docker-compose=./docker/plat2-v2.docker-compose.yml ${{ needs.setup.outputs.pytest_opts }}"
-      storage_suffix: "_worker-${{ needs.setup.outputs.release_stable_1-15 }}"
 
   stable_worker_1-23:
     name: Test stable worker (${{ needs.setup.outputs.release_stable_1-23 }})
