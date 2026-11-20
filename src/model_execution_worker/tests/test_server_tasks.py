@@ -16,6 +16,7 @@ from ods_tools.oed import OdsException
 from src.server.oasisapi.portfolios.models import Portfolio
 from src.server.oasisapi.files.models import RelatedFile
 from src.model_execution_worker.server_tasks import run_oed_validation, run_exposure_run, run_exposure_transform, run_combine
+from src.model_execution_worker.utils import update_params
 from src.server.oasisapi.portfolios.v2_api.tasks import record_validation_output, record_exposure_output, record_transform_output
 from src.server.oasisapi.auth.tests.fakes import fake_user
 
@@ -34,6 +35,22 @@ EXPECTED_ALL_USD = os.path.join(TEST_DIR, "inputs", "expected_output_all_usd.csv
 EXPECTED_ACC_LOC_EXPOSURE = os.path.join(TEST_DIR, "inputs", "expected_output_acc_loc.csv")
 EXPECTED_ACC_LOC_USD = os.path.join(TEST_DIR, "inputs", "expected_output_acc_loc_usd.csv")
 EXPECTED_LOSS_HALF = os.path.join(TEST_DIR, "inputs", "expected_loss_factor_half.csv")
+
+
+@pytest.fixture
+def update_expected(request):
+    request.cls.update_expected = request.config.getoption('--update-expected')
+
+
+def assert_matches_expected(output_fp, expected_fp, update_expected=False):
+    """
+    Compare an output file with its expected file, or overwrite the expected
+    file with the output when running with `pytest --update-expected`.
+    """
+    if update_expected:
+        shutil.copyfile(output_fp, expected_fp)
+    else:
+        assert filecmp.cmp(output_fp, expected_fp, shallow=False)
 
 
 class PortfolioValidation(TestCase):
@@ -231,6 +248,7 @@ class PortfolioValidation(TestCase):
         assert validation_errors == "currency pair ('GBP', 'Emeralds') is missing"
 
 
+@pytest.mark.usefixtures("update_expected")
 class ExposureRun(TestCase):
     def test_chain_creation(self):
         mock_portfolio = MagicMock()
@@ -307,7 +325,7 @@ class ExposureRun(TestCase):
 
     def test_run_exposure_run_output_no_conversion(self):
         def side_effect(arg):
-            assert filecmp.cmp("outfile.csv", EXPECTED_ACC_LOC_EXPOSURE)
+            assert_matches_expected("outfile.csv", EXPECTED_ACC_LOC_EXPOSURE, self.update_expected)
 
         with patch('src.model_execution_worker.server_tasks.get_filestore') as mock_filestore:
             mock_store = MagicMock()
@@ -318,7 +336,7 @@ class ExposureRun(TestCase):
 
     def test_run_exposure_run_output_with_conversion(self):
         def side_effect(arg):
-            assert filecmp.cmp("outfile.csv", EXPECTED_ACC_LOC_USD)
+            assert_matches_expected("outfile.csv", EXPECTED_ACC_LOC_USD, self.update_expected)
 
         with patch('src.model_execution_worker.server_tasks.get_filestore') as mock_filestore:
             mock_store = MagicMock()
@@ -329,7 +347,7 @@ class ExposureRun(TestCase):
 
     def test_run_exposure_run_output_ri_rl_no_conversion(self):
         def side_effect(arg):
-            assert filecmp.cmp("outfile.csv", EXPECTED_ALL_EXPOSURE)
+            assert_matches_expected("outfile.csv", EXPECTED_ALL_EXPOSURE, self.update_expected)
 
         with patch('src.model_execution_worker.server_tasks.get_filestore') as mock_filestore:
             mock_store = MagicMock()
@@ -340,7 +358,7 @@ class ExposureRun(TestCase):
 
     def test_run_exposure_run_output_ri_rl_with_conversion(self):
         def side_effect(arg):
-            assert filecmp.cmp("outfile.csv", EXPECTED_ALL_USD)
+            assert_matches_expected("outfile.csv", EXPECTED_ALL_USD, self.update_expected)
 
         with patch('src.model_execution_worker.server_tasks.get_filestore') as mock_filestore:
             mock_store = MagicMock()
@@ -372,7 +390,7 @@ class ExposureRun(TestCase):
 
     def test_run_with_different_parameters(self):
         def side_effect(arg):
-            assert filecmp.cmp("outfile.csv", EXPECTED_LOSS_HALF)
+            assert_matches_expected("outfile.csv", EXPECTED_LOSS_HALF, self.update_expected)
 
         with patch('src.model_execution_worker.server_tasks.get_filestore') as mock_filestore:
             mock_store = MagicMock()
@@ -401,7 +419,7 @@ def test_exposure_run_params(currency_conversion_json, reporting_currency):
         'extra_summary_cols': 13,
         'kernel_alloc_rule_ri': 17,
         'check_oed': 19,
-        'do_disaggregation': 23,
+        'disaggregation': 23,
         'verbose': 29
     }
     disallowed_params = {
@@ -422,7 +440,7 @@ def test_exposure_run_params(currency_conversion_json, reporting_currency):
             'extra_summary_cols': "W",
             'kernel_alloc_rule_ri': "o",
             'check_oed': "r",
-            'do_disaggregation': "l",
+            'disaggregation': "l",
             'verbose': "d",
             'log_level': "!",
             'reporting_currency': None,
@@ -448,6 +466,25 @@ def test_exposure_run_params(currency_conversion_json, reporting_currency):
             assert 'currency_conversion_json' in kwargs and kwargs['currency_conversion_json'] is not None  # will be a weird filepath
 
 
+@pytest.mark.parametrize(
+    "given_params, expected",
+    [
+        ({}, 'default'),
+        ({'disaggregation': 'samples'}, 'samples'),
+        ({'do_disaggregation': True}, 'items'),
+        ({'do_disaggregation': False}, 'none'),
+        ({'do_disaggregation': None}, 'default'),
+        ({'disaggregation': 'samples', 'do_disaggregation': True}, 'samples'),
+    ]
+)
+def test_update_params_disaggregation(given_params, expected):
+    params = {'disaggregation': 'default', 'supported_oed_coverage_types': None}
+    update_params(params, given_params)
+    assert params['disaggregation'] == expected
+    assert 'do_disaggregation' not in params
+
+
+@pytest.mark.usefixtures("update_expected")
 class Transform(TestCase):
     def test_chain_creation(self):
         mock_portfolio = MagicMock()
@@ -500,7 +537,7 @@ class Transform(TestCase):
         expected_output = os.path.join(TRANSFORM_DIR, "expected_output.csv")
         with patch('src.model_execution_worker.server_tasks.get_filestore') as mock_filestore:
             def side_effect(arg):
-                assert filecmp.cmp(os.path.join(TRANSFORM_DIR, "output.csv"), expected_output)
+                assert_matches_expected(os.path.join(TRANSFORM_DIR, "output.csv"), expected_output, self.update_expected)
                 return "Hello World"
 
             mock_store = MagicMock()
