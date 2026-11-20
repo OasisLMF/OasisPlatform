@@ -104,21 +104,22 @@ jobs:
           SERVER_MIN: ${{ env.server_min_supported }}
         run: |
           entries=()
-          add() {  # name server_img server_tag worker_img worker_tag api_ver suffix
+          add() {  # name server_img server_tag worker_img worker_tag api_ver suffix channel_layer
             entries+=("$(jq -cn --arg name "$1" --arg server_image "$2" --arg server_tag "$3" \
                                 --arg worker_image "$4" --arg worker_tag "$5" --arg api "$6" --arg suffix "$7" \
-                                '$ARGS.named')")
+                                --arg channel_layer "$8" '$ARGS.named')")
           }
 
           # stable worker line -> API version (1.x only supports v1)
           for line in 1.23:v1 1.27:v1 1.28:v1 2.3:v2 2.4:v2; do
             ver=${line%%:*}; api=${line##*:}
             tag=$( ./scripts/find_latest.sh -j "${ver%%.*}" -i "${ver##*.}" )
-            add "Worker $tag ($api)" "$NEW_SERVER_IMG" "$NEW_SERVER_TAG" coreoasis/model_worker "$tag" "$api" "_worker-$tag"
+            add "Worker $tag" "$NEW_SERVER_IMG" "$NEW_SERVER_TAG" coreoasis/model_worker "$tag" "$api" "_worker-$tag" false
           done
 
           for api in v1 v2; do
-            add "Server $SERVER_MIN ($api)" coreoasis/api_server "$SERVER_MIN" "$NEW_WORKER_IMG" "$NEW_WORKER_TAG" "$api" "_server-${SERVER_MIN}_$api"
+            # servers before 2.5.7 need a channel layer (redis), the OasisModels stack only starts one on request
+            add "Server $SERVER_MIN" coreoasis/api_server "$SERVER_MIN" "$NEW_WORKER_IMG" "$NEW_WORKER_TAG" "$api" "_server-${SERVER_MIN}_$api" true
           done
 
           matrix=$(printf '%s\n' "${entries[@]}" | jq -cs '{include: .}')
@@ -142,6 +143,7 @@ jobs:
       worker_api_ver: ${{ matrix.api }}
       platform_tests: ${{ inputs.platform_tests || 'PiWind/test_1' }}
       skip_results_check: 'true'
+      channel_layer: ${{ matrix.channel_layer }}
       oasislmf_branch: ${{ inputs.oasislmf_branch }}
       pytest_opts: ${{ inputs.pytest_options }}
       debug_mode: '1'

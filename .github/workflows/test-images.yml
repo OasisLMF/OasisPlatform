@@ -138,7 +138,7 @@ jobs:
 
   # Every enabled OasisModels test case, on the newly built images
   all_checks_v1:
-    name: V1 all checks
+    name: All checks
     secrets: inherit
     needs: [setup]
     uses: OasisLMF/OasisModels/.github/workflows/platform-tests.yml@feature/platform-tests  # TODO: @main once OasisModels#65 is merged
@@ -155,7 +155,7 @@ jobs:
       storage_suffix: '-all-checks-v1'
 
   all_checks_v2:
-    name: V2 all checks
+    name: All checks
     secrets: inherit
     needs: [setup]
     uses: OasisLMF/OasisModels/.github/workflows/platform-tests.yml@feature/platform-tests  # TODO: @main once OasisModels#65 is merged
@@ -172,8 +172,9 @@ jobs:
       storage_suffix: '-all-checks-v2'
 
   # Everything else runs the base case only (PiWind/test_1)
+  # The non-default backends: S3 storage and MySQL databases
   storage_s3_v1:
-    name: V1 Storage Compatibility (S3)
+    name: S3 + MySQL
     secrets: inherit
     needs: [setup]
     uses: OasisLMF/OasisModels/.github/workflows/platform-tests.yml@feature/platform-tests  # TODO: @main once OasisModels#65 is merged
@@ -187,12 +188,13 @@ jobs:
       worker_api_ver: 'v1'
       platform_tests: 'PiWind/test_1'
       storage: 's3'
+      db: 'mysql'
       debug_mode: '1'
       pytest_opts: ${{ inputs.pytest_options }}
-      storage_suffix: '_s3-v1'
+      storage_suffix: '_s3-mysql-v1'
 
   storage_s3_v2:
-    name: V2 Storage Compatibility (S3)
+    name: S3 + MySQL
     secrets: inherit
     needs: [setup]
     uses: OasisLMF/OasisModels/.github/workflows/platform-tests.yml@feature/platform-tests  # TODO: @main once OasisModels#65 is merged
@@ -206,9 +208,10 @@ jobs:
       worker_api_ver: 'v2'
       platform_tests: 'PiWind/test_1'
       storage: 's3'
+      db: 'mysql'
       debug_mode: '1'
       pytest_opts: ${{ inputs.pytest_options }}
-      storage_suffix: '_s3-v2'
+      storage_suffix: '_s3-mysql-v2'
 
   # Released platform versions against the new images (OasisModels, runs must complete), see test-compatibility.yml
   compatibility:
