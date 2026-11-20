@@ -19,6 +19,7 @@ from src.model_execution_worker.distributed_tasks import (
     merge_dataframes,
     split_subject_at_risk_data,
     merge_chunk_log_storage,
+    _csv_lines_mergeable,
     _merge_csv_streaming,
     _merge_parquet_streaming,
     take_first,
@@ -115,6 +116,77 @@ class MergeCsvStreaming(TestCase):
                 merged = pl.read_csv(str(output_file))
                 self.assertEqual(merged['id'].to_list(), [1])
                 self.assertEqual(merged['value'].to_list(), ['x'])
+
+    def assert_merges_on_both_paths(self, chunk_texts, expected):
+        """Merge chunk_texts via the line path and the column path; each must output `expected`."""
+        for lines_path in (True, False):
+            with self.subTest(lines_path=lines_path), TemporaryDirectory() as tmp_dir, \
+                    patch('src.model_execution_worker.distributed_tasks._csv_lines_mergeable', return_value=lines_path):
+                chunks = []
+                for i, text in enumerate(chunk_texts):
+                    chunks.append(Path(tmp_dir, f'{i}.csv'))
+                    chunks[-1].write_text(text)
+                output_file = Path(tmp_dir, 'merged.csv')
+
+                _merge_csv_streaming(chunks, output_file)
+
+                self.assertEqual(output_file.read_text(), expected)
+
+    def test_int_and_float_chunks___values_are_not_rewritten(self):
+        self.assert_merges_on_both_paths(['id,value\n1,1\n', 'id,value\n2,1.5\n'], 'id,value\n1,1\n2,1.5\n')
+
+    def test_non_numeric_value_past_inference_window___merges(self):
+        chunk = 'id,value\n' + ''.join(f'{i},{i}\n' for i in range(150)) + '150,abc\n'
+        self.assert_merges_on_both_paths([chunk], chunk)
+
+    def test_duplicate_rows___first_kept_in_order(self):
+        self.assert_merges_on_both_paths(
+            ['id,value\n1,x\n2,y\n', 'id,value\n2,y\n3,z\n', 'id,value\n'], 'id,value\n1,x\n2,y\n3,z\n')
+
+    def test_quoted_fields___passed_through_unchanged(self):
+        self.assert_merges_on_both_paths(
+            ['id,value\n1,"x, y"\n2,"say ""hi"""\n', 'id,value\n1,"x, y"\n3,z\n'],
+            'id,value\n1,"x, y"\n2,"say ""hi"""\n3,z\n')
+
+    def test_quoted_field_spanning_lines___merged_as_one_row(self):
+        with TemporaryDirectory() as tmp_dir:
+            chunk_a = Path(tmp_dir, 'a.csv')
+            chunk_b = Path(tmp_dir, 'b.csv')
+            output_file = Path(tmp_dir, 'merged.csv')
+            chunk_a.write_text('id,value\n1,"a\nb"\n')
+            chunk_b.write_text('id,value\n1,"a\nb"\n2,b\n')
+
+            _merge_csv_streaming([chunk_a, chunk_b], output_file)
+
+            self.assertEqual(output_file.read_text(), 'id,value\n1,"a\nb"\n2,b\n')
+
+
+class CsvLinesMergeable(TestCase):
+    def check(self, chunk_texts):
+        with TemporaryDirectory() as tmp_dir:
+            chunks = []
+            for i, text in enumerate(chunk_texts):
+                chunks.append(Path(tmp_dir, f'{i}.csv'))
+                chunks[-1].write_text(text)
+            return _csv_lines_mergeable([str(c) for c in chunks])
+
+    def test_same_header_unquoted___true(self):
+        self.assertTrue(self.check(['id,value\n1,x\n', 'id,value\n', 'id,value\r\n2,y\r\n']))
+
+    def test_different_headers___false(self):
+        self.assertFalse(self.check(['id,value\n1,x\n', 'id,extra\n2,y\n']))
+
+    def test_quoted_fields_within_lines___true(self):
+        self.assertTrue(self.check(['id,value\n1,x\n', 'id,value\n2,"y, z"\n3,"say ""hi"""\n']))
+
+    def test_quoted_field_spanning_lines___false(self):
+        self.assertFalse(self.check(['id,value\n1,x\n', 'id,value\n2,"y\nz"\n']))
+
+    def test_quoted_field_spanning_lines_with_escaped_quote___false(self):
+        self.assertFalse(self.check(['id,value\n1,"a ""b""\nc"\n']))
+
+    def test_line_separator_in_data___false(self):
+        self.assertFalse(self.check(['id,value\n1,x\x1fy\n']))
 
     def test_all_chunks_empty___no_output_file_is_written(self):
         with TemporaryDirectory() as tmp_dir:
