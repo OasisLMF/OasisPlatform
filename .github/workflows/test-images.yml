@@ -20,7 +20,7 @@ on:
         description: "Extra pytest args for the OasisModels platform tests [-k <test_name>]"
         required: false
       compat_pytest_options:
-        description: "Pytest args for the OasisPiWind compatibility checks (default: -k control_set)"
+        description: "Extra pytest args for the compatibility checks (OasisModels platform tests) [-k <test_name>]"
         required: false
       cve_severity:
         description: 'Severities of vulnerabilities to scanned for [LOW, MEDIUM, HIGH, CRITICAL, SKIP]'
@@ -150,7 +150,6 @@ jobs:
       worker_image: ${{ needs.setup.outputs.build_worker_img }}
       worker_tag: ${{ needs.setup.outputs.build_worker_tag }}
       worker_api_ver: 'v1'
-      platform_tests: 'all'
       debug_mode: '1'
       pytest_opts: ${{ inputs.pytest_options }}
       storage_suffix: '-all-checks-v1'
@@ -168,7 +167,6 @@ jobs:
       worker_image: ${{ needs.setup.outputs.build_worker_img }}
       worker_tag: ${{ needs.setup.outputs.build_worker_tag }}
       worker_api_ver: 'v2'
-      platform_tests: 'all'
       debug_mode: '1'
       pytest_opts: ${{ inputs.pytest_options }}
       storage_suffix: '-all-checks-v2'
@@ -212,7 +210,7 @@ jobs:
       pytest_opts: ${{ inputs.pytest_options }}
       storage_suffix: '_s3-v2'
 
-  # Released platform versions against the new images (OasisPiWind), see test-compatibility.yml
+  # Released platform versions against the new images (OasisModels, runs must complete), see test-compatibility.yml
   compatibility:
     name: Compatibility
     secrets: inherit
@@ -223,5 +221,6 @@ jobs:
       server_tag: ${{ needs.setup.outputs.build_server_tag }}
       worker_image: ${{ needs.setup.outputs.build_worker_img }}
       worker_tag: ${{ needs.setup.outputs.build_worker_tag }}
+      models_branch: ${{ needs.setup.outputs.models_branch }}
       oasislmf_branch: ${{ github.event_name != 'workflow_dispatch' && 'main' || inputs.oasislmf_branch }}
       pytest_options: ${{ inputs.compat_pytest_options }}
