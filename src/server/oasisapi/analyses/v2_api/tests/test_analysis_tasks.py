@@ -327,7 +327,7 @@ class HandleTaskFailure(TestCase):
         sub-tasks to see why a run failed.
     """
 
-    def test_run_failure___subtask_output_and_error_logs_are_merged_into_run_traceback_and_log_file(self):
+    def test_run_failure___subtask_output_and_error_logs_are_merged_into_run_traceback_file(self):
         with TemporaryDirectory() as d, override_settings(MEDIA_ROOT=d):
             initiator = fake_user()
             analysis = fake_analysis()
@@ -351,10 +351,8 @@ class HandleTaskFailure(TestCase):
             analysis.refresh_from_db()
             self.assertEqual(analysis.status, Analysis.status_choices.RUN_ERROR)
             self.assertIsNotNone(analysis.run_traceback_file)
-            self.assertIsNotNone(analysis.run_log_file)
-            # both fields point at the same combined content, so it's visible from
-            # either place on the analysis, without opening a sub-task record
-            self.assertEqual(analysis.run_traceback_file_id, analysis.run_log_file_id)
+            # 'run_log_file' is only ever a log archive, never the traceback
+            self.assertIsNone(analysis.run_log_file)
 
             content = analysis.run_traceback_file.read().decode('utf-8')
             self.assertIn('generate-losses-chunk-1', content)
@@ -363,6 +361,37 @@ class HandleTaskFailure(TestCase):
             self.assertIn('failure output', content)
             self.assertIn('OasisException: boom', content)
             self.assertIn('top level celery traceback', content)
+
+    def test_run_failure___keeps_log_archive_stored_by_record_losses_error_files(self):
+        with TemporaryDirectory() as d, override_settings(MEDIA_ROOT=d):
+            initiator = fake_user()
+            analysis = fake_analysis()
+            log_archive = fake_related_file(file='log archive', filename='analysis_logs.tar.gz', content_type='application/gzip')
+            analysis.run_log_file = log_archive
+            analysis.save()
+            fake_analysis_task_status(
+                analysis=analysis,
+                slug='generate-losses-output',
+                status=AnalysisTaskStatus.status_choices.ERROR,
+                output_log=fake_related_file(file='STDOUT:\naalpy segfault'),
+                error_log=fake_related_file(file='OasisException: Incomplete pytool logs'),
+            )
+
+            handle_task_failure(
+                None, None, 'top level celery traceback',
+                analysis_id=analysis.pk,
+                initiator_id=initiator.pk,
+                run_data_uuid='run-uuid',
+                traceback_property='run_traceback_file',
+                failure_status=Analysis.status_choices.RUN_ERROR,
+            )
+
+            analysis.refresh_from_db()
+            self.assertEqual(analysis.status, Analysis.status_choices.RUN_ERROR)
+            self.assertEqual(analysis.run_log_file_id, log_archive.pk)
+            self.assertEqual(analysis.run_log_file.read(), b'log archive')
+            self.assertNotEqual(analysis.run_traceback_file_id, log_archive.pk)
+            self.assertIn('Incomplete pytool logs', analysis.run_traceback_file.read().decode('utf-8'))
 
     def test_input_generation_failure___leaves_run_log_file_untouched(self):
         with TemporaryDirectory() as d, override_settings(MEDIA_ROOT=d):
