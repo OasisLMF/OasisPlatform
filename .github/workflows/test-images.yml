@@ -153,6 +153,7 @@ jobs:
       debug_mode: '1'
       pytest_opts: ${{ inputs.pytest_options }}
       storage_suffix: '-all-checks-v1'
+      job_name: 'v1 API All'
 
   all_checks_v2:
     name: All checks
@@ -170,6 +171,7 @@ jobs:
       debug_mode: '1'
       pytest_opts: ${{ inputs.pytest_options }}
       storage_suffix: '-all-checks-v2'
+      job_name: 'v2 API All'
 
   # Everything else runs the base case only (PiWind/test_1)
   # The non-default backends: S3 storage and MySQL databases
@@ -192,6 +194,7 @@ jobs:
       debug_mode: '1'
       pytest_opts: ${{ inputs.pytest_options }}
       storage_suffix: '_s3-mysql-v1'
+      job_name: 'v1 MySQL S3'
 
   storage_s3_v2:
     name: S3 + MySQL
@@ -212,6 +215,7 @@ jobs:
       debug_mode: '1'
       pytest_opts: ${{ inputs.pytest_options }}
       storage_suffix: '_s3-mysql-v2'
+      job_name: 'v2 MySQL s3'
 
   # Released platform versions against the new images (OasisModels, runs must complete), see test-compatibility.yml
   compatibility:

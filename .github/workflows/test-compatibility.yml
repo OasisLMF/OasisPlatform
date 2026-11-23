@@ -127,7 +127,7 @@ jobs:
           echo "matrix=$matrix" >> $GITHUB_OUTPUT
 
   compatibility:
-    name: ${{ matrix.name }}
+    name: ${{ matrix.api }} API
     secrets: inherit
     needs: [setup]
     strategy:
@@ -148,3 +148,4 @@ jobs:
       pytest_opts: ${{ inputs.pytest_options }}
       debug_mode: '1'
       storage_suffix: ${{ matrix.suffix }}
+      job_name: ${{ matrix.name }}
