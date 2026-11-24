@@ -31,6 +31,7 @@ from ....conf import iniconf
 from ..combine.tasks import record_combine_output
 
 from .v1_api.tasks import record_generate_input_result, record_run_analysis_result
+from .v2_api.utils import delete_prev_output
 
 
 class AnalysisTaskStatusQuerySet(models.QuerySet):
@@ -250,6 +251,9 @@ class Analysis(TimeStampedModel):
         status_choices.RUN_ERROR,
         status_choices.RUN_CANCELLED,
     ]
+    # Cleared before a V2 run is dispatched. On failure the V2 chain only stores the files
+    # it has, so stale outputs from an earlier run would be returned as the failed run's.
+    RUN_OUTPUT_FIELDS = ['output_file', 'run_log_file', 'run_traceback_file']
 
     input_generation_traceback_file_id = None
 
@@ -628,22 +632,6 @@ class Analysis(TimeStampedModel):
         self.num_events_total = 0
         self.num_events_complete = 0
 
-    def _clear_run_output(self):
-        """ Remove the previous run's outputs, logs and traceback before a V2 run is
-            dispatched. On failure the V2 chain only stores the files it has (e.g. the
-            log archive from 'record_losses_error_files'), so anything left over from an
-            earlier run would otherwise be returned as if it belonged to the failed one.
-        """
-        old_files = []
-        for field in ['output_file', 'run_log_file', 'run_traceback_file']:
-            current_file = getattr(self, field)
-            if current_file:
-                old_files.append(current_file)
-                setattr(self, field, None)
-        self.save(update_fields=['output_file', 'run_log_file', 'run_traceback_file'])
-        for f in old_files:
-            f.delete()
-
     def _dispatch_v1(self, task, initiator, success_callback, failure_callback_name):
         task.link(success_callback.s(self.pk, initiator.pk))
         task.link_error(
@@ -693,7 +681,7 @@ class Analysis(TimeStampedModel):
         self._reset_loss_progress()
         self.save()
         if run_mode == self.run_mode_choices.V2:
-            self._clear_run_output()
+            delete_prev_output(self, self.RUN_OUTPUT_FIELDS)
 
         if run_mode == self.run_mode_choices.V1:
             task_id = self._dispatch_v1(
@@ -751,7 +739,7 @@ class Analysis(TimeStampedModel):
         self._reset_input_generation()
         self._reset_loss_progress()
         self.save()
-        self._clear_run_output()
+        delete_prev_output(self, self.RUN_OUTPUT_FIELDS)
 
         task_id = self._dispatch_v2(
             self.v2_start_input_and_loss_generation_signature, initiator, [loc_lines, events_total],
