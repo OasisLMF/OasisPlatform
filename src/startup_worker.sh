@@ -54,7 +54,7 @@ fi
 # Checks for any value rather than comparing with the defaults, so it doesn't depend on oasislmf's.
 if [ -n "${OASIS_INT}${OASIS_FLOAT}${OASIS_AREAPERIL_TYPE}" ]; then
   echo "oasislmf dtypes set (OASIS_INT=${OASIS_INT} OASIS_FLOAT=${OASIS_FLOAT} OASIS_AREAPERIL_TYPE=${OASIS_AREAPERIL_TYPE}): clearing the prebuilt numba cache"
-  oasislmf clearcache
+  oasislmf clearcache || echo "WARNING: 'oasislmf clearcache' failed, the prebuilt numba cache may not match these dtypes"
 fi
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
