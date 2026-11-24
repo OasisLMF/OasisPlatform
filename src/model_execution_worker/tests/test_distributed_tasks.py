@@ -272,6 +272,22 @@ class SplitSubjectAtRiskData(TestCase):
 
         self.assertEqual([len(c) for c in chunks], [1, 1, 0, 0])
 
+    def test_unused_categories_are_dropped(self):
+        # slicing keeps a categorical column's full category list unless trimmed (#1508)
+        sar_df = pd.DataFrame({
+            'loc_id': [1, 2, 3, 4],
+            'LocNumber': pd.Categorical(['a', 'b', 'c', 'd']),
+            'PostalCode': pd.Categorical(['x', None, 'y', 'x']),
+        })
+
+        chunks = [split_subject_at_risk_data(sar_df, 2, idx) for idx in range(2)]
+
+        self.assertEqual(chunks[0]['LocNumber'].cat.categories.to_list(), ['a', 'b'])
+        self.assertEqual(chunks[1]['LocNumber'].cat.categories.to_list(), ['c', 'd'])
+        self.assertEqual(chunks[0]['PostalCode'].cat.categories.to_list(), ['x'])
+        self.assertTrue(pd.isna(chunks[0]['PostalCode'][1]))
+        self.assertEqual(chunks[1]['PostalCode'].to_list(), ['y', 'x'])
+
 
 class LoadSubjectAtRiskData(TestCase):
     inputs_dir = os.path.join(os.path.dirname(__file__), 'inputs')
@@ -350,6 +366,16 @@ class SubjectAtRiskChunkFiles(TestCase):
         chunk = load_subject_at_risk_chunk(self.params, 3, 2)
 
         pd.testing.assert_frame_equal(chunk, split_subject_at_risk_data(self.full_sar_df, 3, 2))
+
+    def test_stored_chunks_only_hold_their_own_categories(self):
+        # each chunk file holds only its own rows' string values, not the whole portfolio's (#1508)
+        self.assertIsInstance(self.full_sar_df['LocNumber'].dtype, pd.CategoricalDtype)
+
+        chunks = self._store_and_load(3)
+
+        for chunk in chunks:
+            for col in chunk.select_dtypes('category').columns:
+                self.assertEqual(len(chunk[col].cat.categories), chunk[col].nunique(dropna=True), col)
 
 
 class MergeChunkLogStorage(TestCase):

@@ -623,12 +623,25 @@ def subject_at_risk_chunk_rows(sar_df, num_chunks):
     return np.split(rows, np.searchsorted(row_chunks[rows], np.arange(1, num_chunks)))
 
 
+def take_subject_at_risk_rows(sar_df, chunk_rows):
+    """ Returns the `chunk_rows` of `sar_df` as a new frame
+
+        Slicing keeps a categorical column's full category list, so without dropping the
+        unused categories every chunk carries the whole portfolio's values (e.g. a unique
+        'LocNumber'), which parquet then repeats in every row group of each chunk file.
+    """
+    chunk_df = sar_df.iloc[chunk_rows].reset_index(drop=True)
+    for col in chunk_df.select_dtypes('category').columns:
+        chunk_df[col] = chunk_df[col].cat.remove_unused_categories()
+    return chunk_df
+
+
 def split_subject_at_risk_data(sar_df, num_chunks, chunk_idx):
     """ Returns the `chunk_idx` slice of `sar_df`, split into `num_chunks` parts
         (see `subject_at_risk_chunk_rows`)
     """
     chunk_rows = subject_at_risk_chunk_rows(sar_df, num_chunks)[chunk_idx]
-    return sar_df.iloc[chunk_rows].reset_index(drop=True)
+    return take_subject_at_risk_rows(sar_df, chunk_rows)
 
 
 def store_subject_at_risk_chunks(params, num_chunks, chunks_dir, filestore=None):
@@ -648,7 +661,7 @@ def store_subject_at_risk_chunks(params, num_chunks, chunks_dir, filestore=None)
     chunk_refs = []
     for chunk_idx, chunk_rows in enumerate(subject_at_risk_chunk_rows(sar_df, num_chunks)):
         chunk_fp = os.path.join(chunks_dir, f'sar-chunk-{chunk_idx + 1}.parquet')
-        chunk_df = sar_df.iloc[chunk_rows].reset_index(drop=True)
+        chunk_df = take_subject_at_risk_rows(sar_df, chunk_rows)
         chunk_df.to_parquet(chunk_fp, index=False)
         chunk_refs.append(filestore.put(
             chunk_fp,
