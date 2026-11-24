@@ -12,22 +12,25 @@ from pathlib2 import Path
 
 from oasis_data_manager.filestore.backends.local import LocalStorage
 
-from src.model_execution_worker.distributed_tasks import (
+from src.model_execution_worker.utils import (
     load_subject_at_risk_chunk,
     load_subject_at_risk_data,
     store_subject_at_risk_chunks,
     merge_dataframes,
     split_subject_at_risk_data,
-    merge_chunk_log_storage,
+    _csv_lines_mergeable,
     _merge_csv_streaming,
     _merge_parquet_streaming,
     take_first,
+    get_keys_format,
+)
+from src.model_execution_worker.distributed_tasks import (
+    merge_chunk_log_storage,
     handle_task_failure,
     generate_losses_chunk,
     generate_losses_output,
     prepare_losses_generation_directory,
     write_input_files,
-    get_keys_format,
     pre_analysis_hook,
 )
 
@@ -117,6 +120,76 @@ class MergeCsvStreaming(TestCase):
                 self.assertEqual(merged['id'].to_list(), [1])
                 self.assertEqual(merged['value'].to_list(), ['x'])
 
+    def assert_merges_on_both_paths(self, chunk_texts, expected):
+        """Merge chunk_texts via the line path and the column path; each must output `expected`."""
+        for lines_path in (True, False):
+            with self.subTest(lines_path=lines_path), TemporaryDirectory() as tmp_dir, \
+                    patch('src.model_execution_worker.utils._csv_lines_mergeable', return_value=lines_path):
+                chunks = []
+                for i, text in enumerate(chunk_texts):
+                    chunks.append(Path(tmp_dir, f'{i}.csv'))
+                    chunks[-1].write_text(text)
+                output_file = Path(tmp_dir, 'merged.csv')
+
+                _merge_csv_streaming(chunks, output_file)
+
+                self.assertEqual(output_file.read_text(), expected)
+
+    def test_int_and_float_chunks___values_are_not_rewritten(self):
+        self.assert_merges_on_both_paths(['id,value\n1,1\n', 'id,value\n2,1.5\n'], 'id,value\n1,1\n2,1.5\n')
+
+    def test_non_numeric_value_past_inference_window___merges(self):
+        chunk = 'id,value\n' + ''.join(f'{i},{i}\n' for i in range(150)) + '150,abc\n'
+        self.assert_merges_on_both_paths([chunk], chunk)
+
+    def test_duplicate_rows___first_kept_in_order(self):
+        self.assert_merges_on_both_paths(
+            ['id,value\n1,x\n2,y\n', 'id,value\n2,y\n3,z\n', 'id,value\n'], 'id,value\n1,x\n2,y\n3,z\n')
+
+    def test_quoted_fields___passed_through_unchanged(self):
+        self.assert_merges_on_both_paths(
+            ['id,value\n1,"x, y"\n2,"say ""hi"""\n', 'id,value\n1,"x, y"\n3,z\n'],
+            'id,value\n1,"x, y"\n2,"say ""hi"""\n3,z\n')
+
+    def test_quoted_field_spanning_lines___merged_as_one_row(self):
+        with TemporaryDirectory() as tmp_dir:
+            chunk_a = Path(tmp_dir, 'a.csv')
+            chunk_b = Path(tmp_dir, 'b.csv')
+            output_file = Path(tmp_dir, 'merged.csv')
+            chunk_a.write_text('id,value\n1,"a\nb"\n')
+            chunk_b.write_text('id,value\n1,"a\nb"\n2,b\n')
+
+            _merge_csv_streaming([chunk_a, chunk_b], output_file)
+
+            self.assertEqual(output_file.read_text(), 'id,value\n1,"a\nb"\n2,b\n')
+
+    def test_same_row_quoted_and_unquoted___deduplicated(self):
+        with TemporaryDirectory() as tmp_dir:
+            chunk_a = Path(tmp_dir, 'a.csv')
+            chunk_b = Path(tmp_dir, 'b.csv')
+            output_file = Path(tmp_dir, 'merged.csv')
+            chunk_a.write_text('id,value\n1,x\n')
+            chunk_b.write_text('id,value\n1,"x"\n2,y\n')
+
+            _merge_csv_streaming([chunk_a, chunk_b], output_file)
+
+            self.assertEqual(output_file.read_text(), 'id,value\n1,x\n2,y\n')
+
+    def test_stray_quotes_around_multi_line_field___raises(self):
+        # Every line has an even number of quotes, so only a full CSV parse can
+        # tell the field spans lines. Merging line by line would silently drop
+        # record 2's continuation lines as duplicates of record 1's.
+        with TemporaryDirectory() as tmp_dir:
+            chunk = Path(tmp_dir, 'chunk.csv')
+            output_file = Path(tmp_dir, 'merged.csv')
+            chunk.write_text(
+                'id,size,note,size2\n'
+                '1,5" pipe,"a\nb\nc",7" pipe\n'
+                '2,5" pipe,"d\nb\nc",7" pipe\n')
+
+            with self.assertRaises(pl.exceptions.ComputeError):
+                _merge_csv_streaming([chunk], output_file)
+
     def test_all_chunks_empty___no_output_file_is_written(self):
         with TemporaryDirectory() as tmp_dir:
             empty_chunk = Path(tmp_dir, 'empty.csv')
@@ -126,6 +199,34 @@ class MergeCsvStreaming(TestCase):
             _merge_csv_streaming([empty_chunk], output_file)
 
             self.assertFalse(output_file.exists())
+
+
+class CsvLinesMergeable(TestCase):
+    def check(self, chunk_texts):
+        with TemporaryDirectory() as tmp_dir:
+            chunks = []
+            for i, text in enumerate(chunk_texts):
+                chunks.append(Path(tmp_dir, f'{i}.csv'))
+                chunks[-1].write_text(text)
+            return _csv_lines_mergeable([str(c) for c in chunks])
+
+    def test_same_header_unquoted___true(self):
+        self.assertTrue(self.check(['id,value\n1,x\n', 'id,value\n', 'id,value\r\n2,y\r\n']))
+
+    def test_different_headers___false(self):
+        self.assertFalse(self.check(['id,value\n1,x\n', 'id,extra\n2,y\n']))
+
+    def test_quoted_fields_within_lines___false(self):
+        self.assertFalse(self.check(['id,value\n1,x\n', 'id,value\n2,"y, z"\n3,"say ""hi"""\n']))
+
+    def test_quoted_field_spanning_lines___false(self):
+        self.assertFalse(self.check(['id,value\n1,x\n', 'id,value\n2,"y\nz"\n']))
+
+    def test_stray_quote_in_unquoted_field___false(self):
+        self.assertFalse(self.check(['id,size\n1,5" pipe\n']))
+
+    def test_line_separator_in_data___false(self):
+        self.assertFalse(self.check(['id,value\n1,x\x1fy\n']))
 
 
 class MergeParquetStreaming(TestCase):
@@ -196,9 +297,9 @@ class MergeParquetStreaming(TestCase):
 
 class MergeDataframes(TestCase):
     def test_empty_path_list___warns_and_returns_without_dispatching(self):
-        with patch('src.model_execution_worker.distributed_tasks._merge_csv_streaming') as csv_mock, \
-                patch('src.model_execution_worker.distributed_tasks._merge_parquet_streaming') as parquet_mock, \
-                patch('src.model_execution_worker.distributed_tasks.logger') as logger_mock:
+        with patch('src.model_execution_worker.utils._merge_csv_streaming') as csv_mock, \
+                patch('src.model_execution_worker.utils._merge_parquet_streaming') as parquet_mock, \
+                patch('src.model_execution_worker.utils.logger') as logger_mock:
             merge_dataframes([], 'output.csv', 'csv')
 
             csv_mock.assert_not_called()
@@ -206,16 +307,16 @@ class MergeDataframes(TestCase):
             logger_mock.warning.assert_called_once()
 
     def test_csv_file_type___dispatches_to_csv_streaming(self):
-        with patch('src.model_execution_worker.distributed_tasks._merge_csv_streaming') as csv_mock, \
-                patch('src.model_execution_worker.distributed_tasks._merge_parquet_streaming') as parquet_mock:
+        with patch('src.model_execution_worker.utils._merge_csv_streaming') as csv_mock, \
+                patch('src.model_execution_worker.utils._merge_parquet_streaming') as parquet_mock:
             merge_dataframes(['a.csv'], 'output.csv', 'csv')
 
             csv_mock.assert_called_once_with(['a.csv'], 'output.csv')
             parquet_mock.assert_not_called()
 
     def test_parquet_file_type___dispatches_to_parquet_streaming(self):
-        with patch('src.model_execution_worker.distributed_tasks._merge_csv_streaming') as csv_mock, \
-                patch('src.model_execution_worker.distributed_tasks._merge_parquet_streaming') as parquet_mock:
+        with patch('src.model_execution_worker.utils._merge_csv_streaming') as csv_mock, \
+                patch('src.model_execution_worker.utils._merge_parquet_streaming') as parquet_mock:
             merge_dataframes(['a.parquet'], 'output.parquet', 'parquet')
 
             parquet_mock.assert_called_once_with(['a.parquet'], 'output.parquet')
@@ -310,16 +411,15 @@ class SubjectAtRiskChunkFiles(TestCase):
             os.makedirs(os.path.join(tmp_dir, 'media', self.params['storage_subdir']))
             split_dir = os.path.join(tmp_dir, 'split')
             os.makedirs(split_dir)
-            with patch('src.model_execution_worker.distributed_tasks.filestore', storage):
-                self.params['sar_chunks'] = store_subject_at_risk_chunks(self.params, num_chunks, split_dir)
-                with patch('src.model_execution_worker.distributed_tasks.load_subject_at_risk_data') as full_load, \
-                        patch.object(storage, 'get') as storage_get:
-                    chunks = []
-                    for idx in range(num_chunks):
-                        chunks.append(load_subject_at_risk_chunk(self.params, num_chunks, idx))
-                    full_load.assert_not_called()
-                    # 'get' leaves a copy in the data cache on S3 / Azure
-                    storage_get.assert_not_called()
+            self.params['sar_chunks'] = store_subject_at_risk_chunks(self.params, num_chunks, split_dir, filestore=storage)
+            with patch('src.model_execution_worker.utils.load_subject_at_risk_data') as full_load, \
+                    patch.object(storage, 'get') as storage_get:
+                chunks = []
+                for idx in range(num_chunks):
+                    chunks.append(load_subject_at_risk_chunk(self.params, num_chunks, idx, filestore=storage))
+                full_load.assert_not_called()
+                # 'get' leaves a copy in the data cache on S3 / Azure
+                storage_get.assert_not_called()
             self.assertEqual(os.listdir(split_dir), [])
         return chunks
 
