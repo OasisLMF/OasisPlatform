@@ -1,11 +1,13 @@
 from django.conf import settings
 from django.contrib.auth.models import Group
 from django.db import models
+from django.db.models.signals import post_delete
+from django.dispatch import receiver
 from django.utils.translation import gettext_lazy as _
 from model_utils.models import TimeStampedModel
 from rest_framework.reverse import reverse
 
-from ..files.models import RelatedFile
+from ..files.models import RelatedFile, delete_related_files
 
 
 class DataFile(TimeStampedModel):
@@ -77,3 +79,10 @@ class DataFile(TimeStampedModel):
     def get_absolute_data_file_url(self, request=None, namespace=None):
         override_ns = f'{namespace}:' if namespace else ''
         return reverse(f'{override_ns}data-file-content', kwargs={'pk': self.pk}, request=self._update_ns(request))
+
+
+@receiver(post_delete, sender=DataFile)
+def delete_connected_files(sender, instance, **kwargs):
+    """ Post delete handler to clear out the data file's stored content
+    """
+    delete_related_files(instance, ['file'])
