@@ -10,15 +10,10 @@ import shutil
 from datetime import datetime
 
 import filelock
-import numpy as np
-import pandas as pd
-import pyarrow as pa
-import pyarrow.parquet as pq
 from celery import Celery, signature
 from celery.utils.log import get_task_logger
 from celery.signals import (task_failure, task_revoked, worker_ready)
 from natsort import natsorted
-from oasislmf.preparation.lookup import OasisLookupFactory
 from oasislmf.utils.data import get_json
 from oasislmf.utils.exceptions import OasisExceptionNoKeys
 from oasislmf.utils.status import OASIS_TASK_STATUS
@@ -43,12 +38,19 @@ from .utils import (
     unwrap_task_args,
     notify_api_status_v2,
     get_lookup_success_file,
+    run_oasis,
+    run_function,
+    get_keys_format,
+    store_subject_at_risk_chunks,
+    generate_chunk_keys,
+    merge_dataframes,
+    take_first,
 )
 
-# Set before importing polars - it sizes its thread pool from host CPU count
-# at import time, which oversubscribes under celery's prefork concurrency.
+# Set before polars is imported (by the keys merge in utils, and oasislmf) - it sizes its
+# thread pool from host CPU count at import time, which oversubscribes under celery's
+# prefork concurrency. Subprocesses inherit it.
 os.environ.setdefault("POLARS_MAX_THREADS", os.environ.get("OASIS_POLARS_MAX_THREADS", "1"))
-import polars as pl  # noqa: E402
 
 
 '''
@@ -62,7 +64,6 @@ ARCHIVE_COMPRESSION_TYPE = get_archive_compression(settings)
 RUNNING_TASK_STATUS = OASIS_TASK_STATUS["running"]["id"]
 TASK_LOG_DIR = settings.get('worker', 'TASK_LOG_DIR', fallback='/var/log/oasis/tasks')
 # oasislmf 'keys_format' -> keys file extension (formats chunk merging supports)
-KEYS_FORMAT_EXT = {'parquet': 'parquet', 'oasis': 'csv'}
 FAIL_ON_REDELIVERY = settings.getboolean('worker', 'FAIL_ON_REDELIVERY', fallback=True)
 
 
@@ -79,111 +80,6 @@ debug_worker = settings.getboolean('worker', 'DEBUG', fallback=False)
 # Quiet sub-loggers
 logging.getLogger('billiard').setLevel('INFO')
 logging.getLogger('numba').setLevel('INFO')
-
-
-def load_subject_at_risk_data(params):
-    """ Returns the subject at risk (SAR) exposure as a DataFrame, with 'loc_id' assigned
-
-    The SAR source depends on the class of business: the location file for
-    property / marine, but the account file for cyber / liability, which can be
-    run with no location file at all. Both files are loaded (when present) so the
-    class of business is detected the same way as in `write_input_files`.
-    """
-    from ods_tools.oed.exposure import OedExposure
-
-    def _abs_path(key):
-        return pathlib.Path(os.path.abspath(params[key])) if params.get(key) else None
-
-    exposure = OedExposure(
-        location=_abs_path('oed_location_csv'),
-        account=_abs_path('oed_accounts_csv'),
-        oed_schema_info=params.get('oed_schema_info') or os.environ.get("OASIS_OED_SCHEMA_INFO", None),
-        check_oed=params.get('check_oed', True),
-        use_field=True,
-        backend_dtype=params.get('oed_backend_dtype', 'pd_dtype'),
-        disable_oed_version_update=params.get('disable_oed_version_update', False),
-    )
-
-    try:
-        # Oasislmf 2.4.x
-        from oasislmf.utils.data import prepare_oed_exposure
-        prepare_oed_exposure(exposure)
-    except ImportError:
-        # Fallback Oasislmf LTS 2.3.x, LTS 1.28.x (location based models only)
-        from oasislmf.utils.data import prepare_location_df
-        exposure.location.dataframe = prepare_location_df(exposure.location.dataframe)
-        return exposure.location.dataframe
-
-    return exposure.get_subject_at_risk_source().dataframe
-
-
-def subject_at_risk_chunk_rows(sar_df, num_chunks):
-    """ Returns the row positions of `sar_df` in each of its `num_chunks` lookup chunks
-
-    Split by subject id ('loc_id') rather than by row, so that every row for a
-    subject (e.g. multiple layers of a cyber account) is looked up in the same chunk.
-    The subjects, in order of first appearance, are split into `num_chunks` even
-    blocks, and each row is assigned its chunk in one pass.
-    """
-    codes, sar_ids = pd.factorize(sar_df['loc_id'], use_na_sentinel=False)
-    chunk_sizes = [len(ids) for ids in np.array_split(np.arange(len(sar_ids)), num_chunks)]
-    row_chunks = np.repeat(np.arange(num_chunks), chunk_sizes)[codes]
-
-    # stable, so rows keep their original order within each chunk
-    rows = np.argsort(row_chunks, kind='stable')
-    return np.split(rows, np.searchsorted(row_chunks[rows], np.arange(1, num_chunks)))
-
-
-def split_subject_at_risk_data(sar_df, num_chunks, chunk_idx):
-    """ Returns the `chunk_idx` slice of `sar_df`, split into `num_chunks` parts
-        (see `subject_at_risk_chunk_rows`)
-    """
-    chunk_rows = subject_at_risk_chunk_rows(sar_df, num_chunks)[chunk_idx]
-    return sar_df.iloc[chunk_rows].reset_index(drop=True)
-
-
-def store_subject_at_risk_chunks(params, num_chunks, chunks_dir):
-    """ Load the SAR exposure once, split it into `num_chunks` parquet files and
-        store them, returning one filestore reference per lookup chunk
-
-        Without this every 'prepare_keys_file_chunk' task loads and checks the
-        whole portfolio just to keep its own rows, so lookup memory and CPU grow
-        with the chunk count.
-    """
-    sar_df = load_subject_at_risk_data(params)
-
-    chunk_refs = []
-    for chunk_idx, chunk_rows in enumerate(subject_at_risk_chunk_rows(sar_df, num_chunks)):
-        chunk_fp = os.path.join(chunks_dir, f'sar-chunk-{chunk_idx + 1}.parquet')
-        chunk_df = sar_df.iloc[chunk_rows].reset_index(drop=True)
-        chunk_df.to_parquet(chunk_fp, index=False)
-        chunk_refs.append(filestore.put(
-            chunk_fp,
-            filename=os.path.basename(chunk_fp),
-            subdir=params['storage_subdir']
-        ))
-        os.remove(chunk_fp)
-    return chunk_refs
-
-
-def load_subject_at_risk_chunk(params, num_chunks, chunk_idx):
-    """ Returns this lookup chunk's SAR rows, from the file stored by
-        'pre_analysis_hook' when there is one, otherwise by loading and splitting
-        the full exposure (e.g. the API didn't send 'num_chunks' to the hook)
-
-        The chunk file is read straight from the filestore, as 'filestore.get'
-        on S3 / Azure also leaves a copy in the worker's data cache.
-    """
-    sar_chunks = params.get('sar_chunks') or []
-    if len(sar_chunks) != num_chunks:
-        if sar_chunks:
-            logger.warning(f'Expected {num_chunks} pre-split exposure chunks, got {len(sar_chunks)}, loading the full exposure')
-        elif num_chunks > 1:
-            logger.info('No pre-split exposure chunks, loading the full exposure')
-        return split_subject_at_risk_data(load_subject_at_risk_data(params), num_chunks, chunk_idx)
-
-    with filestore.open(sar_chunks[chunk_idx], 'rb') as f:
-        return pd.read_parquet(f)
 
 
 @task_revoked.connect
@@ -571,8 +467,7 @@ def pre_analysis_hook(self,
     with TemporaryDir() as hook_target_dir:
         if params.get('exposure_pre_analysis_module'):
             params['oasis_files_dir'] = hook_target_dir
-            from oasislmf.manager import OasisManager
-            pre_hook_output = OasisManager().exposure_pre_analysis(**params)
+            pre_hook_output = run_oasis('exposure_pre_analysis', **params)
             files_modified = pre_hook_output.get('modified', {})
 
             # store updated files
@@ -615,22 +510,14 @@ def pre_analysis_hook(self,
 
         # Split the exposure once here, so each lookup chunk loads only its own rows
         if num_chunks and num_chunks > 1:
-            params['sar_chunks'] = store_subject_at_risk_chunks({**params, **sar_files}, num_chunks, hook_target_dir)
+            params['sar_chunks'] = run_function(
+                store_subject_at_risk_chunks,
+                params={**params, **sar_files}, num_chunks=num_chunks, chunks_dir=hook_target_dir,
+                in_process_only={'filestore': filestore},
+            )
     params['log_location'] = filestore.put(kwargs.get('log_filename'))
     params['log_storage'][slug] = params['log_location']
     return params
-
-
-def get_keys_format(params):
-    """ Return the oasislmf 'keys_format' and matching file extension for the
-        distributed lookup. Chunk merging only supports the tabular formats, so
-        'json' falls back to the default, 'parquet'.
-    """
-    keys_format = (params.get('keys_format') or 'parquet').lower()
-    if keys_format not in KEYS_FORMAT_EXT:
-        logger.warning(f'keys_format "{keys_format}" is not supported for distributed lookups, using "parquet"')
-        keys_format = 'parquet'
-    return keys_format, KEYS_FORMAT_EXT[keys_format]
 
 
 @app.task(bind=True, name='prepare_keys_file_chunk', **celery_conf.worker_task_kwargs)
@@ -650,38 +537,11 @@ def prepare_keys_file_chunk(
         chunk_target_dir = os.path.join(chunk_tmp_dir, f'lookup-{chunk_idx + 1}')
         Path(chunk_target_dir).mkdir(parents=True, exist_ok=True)
 
-        _, lookup = OasisLookupFactory.create(
-            lookup_config_fp=params.get('lookup_config_json', None),
-            model_keys_data_path=params.get('lookup_data_dir', None),
-            model_version_file_path=params.get('model_version_csv', None),
-            lookup_module_path=params.get('lookup_module_path', None),
-            complex_lookup_config_fp=params.get('lookup_complex_config_json', None),
-            user_data_dir=params.get('user_data_dir', None),
-            output_directory=chunk_target_dir,
+        run_function(
+            generate_chunk_keys,
+            params=params, num_chunks=num_chunks, chunk_idx=chunk_idx, chunk_target_dir=chunk_target_dir,
+            in_process_only={'filestore': filestore},
         )
-
-        sar_df = load_subject_at_risk_chunk(params, num_chunks, chunk_idx)
-
-        # With no location file the chunk count isn't capped by the row count
-        # (see `_get_inputs_generation_chunks`), so a chunk can be empty. Skip the
-        # lookup, `collect_keys` merges whatever the other chunks produced.
-        if sar_df.empty:
-            logger.info(f'Lookup chunk {chunk_idx + 1}/{num_chunks} is empty --skipped--')
-        else:
-            keys_format, keys_ext = get_keys_format(params)
-            chunk_keys_fp = os.path.join(chunk_target_dir, f'keys.{keys_ext}')
-            chunk_keys_errors_fp = os.path.join(chunk_target_dir, f'keys-errors.{keys_ext}')
-            lookup.generate_key_files(
-                location_fp=None,
-                location_df=sar_df,
-                successes_fp=chunk_keys_fp,
-                errors_fp=chunk_keys_errors_fp,
-                output_format=keys_format,
-                keys_success_msg=False,
-                multiproc_enabled=params.get('lookup_multiprocessing', False),
-                multiproc_num_cores=params.get('lookup_num_processes', -1),
-                multiproc_num_partitions=params.get('lookup_num_chunks', -1),
-            )
 
         # Store chunks
         params['chunk_keys'] = filestore.put(
@@ -694,66 +554,6 @@ def prepare_keys_file_chunk(
     params['log_location'] = filestore.put(kwargs.get('log_filename'))
     params['log_storage'][slug] = params['log_location']
     return params
-
-
-def _merge_csv_streaming(paths, output_file):
-    # scan_csv errors on a zero-byte file, so skip those first.
-    non_empty_paths = []
-    for path in paths:
-        if os.path.getsize(path) > 0:
-            non_empty_paths.append(str(path))  # polars mishandles pathlib2.Path
-        else:
-            logger.info(f"File {path} is empty. --skipped--")
-    if not non_empty_paths:
-        logger.warning(f"All files were empty: {paths}. --skipped--")
-        return
-
-    # diagonal concat: chunk files' column sets aren't always identical.
-    # relaxed: a header-only chunk scans as all-String, so dtypes can differ too.
-    lazy_frames = [pl.scan_csv(path) for path in non_empty_paths]
-    (
-        pl.concat(lazy_frames, how='diagonal_relaxed')
-        .unique(keep='first', maintain_order=True)
-        .sink_csv(str(output_file))
-    )
-
-
-def _merge_parquet_streaming(paths, output_file):
-    # Dedup by content, not index - chunk files carry no meaningful index.
-    valid_paths = []
-    for path in paths:
-        try:
-            pq.ParquetFile(path).schema_arrow
-            valid_paths.append(str(path))
-        except pa.lib.ArrowInvalid:
-            logger.info(f"File {path} is empty or unreadable. --skipped--")
-    if not valid_paths:
-        logger.warning(f"All files were empty or unreadable: {paths}. --skipped--")
-        return
-
-    # relaxed: a zero-row chunk written from pandas has all-null column types.
-    lazy_frames = [pl.scan_parquet(path) for path in valid_paths]
-    (
-        pl.concat(lazy_frames, how='diagonal_relaxed')
-        .unique(keep='first', maintain_order=True)
-        .sink_parquet(str(output_file))
-    )
-
-
-def merge_dataframes(paths, output_file, file_type):
-    if not paths:
-        logger.warning("merge_dataframes was called with an empty path list.")
-        return
-    if file_type == 'csv':
-        _merge_csv_streaming(paths, output_file)
-    elif file_type == 'parquet':
-        _merge_parquet_streaming(paths, output_file)
-
-
-def take_first(paths, output_file):
-    first_path = paths[0]
-    logger.info(f"Using {first_path} and ignoring others.")
-    shutil.copy2(first_path, output_file)
 
 
 def merge_chunk_log_storage(chunk_results):
@@ -842,9 +642,8 @@ def write_input_files(self, params, run_data_uuid=None, analysis_id=None, initia
     params['keys_data_path'] = os.path.join(params['target_dir'], f'keys.{keys_ext}')
     params['keys_errors_path'] = os.path.join(params['target_dir'], f'keys-errors.{keys_ext}')
     params['oasis_files_dir'] = params['target_dir']
-    from oasislmf.manager import OasisManager
     try:
-        OasisManager().generate_files(**params)
+        run_oasis('generate_files', **params)
     except OasisExceptionNoKeys:
         notify_api_status_v2(analysis_id, 'INPUTS_GENERATION_NO_KEYS')
         raise
@@ -852,7 +651,7 @@ def write_input_files(self, params, run_data_uuid=None, analysis_id=None, initia
     # Optional step (Post file generation Hook)
     if params.get('post_file_gen_module', None):
         logger.info(f"post_generation_hook: running {params.get('post_file_gen_module')}")
-        OasisManager().post_file_gen(**params)
+        run_oasis('post_file_gen', **params)
 
     # clear out user-data,
     # these files should not be sorted in the generated inputs tar
@@ -1066,13 +865,12 @@ def prepare_losses_generation_directory(self, params, analysis_id=None, slug=Non
             f.flush()
         params['model_storage_json'] = f.name if model_storage else None
 
-        from oasislmf.manager import OasisManager
-        params['analysis_settings'] = OasisManager().generate_losses_dir(**params)
+        params['analysis_settings'] = run_oasis('generate_losses_dir', **params)
 
         # Optional step (Pre losses hook) --- Before or after 'generate_losses_dir' ??
         if params.get('pre_loss_module', None):
             logger.info(f"pre_losses_hook: running {params.get('pre_loss_module')}")
-            OasisManager().pre_loss(**params)
+            run_oasis('pre_loss', **params)
 
         params['run_location'] = filestore.put(
             params['model_run_dir'],
@@ -1129,8 +927,7 @@ def generate_losses_chunk(self, params, chunk_idx, num_chunks, analysis_id=None,
 
         chunk_params['model_storage_json'] = f.name if model_storage else None
         Path(chunk_params['kernel_work_dir']).mkdir(parents=True, exist_ok=True)
-        from oasislmf.manager import OasisManager
-        OasisManager().generate_losses_partial(**chunk_params)
+        run_oasis('generate_losses_partial', **chunk_params)
 
         return {
             **params,
@@ -1176,11 +973,10 @@ def generate_losses_output(self, params, analysis_id=None, slug=None, **kwargs):
             merge_dirs(d, abs_log_dir)
 
     # Exec losses
-    from oasislmf.manager import OasisManager
-    OasisManager().generate_losses_output(**res)
+    run_oasis('generate_losses_output', **res)
     if res.get('post_analysis_module', None):
         logger.info(f"post_losses_hook: running {res.get('post_analysis_module')}")
-        OasisManager().post_analysis(**res)
+        run_oasis('post_analysis', **res)
 
     # store additional files needed for combine run
     occ_path = os.path.join(res['model_run_dir'], 'input', 'occurrence.bin')

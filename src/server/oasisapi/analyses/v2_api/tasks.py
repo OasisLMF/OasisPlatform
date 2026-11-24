@@ -511,12 +511,17 @@ def record_sub_task_failure(self, *args, analysis_id=None, initiator_id=None, ta
     tb = _traceback_from_errback_args(*args)
     task_id = self.request.parent_id
 
+    # 'cancel_subtasks' may already have marked it cancelled, don't overwrite that
+    subtask_qs = AnalysisTaskStatus.objects.filter(
+        slug=task_slug,
+        analysis_id=analysis_id,
+    ).exclude(status=AnalysisTaskStatus.status_choices.CANCELLED)
+    if not subtask_qs.exists():
+        return
+
     with TemporaryFile() as tmp_file:
         tmp_file.write(tb.encode('utf-8'))
-        AnalysisTaskStatus.objects.filter(
-            slug=task_slug,
-            analysis_id=analysis_id,
-        ).update(
+        subtask_qs.update(
             task_id=task_id,
             status=AnalysisTaskStatus.status_choices.ERROR,
             end_time=timezone.now(),
