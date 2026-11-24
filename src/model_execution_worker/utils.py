@@ -48,6 +48,8 @@ from ods_tools import __version__ as ods_version
 from oasislmf.utils.exceptions import OasisException
 
 from ..common.data import ORIGINAL_FILENAME, STORED_FILENAME
+from ..common.filestore.filestore import get_filestore
+from ..conf.iniconf import settings
 from .oasis_subprocess_runner import MANAGER, run_in_subprocess, subprocess_enabled
 import requests
 
@@ -564,8 +566,6 @@ KEYS_FORMAT_EXT = {'parquet': 'parquet', 'oasis': 'csv'}
 @functools.lru_cache(maxsize=None)
 def _worker_filestore():
     """ The worker's filestore, built from its settings (as `distributed_tasks.filestore`) """
-    from ..common.filestore.filestore import get_filestore
-    from ..conf.iniconf import settings
     return get_filestore(settings)
 
 
