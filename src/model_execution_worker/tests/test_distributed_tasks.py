@@ -162,6 +162,43 @@ class MergeCsvStreaming(TestCase):
 
             self.assertEqual(output_file.read_text(), 'id,value\n1,"a\nb"\n2,b\n')
 
+    def test_same_row_quoted_and_unquoted___deduplicated(self):
+        with TemporaryDirectory() as tmp_dir:
+            chunk_a = Path(tmp_dir, 'a.csv')
+            chunk_b = Path(tmp_dir, 'b.csv')
+            output_file = Path(tmp_dir, 'merged.csv')
+            chunk_a.write_text('id,value\n1,x\n')
+            chunk_b.write_text('id,value\n1,"x"\n2,y\n')
+
+            _merge_csv_streaming([chunk_a, chunk_b], output_file)
+
+            self.assertEqual(output_file.read_text(), 'id,value\n1,x\n2,y\n')
+
+    def test_stray_quotes_around_multi_line_field___raises(self):
+        # Every line has an even number of quotes, so only a full CSV parse can
+        # tell the field spans lines. Merging line by line would silently drop
+        # record 2's continuation lines as duplicates of record 1's.
+        with TemporaryDirectory() as tmp_dir:
+            chunk = Path(tmp_dir, 'chunk.csv')
+            output_file = Path(tmp_dir, 'merged.csv')
+            chunk.write_text(
+                'id,size,note,size2\n'
+                '1,5" pipe,"a\nb\nc",7" pipe\n'
+                '2,5" pipe,"d\nb\nc",7" pipe\n')
+
+            with self.assertRaises(pl.exceptions.ComputeError):
+                _merge_csv_streaming([chunk], output_file)
+
+    def test_all_chunks_empty___no_output_file_is_written(self):
+        with TemporaryDirectory() as tmp_dir:
+            empty_chunk = Path(tmp_dir, 'empty.csv')
+            output_file = Path(tmp_dir, 'merged.csv')
+            empty_chunk.touch()
+
+            _merge_csv_streaming([empty_chunk], output_file)
+
+            self.assertFalse(output_file.exists())
+
 
 class CsvLinesMergeable(TestCase):
     def check(self, chunk_texts):
@@ -178,27 +215,17 @@ class CsvLinesMergeable(TestCase):
     def test_different_headers___false(self):
         self.assertFalse(self.check(['id,value\n1,x\n', 'id,extra\n2,y\n']))
 
-    def test_quoted_fields_within_lines___true(self):
-        self.assertTrue(self.check(['id,value\n1,x\n', 'id,value\n2,"y, z"\n3,"say ""hi"""\n']))
+    def test_quoted_fields_within_lines___false(self):
+        self.assertFalse(self.check(['id,value\n1,x\n', 'id,value\n2,"y, z"\n3,"say ""hi"""\n']))
 
     def test_quoted_field_spanning_lines___false(self):
         self.assertFalse(self.check(['id,value\n1,x\n', 'id,value\n2,"y\nz"\n']))
 
-    def test_quoted_field_spanning_lines_with_escaped_quote___false(self):
-        self.assertFalse(self.check(['id,value\n1,"a ""b""\nc"\n']))
+    def test_stray_quote_in_unquoted_field___false(self):
+        self.assertFalse(self.check(['id,size\n1,5" pipe\n']))
 
     def test_line_separator_in_data___false(self):
         self.assertFalse(self.check(['id,value\n1,x\x1fy\n']))
-
-    def test_all_chunks_empty___no_output_file_is_written(self):
-        with TemporaryDirectory() as tmp_dir:
-            empty_chunk = Path(tmp_dir, 'empty.csv')
-            output_file = Path(tmp_dir, 'merged.csv')
-            empty_chunk.touch()
-
-            _merge_csv_streaming([empty_chunk], output_file)
-
-            self.assertFalse(output_file.exists())
 
 
 class MergeParquetStreaming(TestCase):

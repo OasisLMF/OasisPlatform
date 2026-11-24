@@ -735,28 +735,19 @@ _CSV_LINE_SEP = '\x1f'  # ASCII unit separator, used as a never-matching CSV del
 _CSV_SCAN_BLOCK = 1 << 24
 
 
-def _csv_has_odd_quote_line(path):
-    """ True if any line of the CSV has an odd number of quotes, i.e. a quoted
-        field spans lines (escaped quotes come in pairs, so they keep the count even).
-    """
-    import polars as pl
-    return (
-        pl.scan_csv(path, separator=_CSV_LINE_SEP, quote_char=None, has_header=False, infer_schema=False)
-        .select((pl.first().str.count_matches('"', literal=True) % 2 == 1).any())
-        .collect(engine='streaming')
-        .item()
-    )
-
-
 def _csv_lines_mergeable(paths):
     """ True if the chunk CSVs can be merged as whole, unparsed lines: every file
-        has the same header, no file contains the line separator, and no quoted
-        field spans lines.
+        has the same header and no file contains a quote or the line separator.
+
+        Any quote sends the merge to the column path. Line-level quote checks
+        can't reliably spot a quoted field spanning lines (a stray `"` in an
+        unquoted field can balance the count), and splitting such a field into
+        lines would let unique() drop its continuation lines without an error.
+        Quote-free files also have only one way to write each row, so matching
+        rows on their raw text gives the same result as matching on fields.
     """
     header = None
-    quoted_paths = []
     for path in paths:
-        has_quote = False
         with open(path, 'rb') as f:
             first_line = f.readline().rstrip(b'\r\n')
             if header is None:
@@ -765,13 +756,9 @@ def _csv_lines_mergeable(paths):
                 return False
             f.seek(0)
             while block := f.read(_CSV_SCAN_BLOCK):
-                if _CSV_LINE_SEP.encode() in block:
+                if b'"' in block or _CSV_LINE_SEP.encode() in block:
                     return False
-                has_quote = has_quote or b'"' in block
-        if has_quote:
-            quoted_paths.append(path)
-    # Only files with quotes need the slower per-line check.
-    return not any(_csv_has_odd_quote_line(path) for path in quoted_paths)
+    return True
 
 
 def _merge_csv_streaming(paths, output_file):
@@ -792,7 +779,8 @@ def _merge_csv_streaming(paths, output_file):
     # inference window. CSV in, CSV out, so values pass through as text.
     if _csv_lines_mergeable(non_empty_paths):
         # Fast path: each row is one string, so no field splitting and a single
-        # hash per row in unique().
+        # hash per row in unique(). Duplicates are matched on exact text in both
+        # paths (no type inference), so `1` and `1.0` are different rows.
         lazy_frames = [
             pl.scan_csv(path, separator=_CSV_LINE_SEP, quote_char=None, infer_schema=False)
             for path in non_empty_paths
