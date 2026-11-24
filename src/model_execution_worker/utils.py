@@ -57,7 +57,6 @@ import requests
 logger = logging.getLogger(__name__)
 
 
-# Send notification back to the API Once task is read from Queue
 def run_oasis(method, **kwargs):
     """Run `OasisManager().<method>(**kwargs)`.
 
