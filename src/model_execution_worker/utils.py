@@ -731,6 +731,36 @@ def generate_chunk_keys(params, num_chunks, chunk_idx, chunk_target_dir, filesto
         )
 
 
+_CSV_LINE_SEP = '\x1f'  # ASCII unit separator, used as a never-matching CSV delimiter
+_CSV_SCAN_BLOCK = 1 << 24
+
+
+def _csv_lines_mergeable(paths):
+    """ True if the chunk CSVs can be merged as whole, unparsed lines: every file
+        has the same header and no file contains a quote or the line separator.
+
+        Any quote sends the merge to the column path. Line-level quote checks
+        can't reliably spot a quoted field spanning lines (a stray `"` in an
+        unquoted field can balance the count), and splitting such a field into
+        lines would let unique() drop its continuation lines without an error.
+        Quote-free files also have only one way to write each row, so matching
+        rows on their raw text gives the same result as matching on fields.
+    """
+    header = None
+    for path in paths:
+        with open(path, 'rb') as f:
+            first_line = f.readline().rstrip(b'\r\n')
+            if header is None:
+                header = first_line
+            elif first_line != header:
+                return False
+            f.seek(0)
+            while block := f.read(_CSV_SCAN_BLOCK):
+                if b'"' in block or _CSV_LINE_SEP.encode() in block:
+                    return False
+    return True
+
+
 def _merge_csv_streaming(paths, output_file):
     import polars as pl
     # scan_csv errors on a zero-byte file, so skip those first.
@@ -744,14 +774,25 @@ def _merge_csv_streaming(paths, output_file):
         logger.warning(f"All files were empty: {paths}. --skipped--")
         return
 
-    # diagonal concat: chunk files' column sets aren't always identical.
-    # relaxed: a header-only chunk scans as all-String, so dtypes can differ too.
-    lazy_frames = [pl.scan_csv(path) for path in non_empty_paths]
-    (
-        pl.concat(lazy_frames, how='diagonal_relaxed')
-        .unique(keep='first', maintain_order=True)
-        .sink_csv(str(output_file))
-    )
+    # Never infer types: inference breaks on header-only chunks (all-String),
+    # rewrites values across chunks (1 -> 1.0) and fails on values past the
+    # inference window. CSV in, CSV out, so values pass through as text.
+    if _csv_lines_mergeable(non_empty_paths):
+        # Fast path: each row is one string, so no field splitting and a single
+        # hash per row in unique(). Duplicates are matched on exact text in both
+        # paths (no type inference), so `1` and `1.0` are different rows.
+        lazy_frames = [
+            pl.scan_csv(path, separator=_CSV_LINE_SEP, quote_char=None, infer_schema=False)
+            for path in non_empty_paths
+        ]
+        merged = pl.concat(lazy_frames, how='vertical')
+        sink_kwargs = {'separator': _CSV_LINE_SEP, 'quote_style': 'never'}
+    else:
+        # diagonal concat: chunk files' column sets aren't always identical.
+        lazy_frames = [pl.scan_csv(path, infer_schema=False) for path in non_empty_paths]
+        merged = pl.concat(lazy_frames, how='diagonal')
+        sink_kwargs = {}
+    merged.unique(keep='first', maintain_order=True).sink_csv(str(output_file), **sink_kwargs)
 
 
 def _merge_parquet_streaming(paths, output_file):
