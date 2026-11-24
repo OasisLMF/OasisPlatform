@@ -74,7 +74,7 @@ CELERYBEAT_SCHEDULE = {
 worker_task_kwargs = {
     'autoretry_for': (Exception,),
     # The task will be run max_retries + 1 times, 0 = no retries (fail fast)
-    'max_retries': settings.getint('worker', 'TASK_MAX_RETRIES', fallback=2),
+    'max_retries': settings.get_non_negative_int('worker', 'TASK_MAX_RETRIES', fallback=2),
     # A small delay (seconds) to recover from temporary bad states
-    'default_retry_delay': settings.getint('worker', 'TASK_RETRY_DELAY', fallback=6),
+    'default_retry_delay': settings.get_non_negative_int('worker', 'TASK_RETRY_DELAY', fallback=6),
 }

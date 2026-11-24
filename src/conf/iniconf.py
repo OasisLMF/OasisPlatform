@@ -100,6 +100,25 @@ class Settings(ConfigParser):
         kwargs.setdefault('vars', self._get_section_env_vars(section))
         return super(Settings, self).getint(section, option, **kwargs)
 
+    def get_non_negative_int(self, section, option, fallback):
+        ''' Like `getint`, but an empty, non-integer or negative value logs a warning and
+            returns `fallback` instead of raising, so a bad setting can't stop the
+            container from starting (e.g. an unset compose variable passed through as '').
+        '''
+        value = self.get(section, option, fallback=None)
+        if value is None or not str(value).strip():
+            return fallback
+        try:
+            parsed = int(value)
+        except (TypeError, ValueError):
+            parsed = -1
+        if parsed < 0:
+            logging.getLogger(__name__).warning(
+                "Invalid value '%s' for [%s] %s, must be a non-negative integer: using %s",
+                value, section, option, fallback)
+            return fallback
+        return parsed
+
     def get_timedelta(self, section, option, **kwargs):
         ''' Use for reading timedelta argument strings and returns a timedelta
             object

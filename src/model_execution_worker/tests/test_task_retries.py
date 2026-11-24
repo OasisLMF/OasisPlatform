@@ -42,3 +42,14 @@ def test_task_retries___set_in_env___env_values_used(reload_conf, module, retrie
     })
     assert conf.worker_task_kwargs['max_retries'] == retries
     assert conf.worker_task_kwargs['default_retry_delay'] == delay
+
+
+@pytest.mark.parametrize('module', [celeryconf_v1, celeryconf_v2])
+@pytest.mark.parametrize('bad_value', ['', '  ', 'abc', '1.5', '-1'])
+def test_task_retries___invalid_value___defaults_used(reload_conf, module, bad_value):
+    conf = reload_conf(module, {
+        'OASIS_WORKER_TASK_MAX_RETRIES': bad_value,
+        'OASIS_WORKER_TASK_RETRY_DELAY': bad_value,
+    })
+    assert conf.worker_task_kwargs['max_retries'] == 2
+    assert conf.worker_task_kwargs['default_retry_delay'] == 6
