@@ -11,7 +11,8 @@ ARG PYTHON_RUNTIME_IMAGE=dhi.io/python:3.14-alpine
 FROM ${PYTHON_BUILD_IMAGE} AS build-packages
 
 ENV PIP_BREAK_SYSTEM_PACKAGES=1
-RUN apk add --no-cache gcc g++ make musl-dev linux-headers python3-dev git
+# python3-ndbm (Alpine) auto-installs alongside DHI's python-3.14 and conflicts over _dbm.so; DHI's python already provides dbm.ndbm
+RUN apk add --no-cache gcc g++ make musl-dev linux-headers python3-dev git "!python3-ndbm"
 
 COPY ./requirements-server.txt ./requirements-server.txt
 RUN pip install --user --no-warn-script-location -r ./requirements-server.txt
