@@ -23,7 +23,9 @@ from src.server.oasisapi.portfolios.v2_api.tests.fakes import fake_portfolio
 from src.server.oasisapi.files.v1_api.tests.fakes import fake_related_file
 from src.server.oasisapi.auth.tests.fakes import fake_user
 from ...models import AnalysisTaskStatus
-from ...models import Analysis
+from ...models import Analysis, delete_connected_files
+from src.server.oasisapi.analysis_models.models import ModelChunkingOptions
+from src.server.oasisapi.files.models import RelatedFile
 from src.server.oasisapi.analyses.v2_api.tasks import cancel_subtasks
 
 # Override default deadline for all tests to 8s
@@ -608,3 +610,75 @@ class AnalysisGenerateInputs(WebTestMixin, TestCase):
                     sig.options['queue'],
                     iniconf.settings.get('worker', 'TASK_CONTROLLER_QUEUE', fallback='celery-v2')
                 )
+
+
+class DeleteConnectedFiles(TestCase):
+    """ Regression tests for #1503: a cancelled/failed V2 run stores the same
+        RelatedFile as both `run_traceback_file` and `run_log_file`, which made the
+        `post_delete` handler raise `RelatedFile.DoesNotExist` on the second field.
+    """
+
+    def _analysis_with_shared_run_log(self, **kwargs):
+        shared = fake_related_file(file='combined traceback + sub-task logs')
+        analysis = fake_analysis(
+            run_traceback_file=shared,
+            run_log_file=shared,
+            input_file=fake_related_file(),
+            settings_file=fake_related_file(),
+            **kwargs,
+        )
+        return analysis, shared
+
+    def test_portfolio_delete___analysis_with_shared_traceback_and_log_file___files_are_removed(self):
+        with TemporaryDirectory() as d, override_settings(MEDIA_ROOT=d):
+            portfolio = fake_portfolio()
+            analysis, shared = self._analysis_with_shared_run_log(portfolio=portfolio)
+            file_ids = [shared.pk, analysis.input_file_id, analysis.settings_file_id]
+
+            portfolio.delete()
+
+            self.assertFalse(Analysis.objects.filter(pk=analysis.pk).exists())
+            self.assertFalse(RelatedFile.objects.filter(pk__in=file_ids).exists())
+
+    def test_analysis_delete___shared_traceback_and_log_file___files_are_removed(self):
+        with TemporaryDirectory() as d, override_settings(MEDIA_ROOT=d):
+            analysis, shared = self._analysis_with_shared_run_log()
+            file_ids = [shared.pk, analysis.input_file_id, analysis.settings_file_id]
+
+            analysis.delete()
+
+            self.assertFalse(Analysis.objects.filter(pk=analysis.pk).exists())
+            self.assertFalse(RelatedFile.objects.filter(pk__in=file_ids).exists())
+
+    def test_handler___referenced_file_already_deleted___does_not_raise(self):
+        with TemporaryDirectory() as d, override_settings(MEDIA_ROOT=d):
+            analysis = fake_analysis(run_log_file=fake_related_file(), output_file=fake_related_file())
+            output_file_id = analysis.output_file_id
+            # remove the row behind the in-memory instance, as happens when an earlier
+            # handler in the same cascade has already deleted it
+            RelatedFile.objects.filter(pk=analysis.run_log_file_id).delete()
+
+            delete_connected_files(sender=Analysis, instance=analysis)
+
+            self.assertFalse(RelatedFile.objects.filter(pk=output_file_id).exists())
+
+    def test_analysis_delete___chunking_options_are_removed(self):
+        with TemporaryDirectory() as d, override_settings(MEDIA_ROOT=d):
+            analysis = fake_analysis()
+            analysis.chunking_options = ModelChunkingOptions.objects.create()
+            analysis.save()
+            chunking_id = analysis.chunking_options_id
+
+            analysis.delete()
+
+            self.assertFalse(ModelChunkingOptions.objects.filter(pk=chunking_id).exists())
+
+    def test_task_status_delete___shared_log_files___files_are_removed(self):
+        with TemporaryDirectory() as d, override_settings(MEDIA_ROOT=d):
+            shared = fake_related_file()
+            status = fake_analysis_task_status(output_log=shared, error_log=shared, retry_log=fake_related_file())
+            file_ids = [shared.pk, status.retry_log_id]
+
+            status.delete()
+
+            self.assertFalse(RelatedFile.objects.filter(pk__in=file_ids).exists())

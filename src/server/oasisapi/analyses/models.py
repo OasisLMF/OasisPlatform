@@ -23,7 +23,7 @@ from src.server.oasisapi.queues.consumers import send_task_status_message, TaskS
     TaskStatusMessageAnalysisItem, build_task_status_message, build_all_queue_status_message
 from ..analysis_models.models import AnalysisModel, ModelChunkingOptions
 from ..data_files.models import DataFile
-from ..files.models import RelatedFile, file_storage_link
+from ..files.models import RelatedFile, delete_related_files, file_storage_link
 from ..portfolios.models import Portfolio
 from ..queues.utils import filter_queues_info
 from ....common.data import STORED_FILENAME, ORIGINAL_FILENAME
@@ -862,24 +862,19 @@ def delete_connected_files(sender, instance, **kwargs):
         'lookup_success_file',
         'lookup_validation_file',
         'summary_levels_file',
-        'chunking_options',
     ]
-    for ref in for_removal:
-        obj_ref = getattr(instance, ref)
-        if obj_ref:
-            obj_ref.delete()
+    delete_related_files(instance, for_removal)
+
+    if instance.chunking_options_id is not None:
+        ModelChunkingOptions.objects.filter(pk=instance.chunking_options_id).delete()
 
 
 @receiver(post_delete, sender=AnalysisTaskStatus)
 def delete_connected_task_logs(sender, instance, **kwargs):
     """ Post delete handler to clear out any dangaling log files
     """
-    for_removal = [
+    delete_related_files(instance, [
         'output_log',
         'error_log',
         'retry_log',
-    ]
-    for ref in for_removal:
-        obj_ref = getattr(instance, ref)
-        if obj_ref:
-            obj_ref.delete()
+    ])
