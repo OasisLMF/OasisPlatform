@@ -31,6 +31,7 @@ from ....conf import iniconf
 from ..combine.tasks import record_combine_output
 
 from .v1_api.tasks import record_generate_input_result, record_run_analysis_result
+from .v2_api.utils import delete_prev_output
 
 
 class AnalysisTaskStatusQuerySet(models.QuerySet):
@@ -250,6 +251,9 @@ class Analysis(TimeStampedModel):
         status_choices.RUN_ERROR,
         status_choices.RUN_CANCELLED,
     ]
+    # Cleared before a V2 run is dispatched. On failure the V2 chain only stores the files
+    # it has, so stale outputs from an earlier run would be returned as the failed run's.
+    RUN_OUTPUT_FIELDS = ['output_file', 'run_log_file', 'run_traceback_file']
 
     input_generation_traceback_file_id = None
 
@@ -676,6 +680,8 @@ class Analysis(TimeStampedModel):
         self.status = self.status_choices.RUN_QUEUED
         self._reset_loss_progress()
         self.save()
+        if run_mode == self.run_mode_choices.V2:
+            delete_prev_output(self, self.RUN_OUTPUT_FIELDS)
 
         if run_mode == self.run_mode_choices.V1:
             task_id = self._dispatch_v1(
@@ -733,6 +739,7 @@ class Analysis(TimeStampedModel):
         self._reset_input_generation()
         self._reset_loss_progress()
         self.save()
+        delete_prev_output(self, self.RUN_OUTPUT_FIELDS)
 
         task_id = self._dispatch_v2(
             self.v2_start_input_and_loss_generation_signature, initiator, [loc_lines, events_total],

@@ -1,0 +1,151 @@
+# Backwards compatibility checks: the given (newly built) images against released platform versions.
+#
+#   Worker <release>   new server, latest release of each supported stable worker line
+#                      (1.x lines only support v1, 2.x lines run v2)
+#   Server <release>   oldest supported server (server_min_supported), new worker, v1 and v2
+#
+# Each check runs OasisModels' platform-tests workflow with skip_results_check: outputs aren't compared
+# (results legitimately differ between releases), a case only has to complete without errors.
+# Image tests on the new images alone are in test-images.yml, which calls this workflow with the images it built.
+
+name: Platform Compatibility Tests
+
+on:
+  workflow_call:
+    inputs:
+      server_image:
+        description: 'Server image to test [coreoasis/api_server]'
+        required: true
+        type: string
+      server_tag:
+        description: 'Server tag [semver]'
+        required: true
+        type: string
+      worker_image:
+        description: 'Worker image to test [coreoasis/model_worker]'
+        required: true
+        type: string
+      worker_tag:
+        description: 'Worker tag [semver]'
+        required: true
+        type: string
+      models_branch:
+        description: 'OasisModels branch to test with (default: platform-tests default) [git ref]'
+        required: false
+        type: string
+      platform_tests:
+        description: 'OasisModels test cases to run (default: PiWind/test_1) [Model, Model/test_N, ...]'
+        required: false
+        type: string
+      oasislmf_branch:
+        description: 'If set, pip install this oasislmf branch for the test client [git ref]'
+        required: false
+        type: string
+      pytest_options:
+        description: 'Extra pytest options [-k <test_name>]'
+        required: false
+        type: string
+
+  workflow_dispatch:
+    inputs:
+      server_image:
+        description: 'Server image to test [coreoasis/api_server]'
+        required: true
+        default: 'coreoasis/api_server'
+      server_tag:
+        description: 'Server tag [semver]'
+        required: true
+        default: 'latest'
+      worker_image:
+        description: 'Worker image to test [coreoasis/model_worker]'
+        required: true
+        default: 'coreoasis/model_worker'
+      worker_tag:
+        description: 'Worker tag [semver]'
+        required: true
+        default: 'latest'
+      models_branch:
+        description: 'OasisModels branch to test with (default: platform-tests default) [git ref]'
+        required: false
+      platform_tests:
+        description: 'OasisModels test cases to run (default: PiWind/test_1) [Model, Model/test_N, ...]'
+        required: false
+      oasislmf_branch:
+        description: 'If set, pip install this oasislmf branch for the test client [git ref]'
+        required: false
+      pytest_options:
+        description: 'Extra pytest options [-k <test_name>]'
+        required: false
+
+env:
+  server_min_supported: '2.4.4'
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.matrix.outputs.matrix }}
+
+    steps:
+      - name: Checkout Platform
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # One entry per check: released worker lines against the new server, then the
+      # oldest supported server against the new worker
+      - name: Build compatibility matrix
+        id: matrix
+        env:
+          NEW_SERVER_IMG: ${{ inputs.server_image }}
+          NEW_SERVER_TAG: ${{ inputs.server_tag }}
+          NEW_WORKER_IMG: ${{ inputs.worker_image }}
+          NEW_WORKER_TAG: ${{ inputs.worker_tag }}
+          SERVER_MIN: ${{ env.server_min_supported }}
+        run: |
+          entries=()
+          add() {  # name server_img server_tag worker_img worker_tag api_ver suffix channel_layer
+            entries+=("$(jq -cn --arg name "$1" --arg server_image "$2" --arg server_tag "$3" \
+                                --arg worker_image "$4" --arg worker_tag "$5" --arg api "$6" --arg suffix "$7" \
+                                --arg channel_layer "$8" '$ARGS.named')")
+          }
+
+          # stable worker line -> API version (1.x only supports v1)
+          for line in 1.23:v1 1.27:v1 1.28:v1 2.3:v2 2.4:v2; do
+            ver=${line%%:*}; api=${line##*:}
+            tag=$( ./scripts/find_latest.sh -j "${ver%%.*}" -i "${ver##*.}" )
+            add "Worker $tag" "$NEW_SERVER_IMG" "$NEW_SERVER_TAG" coreoasis/model_worker "$tag" "$api" "_worker-$tag" false
+          done
+
+          for api in v1 v2; do
+            # servers before 2.5.7 need a channel layer (redis), the OasisModels stack only starts one on request
+            add "Server $SERVER_MIN" coreoasis/api_server "$SERVER_MIN" "$NEW_WORKER_IMG" "$NEW_WORKER_TAG" "$api" "_server-${SERVER_MIN}_$api" true
+          done
+
+          matrix=$(printf '%s\n' "${entries[@]}" | jq -cs '{include: .}')
+          echo "$matrix" | jq .
+          echo "matrix=$matrix" >> $GITHUB_OUTPUT
+
+  compatibility:
+    name: ${{ matrix.api }} API
+    secrets: inherit
+    needs: [setup]
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.setup.outputs.matrix) }}
+    uses: OasisLMF/OasisModels/.github/workflows/platform-tests.yml@feature/platform-tests  # TODO: @main once OasisModels#65 is merged
+    with:
+      models_branch: ${{ inputs.models_branch }}
+      server_image: ${{ matrix.server_image }}
+      server_tag: ${{ matrix.server_tag }}
+      worker_image: ${{ matrix.worker_image }}
+      worker_tag: ${{ matrix.worker_tag }}
+      worker_api_ver: ${{ matrix.api }}
+      platform_tests: ${{ inputs.platform_tests || 'PiWind/test_1' }}
+      skip_results_check: 'true'
+      channel_layer: ${{ matrix.channel_layer }}
+      oasislmf_branch: ${{ inputs.oasislmf_branch }}
+      pytest_opts: ${{ inputs.pytest_options }}
+      debug_mode: '1'
+      storage_suffix: ${{ matrix.suffix }}
+      job_name: ${{ matrix.name }}

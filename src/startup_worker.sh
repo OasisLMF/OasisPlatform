@@ -47,6 +47,16 @@ if [ ! -z "${OASIS_ODM_VERSION}" ] ; then
   fi
 fi
 
+# The image's numba cache (jit-warmup stage) is compiled with none of OASIS_INT / OASIS_FLOAT /
+# OASIS_AREAPERIL_TYPE set, i.e. oasislmf's defaults. The dtypes are built into the compiled code and
+# aren't part of numba's cache key, so a worker that sets any of them could load mismatched code
+# (segfaults, bad results). Clear it so the pytools compile with this worker's dtypes on first use.
+# Checks for any value rather than comparing with the defaults, so it doesn't depend on oasislmf's.
+if [ -n "${OASIS_INT}${OASIS_FLOAT}${OASIS_AREAPERIL_TYPE}" ]; then
+  echo "oasislmf dtypes set (OASIS_INT=${OASIS_INT} OASIS_FLOAT=${OASIS_FLOAT} OASIS_AREAPERIL_TYPE=${OASIS_AREAPERIL_TYPE}): clearing the prebuilt numba cache"
+  oasislmf clearcache || echo "WARNING: 'oasislmf clearcache' failed, the prebuilt numba cache may not match these dtypes"
+fi
+
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 export PYTHONPATH=$SCRIPT_DIR
 
