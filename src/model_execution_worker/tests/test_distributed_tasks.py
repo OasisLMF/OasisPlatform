@@ -1,4 +1,5 @@
 import os
+import shutil
 from unittest import TestCase
 
 import pandas as pd
@@ -13,6 +14,7 @@ from pathlib2 import Path
 from oasis_data_manager.filestore.backends.local import LocalStorage
 
 from src.model_execution_worker.utils import (
+    copy_pre_analysis_extra_files,
     load_subject_at_risk_chunk,
     load_subject_at_risk_data,
     store_subject_at_risk_chunks,
@@ -732,6 +734,127 @@ class PreAnalysisHookChunks(TestCase):
 
         store_chunks.assert_not_called()
         self.assertNotIn('sar_chunks', result)
+
+
+class CopyPreAnalysisExtraFiles(TestCase):
+    """ Files a pre-analysis hook writes, other than the step's own exposure files,
+        are carried into the generated inputs (#1502).
+    """
+
+    def _make_hook_dir(self, hook_dir):
+        for name in ['raw_location.parquet', 'location.parquet', 'exposure_info.json',
+                     'model_extra.json', os.path.join('sub', 'data.bin')]:
+            Path(hook_dir, name).parent.mkdir(parents=True, exist_ok=True)
+            Path(hook_dir, name).write_text(name)
+
+    def test_only_files_written_by_the_hook_are_copied(self):
+        with TemporaryDirectory() as hook_dir, TemporaryDirectory() as dst_dir:
+            self._make_hook_dir(hook_dir)
+            hook_output = {'original': {'location': 'raw_location.parquet'},
+                           'modified': {'location': 'location.parquet'}}
+
+            copied = copy_pre_analysis_extra_files(hook_dir, hook_output, dst_dir)
+
+            self.assertEqual(copied, ['model_extra.json', 'sub/data.bin'])
+            self.assertEqual(Path(dst_dir, 'sub', 'data.bin').read_text(), os.path.join('sub', 'data.bin'))
+            self.assertFalse(Path(dst_dir, 'location.parquet').exists())
+
+    def test_absolute_paths_in_hook_output(self):
+        with TemporaryDirectory() as hook_dir, TemporaryDirectory() as dst_dir:
+            self._make_hook_dir(hook_dir)
+            hook_output = {'original': {'location': '/somewhere/else/location.csv'},
+                           'modified': {'location': os.path.join(hook_dir, 'location.parquet')}}
+
+            copied = copy_pre_analysis_extra_files(hook_dir, hook_output, dst_dir)
+
+            self.assertEqual(copied, ['model_extra.json', 'raw_location.parquet', 'sub/data.bin'])
+
+    def test_no_extra_files(self):
+        with TemporaryDirectory() as hook_dir, TemporaryDirectory() as dst_dir:
+            Path(hook_dir, 'location.parquet').write_text('x')
+
+            self.assertEqual(copy_pre_analysis_extra_files(hook_dir, {'modified': {'location': 'location.parquet'}}, dst_dir), [])
+
+
+HOOK_WRITING_EXTRA_FILES = """
+import os
+import shutil
+
+
+class ExposurePreAnalysis:
+    def __init__(self, input_dir, **kwargs):
+        self.input_dir = input_dir
+
+    def run(self):
+        with open(os.path.join(self.input_dir, 'model_extra.json'), 'w') as f:
+            f.write('{"from": "pre-analysis"}')
+        os.makedirs(os.path.join(self.input_dir, 'hook_data'))
+        with open(os.path.join(self.input_dir, 'hook_data', 'factors.csv'), 'w') as f:
+            f.write('a,b\\n1,2\\n')
+"""
+
+
+class PreAnalysisHookExtraFiles(TestCase):
+    """ #1502: files the pre-analysis hook writes reach the generated inputs, from which
+        the loss generation and post-analysis hook read them.
+    """
+    inputs_dir = os.path.join(os.path.dirname(__file__), 'inputs')
+
+    def test_hook_files_are_in_the_generated_inputs(self):
+        def settings_get(section, option, fallback=None):
+            return run_dir if option == 'base_run_dir' else fallback
+
+        with TemporaryDirectory() as run_dir:
+            storage = LocalStorage(root_dir=os.path.join(run_dir, 'media'), cache_dir=None)
+            os.makedirs(os.path.join(run_dir, 'media', 'analysis-1_files-run-uuid'))
+            hook_fp = os.path.join(run_dir, 'hook.py')
+            Path(hook_fp).write_text(HOOK_WRITING_EXTRA_FILES)
+            params = {
+                'log_storage': {},
+                'exposure_pre_analysis_module': hook_fp,
+                'oed_location_csv': os.path.join(self.inputs_dir, 'location.csv'),
+                'check_oed': False,
+            }
+            with patch('src.model_execution_worker.distributed_tasks.TASK_LOG_DIR', run_dir), \
+                    patch('src.model_execution_worker.distributed_tasks.settings.get', side_effect=settings_get), \
+                    patch('src.model_execution_worker.distributed_tasks.notify_api_task_started'), \
+                    patch('src.model_execution_worker.distributed_tasks.filestore', storage):
+                params = pre_analysis_hook.run(params, analysis_id=1, run_data_uuid='run-uuid',
+                                               slug='pre-analysis-hook', num_chunks=1)
+            self.assertIn('pre_analysis_files', params)
+            self.assertIn('pre_loc_file', params)
+
+            # 'write_input_files', possibly on another worker: keys from the lookup, then the hook's files
+            target_dir = os.path.join(run_dir, 'analysis-1_files-run-uuid')
+            shutil.rmtree(target_dir)
+            params['keys_data'] = 'keys-data.tar.gz'
+            target_files = {}
+
+            def extract(archive, dst, subdir):
+                if archive == params['pre_analysis_files']:
+                    return storage.extract(archive, dst, subdir)
+                Path(dst).mkdir(parents=True, exist_ok=True)
+                pl.DataFrame(schema=['LocID']).write_parquet(str(Path(dst, 'keys.parquet')))
+                pl.DataFrame(schema=['LocID']).write_parquet(str(Path(dst, 'keys-errors.parquet')))
+
+            def generate_files(**kwargs):
+                target_files.update({
+                    str(p.relative_to(kwargs['target_dir'])): p.read_text()
+                    for p in Path(kwargs['target_dir']).rglob('*') if p.is_file() and p.suffix != '.parquet'})
+
+            with patch('src.model_execution_worker.distributed_tasks.TASK_LOG_DIR', run_dir), \
+                    patch('src.model_execution_worker.distributed_tasks.settings.get', side_effect=settings_get), \
+                    patch('src.model_execution_worker.distributed_tasks.notify_api_task_started'), \
+                    patch('src.model_execution_worker.distributed_tasks.filestore') as filestore_mock, \
+                    patch('oasislmf.manager.OasisManager') as manager_mock:
+                filestore_mock.extract.side_effect = extract
+                manager_mock.return_value.generate_files.side_effect = generate_files
+                write_input_files.run(params, analysis_id=1, run_data_uuid='run-uuid', slug='write-input-files')
+
+        self.assertEqual(target_files.get('model_extra.json'), '{"from": "pre-analysis"}')
+        self.assertEqual(target_files.get(os.path.join('hook_data', 'factors.csv')), 'a,b\n1,2\n')
+        # the hook step's own exposure snapshots are not copied into the inputs
+        self.assertNotIn('exposure_info.json', target_files)
 
 
 class GetKeysFormat(TestCase):

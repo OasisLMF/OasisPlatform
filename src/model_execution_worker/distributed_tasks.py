@@ -35,6 +35,7 @@ from .utils import (
     merge_dirs,
     prepare_complex_model_file_inputs,
     config_strip_default_exposure,
+    copy_pre_analysis_extra_files,
     unwrap_task_args,
     notify_api_status_v2,
     get_lookup_success_file,
@@ -502,6 +503,18 @@ def pre_analysis_hook(self,
                     subdir=params['storage_subdir']
                 )
 
+            # Other files the hook wrote go into the generated inputs, as they do in the MDK
+            with TemporaryDir() as extra_files_dir:
+                extra_files = copy_pre_analysis_extra_files(hook_target_dir, pre_hook_output, extra_files_dir)
+                if extra_files:
+                    logger.info(f'pre_analysis_hook: storing files written by the hook: {extra_files}')
+                    params['pre_analysis_files'] = filestore.put(
+                        extra_files_dir,
+                        filename=f'pre-analysis-files.{filestore.archive_suffix(ARCHIVE_COMPRESSION_TYPE)}',
+                        subdir=params['storage_subdir'],
+                        compression=ARCHIVE_COMPRESSION_TYPE,
+                    )
+
             # OED has been loaded and check in this step, disable check in file gen
             # This is in case pre-exposure func has added non-standard cols to the file.
             params['check_oed'] = False
@@ -642,6 +655,9 @@ def write_input_files(self, params, run_data_uuid=None, analysis_id=None, initia
     params['keys_data_path'] = os.path.join(params['target_dir'], f'keys.{keys_ext}')
     params['keys_errors_path'] = os.path.join(params['target_dir'], f'keys-errors.{keys_ext}')
     params['oasis_files_dir'] = params['target_dir']
+    # Files written by the pre-analysis hook; generate_files then writes over any it also writes, as in the MDK
+    if params.get('pre_analysis_files'):
+        filestore.extract(params['pre_analysis_files'], params['target_dir'], params['storage_subdir'])
     try:
         run_oasis('generate_files', **params)
     except OasisExceptionNoKeys:
