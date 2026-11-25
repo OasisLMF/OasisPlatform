@@ -621,13 +621,11 @@ def handle_task_failure(
 
         # Store the combined traceback + sub-task output on the analysis itself, so it's
         # visible without having to dig into individual sub-task records.
+        # 'run_log_file' is left alone: on a loss failure the worker stores the run's log
+        # archive there ('record_losses_error_files'), which can land before or after this
+        # errback. Only save the fields set here so that archive is never overwritten.
         setattr(analysis, traceback_property, log_file)
-        if traceback_property == 'run_traceback_file':
-            if analysis.run_log_file:
-                analysis.run_log_file.delete()
-            analysis.run_log_file = log_file
-
-        analysis.save()
+        analysis.save(update_fields=['status', 'task_finished', traceback_property])
     except Exception as e:
         logger.exception(str(e))
 

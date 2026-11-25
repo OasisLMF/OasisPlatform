@@ -27,6 +27,7 @@ from src.model_execution_worker.utils import (
 from src.model_execution_worker.distributed_tasks import (
     merge_chunk_log_storage,
     handle_task_failure,
+    generate_losses_chunk,
     generate_losses_output,
     prepare_losses_generation_directory,
     write_input_files,
@@ -371,6 +372,22 @@ class SplitSubjectAtRiskData(TestCase):
 
         self.assertEqual([len(c) for c in chunks], [1, 1, 0, 0])
 
+    def test_unused_categories_are_dropped(self):
+        # slicing keeps a categorical column's full category list unless trimmed (#1508)
+        sar_df = pd.DataFrame({
+            'loc_id': [1, 2, 3, 4],
+            'LocNumber': pd.Categorical(['a', 'b', 'c', 'd']),
+            'PostalCode': pd.Categorical(['x', None, 'y', 'x']),
+        })
+
+        chunks = [split_subject_at_risk_data(sar_df, 2, idx) for idx in range(2)]
+
+        self.assertEqual(chunks[0]['LocNumber'].cat.categories.to_list(), ['a', 'b'])
+        self.assertEqual(chunks[1]['LocNumber'].cat.categories.to_list(), ['c', 'd'])
+        self.assertEqual(chunks[0]['PostalCode'].cat.categories.to_list(), ['x'])
+        self.assertTrue(pd.isna(chunks[0]['PostalCode'][1]))
+        self.assertEqual(chunks[1]['PostalCode'].to_list(), ['y', 'x'])
+
 
 class LoadSubjectAtRiskData(TestCase):
     inputs_dir = os.path.join(os.path.dirname(__file__), 'inputs')
@@ -449,6 +466,16 @@ class SubjectAtRiskChunkFiles(TestCase):
         chunk = load_subject_at_risk_chunk(self.params, 3, 2)
 
         pd.testing.assert_frame_equal(chunk, split_subject_at_risk_data(self.full_sar_df, 3, 2))
+
+    def test_stored_chunks_only_hold_their_own_categories(self):
+        # each chunk file holds only its own rows' string values, not the whole portfolio's (#1508)
+        self.assertIsInstance(self.full_sar_df['LocNumber'].dtype, pd.CategoricalDtype)
+
+        chunks = self._store_and_load(3)
+
+        for chunk in chunks:
+            for col in chunk.select_dtypes('category').columns:
+                self.assertEqual(len(chunk[col].cat.categories), chunk[col].nunique(dropna=True), col)
 
 
 class MergeChunkLogStorage(TestCase):
@@ -777,3 +804,74 @@ class ArchiveCompressionType(TestCase):
             dir_puts = {c.args[0]: c.kwargs.get('compression') for c in filestore_mock.put.call_args_list}
             for name in ['output', 'log']:
                 self.assertEqual(dir_puts[str(Path(model_run_dir, name))], 'zst')
+
+
+class ModelStorageJson(TestCase):
+    """ The worker's model data storage (OASIS_WORKER_MODEL_DATA_*) overrides the model's own
+        'model_storage_json' (from its oasislmf.json); when it isn't set, the model's value is kept.
+    """
+    MODEL_STORAGE_JSON = '/home/worker/model/model_data/model_storage.json'
+
+    def _run(self, task, params, model_storage, **task_kwargs):
+        """Run a loss task, return (kwargs OasisManager was called with, task result, storage config file content)"""
+        seen = {}
+
+        def capture(**kwargs):
+            seen.update(kwargs)
+            fp = kwargs.get('model_storage_json')
+            if fp and fp != self.MODEL_STORAGE_JSON:
+                with open(fp) as f:
+                    seen['storage_config'] = f.read()
+            return {}
+
+        def settings_get(section, option, fallback=None):
+            return run_dir if option == 'base_run_dir' else fallback
+
+        with TemporaryDirectory() as run_dir, \
+                patch('src.model_execution_worker.distributed_tasks.TASK_LOG_DIR', run_dir), \
+                patch('src.model_execution_worker.distributed_tasks.settings.get', side_effect=settings_get), \
+                patch('src.model_execution_worker.distributed_tasks.notify_api_task_started'), \
+                patch('src.model_execution_worker.distributed_tasks.model_storage', model_storage), \
+                patch('src.model_execution_worker.distributed_tasks.filestore') as filestore_mock, \
+                patch('oasislmf.manager.OasisManager') as manager_mock:
+            filestore_mock.archive_suffix.return_value = 'tar.gz'
+            manager_mock.return_value.generate_losses_dir.side_effect = capture
+            manager_mock.return_value.generate_losses_partial.side_effect = capture
+            params = {'model_run_dir': os.path.join(run_dir, 'run-data'), **params}
+            result = task.run(params, analysis_id=1, run_data_uuid='run-uuid', slug='task', **task_kwargs)
+        return seen, result
+
+    def _worker_storage(self):
+        storage = LocalStorage(root_dir='/worker/model_data')
+        return storage
+
+    def test_prepare___no_worker_storage___model_storage_json_is_kept(self):
+        seen, result = self._run(prepare_losses_generation_directory,
+                                 {'model_storage_json': self.MODEL_STORAGE_JSON}, model_storage=None)
+        self.assertEqual(seen['model_storage_json'], self.MODEL_STORAGE_JSON)
+        self.assertEqual(result['model_storage_json'], self.MODEL_STORAGE_JSON)
+
+    def test_prepare___no_storage_set___none_is_passed(self):
+        seen, result = self._run(prepare_losses_generation_directory, {}, model_storage=None)
+        self.assertIsNone(seen.get('model_storage_json'))
+
+    def test_prepare___worker_storage___overrides_and_is_not_returned(self):
+        seen, result = self._run(prepare_losses_generation_directory,
+                                 {'model_storage_json': self.MODEL_STORAGE_JSON},
+                                 model_storage=self._worker_storage())
+        self.assertNotEqual(seen['model_storage_json'], self.MODEL_STORAGE_JSON)
+        self.assertIn('/worker/model_data', seen['storage_config'])
+        # the temp config file is gone once the task ends, so it isn't passed on to later tasks
+        self.assertEqual(result['model_storage_json'], self.MODEL_STORAGE_JSON)
+
+    def test_chunk___no_worker_storage___model_storage_json_is_kept(self):
+        seen, _ = self._run(generate_losses_chunk, {'model_storage_json': self.MODEL_STORAGE_JSON},
+                            model_storage=None, chunk_idx=0, num_chunks=2)
+        self.assertEqual(seen['model_storage_json'], self.MODEL_STORAGE_JSON)
+
+    def test_chunk___worker_storage___overrides(self):
+        seen, result = self._run(generate_losses_chunk, {'model_storage_json': self.MODEL_STORAGE_JSON},
+                                 model_storage=self._worker_storage(), chunk_idx=0, num_chunks=2)
+        self.assertNotEqual(seen['model_storage_json'], self.MODEL_STORAGE_JSON)
+        self.assertIn('/worker/model_data', seen['storage_config'])
+        self.assertEqual(result['model_storage_json'], self.MODEL_STORAGE_JSON)
