@@ -6,11 +6,12 @@ from channels.generic.websocket import AsyncJsonWebsocketConsumer
 from channels.layers import get_channel_layer
 from django.conf import settings
 from django.utils.timezone import now
-from django.db.models import F
 from rest_framework.serializers import DateTimeField
 
 from celery.utils.log import get_task_logger
 import json
+
+from src.server.oasisapi.queues.progress import analysis_progress_updates
 
 logger = get_task_logger(__name__)
 
@@ -238,22 +239,23 @@ class AnalysisStatusConsumer(GuardedAsyncJsonWebsocketConsumer):
         if "analysis_pk" not in content:
             return
         pk = content["analysis_pk"]
-        analysis = await get_analysis(pk=pk)
         logger.info(f"New update received on run {pk}")
 
-        if "events_total" in content:
-            # num_events_complete is reset once at run-start (Analysis.run()), not here -
-            # events_total is reported once per chunk, so resetting on every ping would
-            # wipe out progress already reported by other chunks of the same run.
-            analysis.num_events_total = int(float(content["events_total"]))
-
-        if "events_complete" in content:
-            analysis.num_events_complete = F('num_events_complete') + int(content["events_complete"])
-
-        await sync_to_async(analysis.save)()
+        updates = analysis_progress_updates(content)
+        if updates:
+            await update_analysis_progress(pk, updates)
 
 
 @sync_to_async
-def get_analysis(pk):
+def update_analysis_progress(pk, updates):
+    """Applies run progress updates to an analysis with one UPDATE of just those columns.
+
+    Saving a loaded instance instead would write back every other field as it was read, which can undo
+    a change made meanwhile, such as the run being marked complete as its last output pings arrive.
+
+    Args:
+        pk (int or str): the analysis to update
+        updates (dict): field updates from `analysis_progress_updates`
+    """
     from src.server.oasisapi.analyses.models import Analysis
-    return Analysis.objects.get(pk=int(pk))
+    Analysis.objects.filter(pk=int(pk)).update(**updates)
