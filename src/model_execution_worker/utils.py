@@ -395,6 +395,43 @@ def merge_dirs(src_root, dst_root):
             shutil.copy(os.path.join(root, f), abs_dst)
 
 
+# written by oasislmf's 'exposure_pre_analysis' step itself (OedExposure.DEFAULT_EXPOSURE_CONFIG_NAME)
+PRE_ANALYSIS_EXPOSURE_CONFIG = 'exposure_info.json'
+
+
+def copy_pre_analysis_extra_files(hook_dir, hook_output, dst_dir):
+    """ Copy the files a pre-analysis hook wrote into its 'input_dir', other than the
+        exposure files the 'exposure_pre_analysis' step writes itself, into 'dst_dir'.
+
+        In the MDK the hook writes straight into the generated inputs directory, so these
+        (e.g. model specific data for the losses or the post-analysis hook) are part of
+        the inputs. The worker runs the hook in a temporary directory, so they have to be
+        carried over.
+
+        Returns the copied paths, relative to 'hook_dir'.
+    """
+    hook_dir = Path(hook_dir)
+    own_files = {Path(PRE_ANALYSIS_EXPOSURE_CONFIG)}
+    for key in ('original', 'modified'):
+        for filepath in (hook_output.get(key) or {}).values():
+            filepath = Path(filepath)
+            if filepath.is_absolute():
+                try:
+                    filepath = filepath.relative_to(hook_dir)
+                except ValueError:  # e.g. the portfolio file, outside the hook's directory
+                    continue
+            own_files.add(filepath)
+
+    copied = []
+    for path in sorted(hook_dir.rglob('*')):
+        relative = path.relative_to(hook_dir)
+        if path.is_file() and relative not in own_files:
+            Path(dst_dir, relative).parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(str(path), str(Path(dst_dir, relative)))
+            copied.append(relative.as_posix())
+    return copied
+
+
 def unwrap_task_args(task_args):
     """ Takes the args of a celery task return, and rolls back the nesting to the
         first dict found, then return dict by value
