@@ -14,7 +14,7 @@ on:
         description: "Test backwards compatibility with platform ver [semvar]"
         required: false
       models_branch:
-        description: "OasisModels branch to test with (default: main, or the matching stable/* branch) [git ref]"
+        description: "OasisModels branch to test with (default: main) [git ref]"
         required: false
       pytest_options:
         description: "Extra pytest args for the OasisModels platform tests [-k <test_name>]"
@@ -108,15 +108,8 @@ jobs:
       - name: Select OasisModels branch
         id: models
         run: |
-          # Expected results come from OasisModels main, or the stable/* branch matching the PR base / pushed branch
-          if [[ "${{ github.event_name }}" = "pull_request" ]]; then
-            BRANCH=${{ github.base_ref }}
-          else
-            BRANCH=${{ github.ref_name }}
-          fi
-          if [[ ! $BRANCH == stable/* ]]; then
-            BRANCH='feature/platform-tests'  # TODO: 'main' once OasisModels#65 is merged
-          fi
+          # Expected results come from OasisModels main, unless overridden by the models_branch input
+          BRANCH='main'
           if [[ -n "${{ inputs.models_branch }}" ]]; then
             BRANCH="${{ inputs.models_branch }}"
           fi
@@ -141,7 +134,7 @@ jobs:
     name: All checks
     secrets: inherit
     needs: [setup]
-    uses: OasisLMF/OasisModels/.github/workflows/platform-tests.yml@feature/platform-tests  # TODO: @main once OasisModels#65 is merged
+    uses: OasisLMF/OasisModels/.github/workflows/platform-tests.yml@main
     with:
       models_branch: ${{ needs.setup.outputs.models_branch }}
       oasislmf_branch: ${{ github.event_name != 'workflow_dispatch' && 'main' || inputs.oasislmf_branch }}
@@ -159,7 +152,7 @@ jobs:
     name: All checks
     secrets: inherit
     needs: [setup]
-    uses: OasisLMF/OasisModels/.github/workflows/platform-tests.yml@feature/platform-tests  # TODO: @main once OasisModels#65 is merged
+    uses: OasisLMF/OasisModels/.github/workflows/platform-tests.yml@main
     with:
       models_branch: ${{ needs.setup.outputs.models_branch }}
       oasislmf_branch: ${{ github.event_name != 'workflow_dispatch' && 'main' || inputs.oasislmf_branch }}
@@ -179,7 +172,7 @@ jobs:
     name: S3 + MySQL
     secrets: inherit
     needs: [setup]
-    uses: OasisLMF/OasisModels/.github/workflows/platform-tests.yml@feature/platform-tests  # TODO: @main once OasisModels#65 is merged
+    uses: OasisLMF/OasisModels/.github/workflows/platform-tests.yml@main
     with:
       models_branch: ${{ needs.setup.outputs.models_branch }}
       oasislmf_branch: ${{ github.event_name != 'workflow_dispatch' && 'main' || inputs.oasislmf_branch }}
@@ -200,7 +193,7 @@ jobs:
     name: S3 + MySQL
     secrets: inherit
     needs: [setup]
-    uses: OasisLMF/OasisModels/.github/workflows/platform-tests.yml@feature/platform-tests  # TODO: @main once OasisModels#65 is merged
+    uses: OasisLMF/OasisModels/.github/workflows/platform-tests.yml@main
     with:
       models_branch: ${{ needs.setup.outputs.models_branch }}
       oasislmf_branch: ${{ github.event_name != 'workflow_dispatch' && 'main' || inputs.oasislmf_branch }}

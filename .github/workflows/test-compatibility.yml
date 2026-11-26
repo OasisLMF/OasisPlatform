@@ -133,7 +133,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix: ${{ fromJSON(needs.setup.outputs.matrix) }}
-    uses: OasisLMF/OasisModels/.github/workflows/platform-tests.yml@feature/platform-tests  # TODO: @main once OasisModels#65 is merged
+    uses: OasisLMF/OasisModels/.github/workflows/platform-tests.yml@main
     with:
       models_branch: ${{ inputs.models_branch }}
       server_image: ${{ matrix.server_image }}
