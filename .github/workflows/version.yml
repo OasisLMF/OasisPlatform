@@ -107,6 +107,9 @@ jobs:
     - name: Update ods-tools Version
       if: inputs.ods_tools_version != ''
       run: |
+        # ods-tools is hard-pinned in the .in files; move the pin first or pip-compile hits a conflict
+        sed -i -E 's/^(ods-tools(\[[^]]*\])?)==[^[:space:]]+/\1==${{ inputs.ods_tools_version }}/' requirements-server.in requirements-worker.in
+        git add requirements-server.in requirements-worker.in
         requ_list=( 'requirements-server' 'requirements-worker' 'requirements')
         for fl in "${requ_list[@]}"; do
           pip-compile --upgrade-package ods-tools==${{ inputs.ods_tools_version }} $fl.in
@@ -118,7 +121,7 @@ jobs:
       run: |
         requ_list=( 'requirements-server' 'requirements-worker' 'requirements')
         for fl in "${requ_list[@]}"; do
-          pip-compile --upgrade-package ods-tools==${{ inputs.odm_version }} $fl.in
+          pip-compile --upgrade-package oasis-data-manager==${{ inputs.odm_version }} $fl.in
           git add $fl.txt
         done
 
