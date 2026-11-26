@@ -23,7 +23,9 @@ from src.server.oasisapi.portfolios.v2_api.tests.fakes import fake_portfolio
 from src.server.oasisapi.files.v1_api.tests.fakes import fake_related_file
 from src.server.oasisapi.auth.tests.fakes import fake_user
 from ...models import AnalysisTaskStatus
-from ...models import Analysis
+from ...models import Analysis, delete_connected_files
+from src.server.oasisapi.analysis_models.models import ModelChunkingOptions
+from src.server.oasisapi.files.models import RelatedFile
 from src.server.oasisapi.analyses.v2_api.tasks import cancel_subtasks
 
 # Override default deadline for all tests to 8s
@@ -499,6 +501,84 @@ class AnalysisRun(WebTestMixin, TestCase):
                 )
 
 
+class AnalysisRunClearsPreviousRunOutput(WebTestMixin, TestCase):
+    """ A V2 run only stores the files it produced, so a failed run must not leave the
+        previous run's outputs/logs/traceback on the analysis looking like its own.
+    """
+
+    def _analysis_with_previous_run_output(self, **kwargs):
+        old_files = {
+            'output_file': fake_related_file(file='old output'),
+            'run_log_file': fake_related_file(file='old logs'),
+            'run_traceback_file': fake_related_file(file='old traceback'),
+        }
+        analysis = fake_analysis(
+            status=Analysis.status_choices.RUN_COMPLETED,
+            input_file=fake_related_file(),
+            settings_file=fake_related_file(),
+            **old_files,
+            **kwargs,
+        )
+        return analysis, old_files
+
+    def _assert_cleared(self, analysis, old_files):
+        analysis.refresh_from_db()
+        self.assertIsNone(analysis.output_file)
+        self.assertIsNone(analysis.run_log_file)
+        self.assertIsNone(analysis.run_traceback_file)
+        for f in old_files.values():
+            self.assertFalse(RelatedFile.objects.filter(pk=f.pk).exists())
+
+    def test_v2_run___previous_run_output_is_removed(self):
+        with TemporaryDirectory() as d, override_settings(MEDIA_ROOT=d):
+            analysis, old_files = self._analysis_with_previous_run_output()
+            task_obj = type('', (), {})()
+            task_obj.id = 'task-id'
+
+            with (
+                patch('src.server.oasisapi.analyses.models.celery_app_v2.send_task', new=MagicMock(return_value=task_obj)),
+                patch('src.server.oasisapi.analyses.models.send_task_status_message', Mock()),
+                patch('src.server.oasisapi.analyses.models.build_all_queue_status_message', Mock())
+            ):
+                analysis.run(fake_user(), run_mode_override='V2')
+
+            self._assert_cleared(analysis, old_files)
+
+    def test_v2_generate_and_run___previous_run_output_is_removed(self):
+        with TemporaryDirectory() as d, override_settings(MEDIA_ROOT=d):
+            analysis, old_files = self._analysis_with_previous_run_output(
+                portfolio=fake_portfolio(location_file=fake_related_file()),
+            )
+            analysis.model.run_mode = analysis.model.run_mode_choices.V2
+            analysis.model.save()
+            task_sig = Mock()
+            task_sig.apply_async.return_value = FakeAsyncResultFactory(target_task_id='task-id')('task-id')
+
+            with (
+                patch('src.server.oasisapi.analyses.models.Analysis.v2_start_input_and_loss_generation_signature',
+                      PropertyMock(return_value=task_sig)),
+                patch('src.server.oasisapi.analyses.models.send_task_status_message', Mock()),
+                patch('src.server.oasisapi.analyses.models.build_all_queue_status_message', Mock())
+            ):
+                analysis.generate_and_run(fake_user())
+
+            self._assert_cleared(analysis, old_files)
+
+    def test_run_rejected___previous_run_output_is_kept(self):
+        with TemporaryDirectory() as d, override_settings(MEDIA_ROOT=d):
+            analysis, old_files = self._analysis_with_previous_run_output()
+            analysis.status = Analysis.status_choices.RUN_STARTED
+            analysis.save()
+
+            with self.assertRaises(ValidationError):
+                analysis.run(fake_user(), run_mode_override='V2')
+
+            analysis.refresh_from_db()
+            self.assertEqual(analysis.run_log_file_id, old_files['run_log_file'].pk)
+            self.assertEqual(analysis.output_file_id, old_files['output_file'].pk)
+            self.assertEqual(analysis.run_traceback_file_id, old_files['run_traceback_file'].pk)
+
+
 class AnalysisGenerateInputs(WebTestMixin, TestCase):
     @given(
         status=sampled_from([c for c in Analysis.status_choices._db_values if c not in [
@@ -608,3 +688,91 @@ class AnalysisGenerateInputs(WebTestMixin, TestCase):
                     sig.options['queue'],
                     iniconf.settings.get('worker', 'TASK_CONTROLLER_QUEUE', fallback='celery-v2')
                 )
+
+
+class ResetLossProgress(TestCase):
+    def test_progress_counts_are_set___reset_loss_progress_zeroes_them(self):
+        analysis = fake_analysis(
+            num_events_total=10, num_events_complete=10, num_gul_processes=4, num_gul_ready=4,
+            num_outputs_total=51, num_outputs_complete=51,
+        )
+
+        analysis._reset_loss_progress()
+
+        self.assertEqual(
+            (0, 0, 0, 0, 0, 0),
+            (analysis.num_events_total, analysis.num_events_complete, analysis.num_gul_processes, analysis.num_gul_ready,
+             analysis.num_outputs_total, analysis.num_outputs_complete),
+        )
+
+
+class DeleteConnectedFiles(TestCase):
+    """ Regression tests for #1503: a cancelled/failed V2 run stores the same
+        RelatedFile as both `run_traceback_file` and `run_log_file`, which made the
+        `post_delete` handler raise `RelatedFile.DoesNotExist` on the second field.
+    """
+
+    def _analysis_with_shared_run_log(self, **kwargs):
+        shared = fake_related_file(file='combined traceback + sub-task logs')
+        analysis = fake_analysis(
+            run_traceback_file=shared,
+            run_log_file=shared,
+            input_file=fake_related_file(),
+            settings_file=fake_related_file(),
+            **kwargs,
+        )
+        return analysis, shared
+
+    def test_portfolio_delete___analysis_with_shared_traceback_and_log_file___files_are_removed(self):
+        with TemporaryDirectory() as d, override_settings(MEDIA_ROOT=d):
+            portfolio = fake_portfolio()
+            analysis, shared = self._analysis_with_shared_run_log(portfolio=portfolio)
+            file_ids = [shared.pk, analysis.input_file_id, analysis.settings_file_id]
+
+            portfolio.delete()
+
+            self.assertFalse(Analysis.objects.filter(pk=analysis.pk).exists())
+            self.assertFalse(RelatedFile.objects.filter(pk__in=file_ids).exists())
+
+    def test_analysis_delete___shared_traceback_and_log_file___files_are_removed(self):
+        with TemporaryDirectory() as d, override_settings(MEDIA_ROOT=d):
+            analysis, shared = self._analysis_with_shared_run_log()
+            file_ids = [shared.pk, analysis.input_file_id, analysis.settings_file_id]
+
+            analysis.delete()
+
+            self.assertFalse(Analysis.objects.filter(pk=analysis.pk).exists())
+            self.assertFalse(RelatedFile.objects.filter(pk__in=file_ids).exists())
+
+    def test_handler___referenced_file_already_deleted___does_not_raise(self):
+        with TemporaryDirectory() as d, override_settings(MEDIA_ROOT=d):
+            analysis = fake_analysis(run_log_file=fake_related_file(), output_file=fake_related_file())
+            output_file_id = analysis.output_file_id
+            # remove the row behind the in-memory instance, as happens when an earlier
+            # handler in the same cascade has already deleted it
+            RelatedFile.objects.filter(pk=analysis.run_log_file_id).delete()
+
+            delete_connected_files(sender=Analysis, instance=analysis)
+
+            self.assertFalse(RelatedFile.objects.filter(pk=output_file_id).exists())
+
+    def test_analysis_delete___chunking_options_are_removed(self):
+        with TemporaryDirectory() as d, override_settings(MEDIA_ROOT=d):
+            analysis = fake_analysis()
+            analysis.chunking_options = ModelChunkingOptions.objects.create()
+            analysis.save()
+            chunking_id = analysis.chunking_options_id
+
+            analysis.delete()
+
+            self.assertFalse(ModelChunkingOptions.objects.filter(pk=chunking_id).exists())
+
+    def test_task_status_delete___shared_log_files___files_are_removed(self):
+        with TemporaryDirectory() as d, override_settings(MEDIA_ROOT=d):
+            shared = fake_related_file()
+            status = fake_analysis_task_status(output_log=shared, error_log=shared, retry_log=fake_related_file())
+            file_ids = [shared.pk, status.retry_log_id]
+
+            status.delete()
+
+            self.assertFalse(RelatedFile.objects.filter(pk__in=file_ids).exists())

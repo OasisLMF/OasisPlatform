@@ -17,8 +17,10 @@ from pathlib2 import Path
 from .fakes import fake_analysis, fake_analysis_task_status
 from ...models import Analysis, AnalysisTaskStatus
 from ....auth.tests.fakes import fake_user
+from ....files.models import RelatedFile
 from ....files.v2_api.tests.fakes import fake_related_file
 from ...v2_api.tasks import (
+    record_input_files,
     chord_error_callback, handle_task_failure, record_sub_task_failure, record_sub_task_success, record_sub_task_start,
     start_input_and_loss_generation_task, start_loss_generation_task, start_input_generation_task, subtask_error_log,
     store_lookup_errors_file, store_lookup_success_file,
@@ -145,6 +147,33 @@ class GenerateInputsSuccess(TestCase):
 
             self.assertEqual(analysis.status, analysis.status_choices.READY)
             self.assertTrue(isinstance(analysis.task_finished, datetime.datetime))
+
+
+class RecordInputFiles(TestCase):
+    """Status set once input generation is recorded (record_input_files)."""
+
+    def record(self, **kwargs):
+        initiator = fake_user()
+        analysis = fake_analysis(status=Analysis.status_choices.INPUTS_GENERATION_STARTED)
+        tasks = 'src.server.oasisapi.analyses.v2_api.tasks'
+        with (TemporaryDirectory() as d,
+              override_settings(MEDIA_ROOT=d),
+              patch(f'{tasks}.record_sub_task_start'),
+              patch(f'{tasks}.store_archive', return_value=None),
+              patch(f'{tasks}.store_lookup_errors_file', return_value=None),
+              patch(f'{tasks}.store_lookup_success_file', return_value=None),
+              patch(f'{tasks}.store_file', return_value=None)):
+            record_input_files({'output_location': 'inputs.tar.gz'}, analysis_id=analysis.pk,
+                               initiator_id=initiator.pk, slug='record-input-files', **kwargs)
+        analysis.refresh_from_db()
+        return analysis
+
+    def test_input_generation_finishes_ready(self):
+        self.assertEqual(self.record().status, Analysis.status_choices.READY)
+
+    def test_generate_and_run_moves_straight_to_run_started(self):
+        analysis = self.record(analysis_finish_status=Analysis.status_choices.RUN_STARTED)
+        self.assertEqual(analysis.status, Analysis.status_choices.RUN_STARTED)
 
 
 class GenerateInputsFailure(TestCase):
@@ -318,6 +347,24 @@ class RecordSubTaskFailure(TestCase):
             self.assertEqual(status.end_time, _now)
             self.assertEqual(status.error_log.read().decode(), error_content)
 
+    def _record_failure(self, status, *args):
+        task_request_mock = Mock()
+        task_request_mock.parent_id = uuid4().hex
+        with (TemporaryDirectory() as d,
+              patch('celery.app.task.Context', return_value=task_request_mock),
+              override_settings(MEDIA_ROOT=d)):
+            record_sub_task_failure(*args, analysis_id=status.analysis.pk, initiator_id=status.task_id, task_slug="hello")
+        status.refresh_from_db()
+
+    def test_error_after_subtask_was_cancelled___cancelled_status_is_kept(self):
+        status = fake_analysis_task_status(
+            analysis=fake_analysis(), slug="hello", status=AnalysisTaskStatus.status_choices.CANCELLED)
+        files_before = RelatedFile.objects.count()
+        self._record_failure(status, None, None, 'Traceback ...\nValueError: oops\n')
+        self.assertEqual(status.status, AnalysisTaskStatus.status_choices.CANCELLED)
+        self.assertIsNone(status.error_log)
+        self.assertEqual(RelatedFile.objects.count(), files_before)
+
 
 class HandleTaskFailure(TestCase):
     """ 'handle_task_failure' is the chain-level errback that builds the analysis-wide
@@ -327,7 +374,7 @@ class HandleTaskFailure(TestCase):
         sub-tasks to see why a run failed.
     """
 
-    def test_run_failure___subtask_output_and_error_logs_are_merged_into_run_traceback_and_log_file(self):
+    def test_run_failure___subtask_output_and_error_logs_are_merged_into_run_traceback_file(self):
         with TemporaryDirectory() as d, override_settings(MEDIA_ROOT=d):
             initiator = fake_user()
             analysis = fake_analysis()
@@ -351,10 +398,8 @@ class HandleTaskFailure(TestCase):
             analysis.refresh_from_db()
             self.assertEqual(analysis.status, Analysis.status_choices.RUN_ERROR)
             self.assertIsNotNone(analysis.run_traceback_file)
-            self.assertIsNotNone(analysis.run_log_file)
-            # both fields point at the same combined content, so it's visible from
-            # either place on the analysis, without opening a sub-task record
-            self.assertEqual(analysis.run_traceback_file_id, analysis.run_log_file_id)
+            # 'run_log_file' is only ever a log archive, never the traceback
+            self.assertIsNone(analysis.run_log_file)
 
             content = analysis.run_traceback_file.read().decode('utf-8')
             self.assertIn('generate-losses-chunk-1', content)
@@ -363,6 +408,37 @@ class HandleTaskFailure(TestCase):
             self.assertIn('failure output', content)
             self.assertIn('OasisException: boom', content)
             self.assertIn('top level celery traceback', content)
+
+    def test_run_failure___keeps_log_archive_stored_by_record_losses_error_files(self):
+        with TemporaryDirectory() as d, override_settings(MEDIA_ROOT=d):
+            initiator = fake_user()
+            analysis = fake_analysis()
+            log_archive = fake_related_file(file='log archive', filename='analysis_logs.tar.gz', content_type='application/gzip')
+            analysis.run_log_file = log_archive
+            analysis.save()
+            fake_analysis_task_status(
+                analysis=analysis,
+                slug='generate-losses-output',
+                status=AnalysisTaskStatus.status_choices.ERROR,
+                output_log=fake_related_file(file='STDOUT:\naalpy segfault'),
+                error_log=fake_related_file(file='OasisException: Incomplete pytool logs'),
+            )
+
+            handle_task_failure(
+                None, None, 'top level celery traceback',
+                analysis_id=analysis.pk,
+                initiator_id=initiator.pk,
+                run_data_uuid='run-uuid',
+                traceback_property='run_traceback_file',
+                failure_status=Analysis.status_choices.RUN_ERROR,
+            )
+
+            analysis.refresh_from_db()
+            self.assertEqual(analysis.status, Analysis.status_choices.RUN_ERROR)
+            self.assertEqual(analysis.run_log_file_id, log_archive.pk)
+            self.assertEqual(analysis.run_log_file.read(), b'log archive')
+            self.assertNotEqual(analysis.run_traceback_file_id, log_archive.pk)
+            self.assertIn('Incomplete pytool logs', analysis.run_traceback_file.read().decode('utf-8'))
 
     def test_input_generation_failure___leaves_run_log_file_untouched(self):
         with TemporaryDirectory() as d, override_settings(MEDIA_ROOT=d):

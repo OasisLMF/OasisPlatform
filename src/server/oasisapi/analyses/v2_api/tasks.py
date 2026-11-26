@@ -313,7 +313,7 @@ def record_input_files(self, result, analysis_id=None, initiator_id=None, run_da
     analysis.task_finished = timezone.now()
     initiator = get_user_model().objects.get(pk=initiator_id)
 
-    analysis.status = Analysis.status_choices.READY
+    analysis.status = analysis_finish_status
     analysis.input_file = store_archive(input_location, initiator, f'analysis_{analysis_id}_inputs')
     analysis.lookup_errors_file = store_lookup_errors_file(lookup_error_fp, initiator, analysis_id)
     analysis.lookup_success_file = store_lookup_success_file(lookup_success_fp, initiator, analysis_id)
@@ -511,12 +511,17 @@ def record_sub_task_failure(self, *args, analysis_id=None, initiator_id=None, ta
     tb = _traceback_from_errback_args(*args)
     task_id = self.request.parent_id
 
+    # 'cancel_subtasks' may already have marked it cancelled, don't overwrite that
+    subtask_qs = AnalysisTaskStatus.objects.filter(
+        slug=task_slug,
+        analysis_id=analysis_id,
+    ).exclude(status=AnalysisTaskStatus.status_choices.CANCELLED)
+    if not subtask_qs.exists():
+        return
+
     with TemporaryFile() as tmp_file:
         tmp_file.write(tb.encode('utf-8'))
-        AnalysisTaskStatus.objects.filter(
-            slug=task_slug,
-            analysis_id=analysis_id,
-        ).update(
+        subtask_qs.update(
             task_id=task_id,
             status=AnalysisTaskStatus.status_choices.ERROR,
             end_time=timezone.now(),
@@ -616,13 +621,11 @@ def handle_task_failure(
 
         # Store the combined traceback + sub-task output on the analysis itself, so it's
         # visible without having to dig into individual sub-task records.
+        # 'run_log_file' is left alone: on a loss failure the worker stores the run's log
+        # archive there ('record_losses_error_files'), which can land before or after this
+        # errback. Only save the fields set here so that archive is never overwritten.
         setattr(analysis, traceback_property, log_file)
-        if traceback_property == 'run_traceback_file':
-            if analysis.run_log_file:
-                analysis.run_log_file.delete()
-            analysis.run_log_file = log_file
-
-        analysis.save()
+        analysis.save(update_fields=['status', 'task_finished', traceback_property])
     except Exception as e:
         logger.exception(str(e))
 

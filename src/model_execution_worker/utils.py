@@ -12,37 +12,77 @@ __all__ = [
     'config_strip_default_exposure',
     'unwrap_task_args',
     'get_lookup_success_file',
+    'run_oasis',
+    'run_function',
+    'get_keys_format',
+    'load_subject_at_risk_data',
+    'split_subject_at_risk_data',
+    'store_subject_at_risk_chunks',
+    'load_subject_at_risk_chunk',
+    'generate_chunk_keys',
+    'merge_dataframes',
+    'take_first',
 
     'notify_api_status_v1',
     'notify_api_status_v2',
     'notify_subtask_status_v2',
 ]
 
+import functools
 import logging
 import json
 import os
-import re
+import pathlib
 import tempfile
 import shutil
-import subprocess
 import threading
 from datetime import datetime
 from copy import deepcopy
 from celery import signature
 
+import numpy as np
+import pandas as pd
 from pathlib2 import Path
 from oasislmf import __version__ as mdk_version
 from ods_tools import __version__ as ods_version
 from oasislmf.utils.exceptions import OasisException
 
 from ..common.data import ORIGINAL_FILENAME, STORED_FILENAME
+from ..common.filestore.filestore import get_filestore
+from ..conf.iniconf import settings
+from .oasis_subprocess_runner import MANAGER, run_in_subprocess, subprocess_enabled
 import requests
 
 
 logger = logging.getLogger(__name__)
 
 
-# Send notification back to the API Once task is read from Queue
+def run_oasis(method, **kwargs):
+    """Run `OasisManager().<method>(**kwargs)`.
+
+    On threads/gevent/eventlet workers (or when `OASIS_WORKER_SUBPROCESS_EXECUTION`
+    says so) it runs in a separate, killable process, so cancelling the task stops it
+    (see `oasis_subprocess_runner`). Otherwise it's called in-process.
+    """
+    if subprocess_enabled():
+        return run_in_subprocess(MANAGER, kwargs, method=method)
+    from oasislmf.manager import OasisManager
+    return getattr(OasisManager(), method)(**kwargs)
+
+
+def run_function(func, in_process_only=None, **kwargs):
+    """ Call `func(**kwargs)`, in a separate killable process when `subprocess_enabled()`
+        (like `run_oasis`). `func` must be importable without the celery app (e.g. from
+        this module) and `kwargs` JSON serialisable.
+
+        `in_process_only`: extra kwargs, e.g. the task's filestore, only passed when
+        `func` is called in-process. `func` must default them itself.
+    """
+    if subprocess_enabled():
+        return run_in_subprocess(f'{func.__module__}:{func.__qualname__}', kwargs)
+    return func(**kwargs, **(in_process_only or {}))
+
+
 def notify_api_status_v1(analysis_pk, task_status):
     logger.info("Notify API: analysis_id={}, status={}".format(
         analysis_pk,
@@ -313,22 +353,10 @@ def get_oed_version():
         return None
 
 
-def get_ktools_version():
-    ktool_ver_str = subprocess.getoutput('fmcalc -v')
-
-    # Match version x.x.x , x.x or x
-    reg_pattern = r"(\d+\.)?(\d+\.)?(\d+)"
-    match_ver = re.search(reg_pattern, ktool_ver_str)
-
-    if match_ver:
-        ktool_ver_str = match_ver[0]
-    return ktool_ver_str
-
-
 def get_worker_versions():
     """ Search and return the versions of Oasis components
     """
-    ktool_ver_str = get_ktools_version()
+    ktool_ver_str = 'pytools'
     plat_ver_file = '/home/worker/VERSION'
     oed_schma_ver = get_oed_version()
 
@@ -365,6 +393,43 @@ def merge_dirs(src_root, dst_root):
             abs_dst = os.path.join(dst_root, rel_dst)
             Path(abs_dst).parent.mkdir(exist_ok=True, parents=True)
             shutil.copy(os.path.join(root, f), abs_dst)
+
+
+# written by oasislmf's 'exposure_pre_analysis' step itself (OedExposure.DEFAULT_EXPOSURE_CONFIG_NAME)
+PRE_ANALYSIS_EXPOSURE_CONFIG = 'exposure_info.json'
+
+
+def copy_pre_analysis_extra_files(hook_dir, hook_output, dst_dir):
+    """ Copy the files a pre-analysis hook wrote into its 'input_dir', other than the
+        exposure files the 'exposure_pre_analysis' step writes itself, into 'dst_dir'.
+
+        In the MDK the hook writes straight into the generated inputs directory, so these
+        (e.g. model specific data for the losses or the post-analysis hook) are part of
+        the inputs. The worker runs the hook in a temporary directory, so they have to be
+        carried over.
+
+        Returns the copied paths, relative to 'hook_dir'.
+    """
+    hook_dir = Path(hook_dir)
+    own_files = {Path(PRE_ANALYSIS_EXPOSURE_CONFIG)}
+    for key in ('original', 'modified'):
+        for filepath in (hook_output.get(key) or {}).values():
+            filepath = Path(filepath)
+            if filepath.is_absolute():
+                try:
+                    filepath = filepath.relative_to(hook_dir)
+                except ValueError:  # e.g. the portfolio file, outside the hook's directory
+                    continue
+            own_files.add(filepath)
+
+    copied = []
+    for path in sorted(hook_dir.rglob('*')):
+        relative = path.relative_to(hook_dir)
+        if path.is_file() and relative not in own_files:
+            Path(dst_dir, relative).parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(str(path), str(Path(dst_dir, relative)))
+            copied.append(relative.as_posix())
+    return copied
 
 
 def unwrap_task_args(task_args):
@@ -418,12 +483,14 @@ def update_params(params, given_params):
         'extra_summary_cols',
         'kernel_alloc_rule_ri',
         'check_oed',
-        'do_disaggregation',
+        'disaggregation',
         'verbose'
     ]
     for k, v in given_params.items():
         if k in ALLOWED_PARAMS:
             params[k] = v
+    if 'disaggregation' not in given_params and given_params.get('do_disaggregation') is not None:
+        params['disaggregation'] = 'items' if given_params['do_disaggregation'] else 'none'
     if params['supported_oed_coverage_types'] == [0]:
         params['supported_oed_coverage_types'] = None
     params["output_file"] = "outfile.csv"
@@ -526,3 +593,294 @@ def get_all_exposure_files(loc_filepath, acc_filepath, ri_filepath, rl_filepath,
         conv_temp = os.path.join(directory, "currency_conversion.json")
         copy_or_download(conv_filepath, conv_temp)
     return (loc_temp, acc_temp, ri_temp, rl_temp, conv_temp)
+
+
+# --- keys generation (lookup) helpers, used by distributed_tasks ------------ #
+# Kept free of the celery app so they can also run in a subprocess (`run_function`).
+
+KEYS_FORMAT_EXT = {'parquet': 'parquet', 'oasis': 'csv'}
+
+
+@functools.lru_cache(maxsize=None)
+def _worker_filestore():
+    """ The worker's filestore, built from its settings (as `distributed_tasks.filestore`) """
+    return get_filestore(settings)
+
+
+def load_subject_at_risk_data(params):
+    """ Returns the subject at risk (SAR) exposure as a DataFrame, with 'loc_id' assigned
+
+    The SAR source depends on the class of business: the location file for
+    property / marine, but the account file for cyber / liability, which can be
+    run with no location file at all. Both files are loaded (when present) so the
+    class of business is detected the same way as in `write_input_files`.
+    """
+    from ods_tools.oed.exposure import OedExposure
+
+    def _abs_path(key):
+        return pathlib.Path(os.path.abspath(params[key])) if params.get(key) else None
+
+    exposure = OedExposure(
+        location=_abs_path('oed_location_csv'),
+        account=_abs_path('oed_accounts_csv'),
+        oed_schema_info=params.get('oed_schema_info') or os.environ.get("OASIS_OED_SCHEMA_INFO", None),
+        check_oed=params.get('check_oed', True),
+        use_field=True,
+        backend_dtype=params.get('oed_backend_dtype', 'pd_dtype'),
+        disable_oed_version_update=params.get('disable_oed_version_update', False),
+    )
+
+    try:
+        # Oasislmf 2.4.x
+        from oasislmf.utils.data import prepare_oed_exposure
+        prepare_oed_exposure(exposure)
+    except ImportError:
+        # Fallback Oasislmf LTS 2.3.x, LTS 1.28.x (location based models only)
+        from oasislmf.utils.data import prepare_location_df
+        exposure.location.dataframe = prepare_location_df(exposure.location.dataframe)
+        return exposure.location.dataframe
+
+    return exposure.get_subject_at_risk_source().dataframe
+
+
+def subject_at_risk_chunk_rows(sar_df, num_chunks):
+    """ Returns the row positions of `sar_df` in each of its `num_chunks` lookup chunks
+
+    Split by subject id ('loc_id') rather than by row, so that every row for a
+    subject (e.g. multiple layers of a cyber account) is looked up in the same chunk.
+    The subjects, in order of first appearance, are split into `num_chunks` even
+    blocks, and each row is assigned its chunk in one pass.
+    """
+    codes, sar_ids = pd.factorize(sar_df['loc_id'], use_na_sentinel=False)
+    chunk_sizes = [len(ids) for ids in np.array_split(np.arange(len(sar_ids)), num_chunks)]
+    row_chunks = np.repeat(np.arange(num_chunks), chunk_sizes)[codes]
+
+    # stable, so rows keep their original order within each chunk
+    rows = np.argsort(row_chunks, kind='stable')
+    return np.split(rows, np.searchsorted(row_chunks[rows], np.arange(1, num_chunks)))
+
+
+def take_subject_at_risk_rows(sar_df, chunk_rows):
+    """ Returns the `chunk_rows` of `sar_df` as a new frame
+
+        Slicing keeps a categorical column's full category list, so without dropping the
+        unused categories every chunk carries the whole portfolio's values (e.g. a unique
+        'LocNumber'), which parquet then repeats in every row group of each chunk file.
+    """
+    chunk_df = sar_df.iloc[chunk_rows].reset_index(drop=True)
+    for col in chunk_df.select_dtypes('category').columns:
+        chunk_df[col] = chunk_df[col].cat.remove_unused_categories()
+    return chunk_df
+
+
+def split_subject_at_risk_data(sar_df, num_chunks, chunk_idx):
+    """ Returns the `chunk_idx` slice of `sar_df`, split into `num_chunks` parts
+        (see `subject_at_risk_chunk_rows`)
+    """
+    chunk_rows = subject_at_risk_chunk_rows(sar_df, num_chunks)[chunk_idx]
+    return take_subject_at_risk_rows(sar_df, chunk_rows)
+
+
+def store_subject_at_risk_chunks(params, num_chunks, chunks_dir, filestore=None):
+    """ Load the SAR exposure once, split it into `num_chunks` parquet files and
+        store them, returning one filestore reference per lookup chunk
+
+        Without this every 'prepare_keys_file_chunk' task loads and checks the
+        whole portfolio just to keep its own rows, so lookup memory and CPU grow
+        with the chunk count.
+
+        `filestore` defaults to the worker's (built from its settings), e.g. when
+        run in a subprocess.
+    """
+    filestore = filestore or _worker_filestore()
+    sar_df = load_subject_at_risk_data(params)
+
+    chunk_refs = []
+    for chunk_idx, chunk_rows in enumerate(subject_at_risk_chunk_rows(sar_df, num_chunks)):
+        chunk_fp = os.path.join(chunks_dir, f'sar-chunk-{chunk_idx + 1}.parquet')
+        chunk_df = take_subject_at_risk_rows(sar_df, chunk_rows)
+        chunk_df.to_parquet(chunk_fp, index=False)
+        chunk_refs.append(filestore.put(
+            chunk_fp,
+            filename=os.path.basename(chunk_fp),
+            subdir=params['storage_subdir']
+        ))
+        os.remove(chunk_fp)
+    return chunk_refs
+
+
+def load_subject_at_risk_chunk(params, num_chunks, chunk_idx, filestore=None):
+    """ Returns this lookup chunk's SAR rows, from the file stored by
+        'pre_analysis_hook' when there is one, otherwise by loading and splitting
+        the full exposure (e.g. the API didn't send 'num_chunks' to the hook)
+
+        The chunk file is read straight from the filestore, as 'filestore.get'
+        on S3 / Azure also leaves a copy in the worker's data cache. `filestore`
+        defaults to the worker's (built from its settings).
+    """
+    sar_chunks = params.get('sar_chunks') or []
+    if len(sar_chunks) != num_chunks:
+        if sar_chunks:
+            logger.warning(f'Expected {num_chunks} pre-split exposure chunks, got {len(sar_chunks)}, loading the full exposure')
+        elif num_chunks > 1:
+            logger.info('No pre-split exposure chunks, loading the full exposure')
+        return split_subject_at_risk_data(load_subject_at_risk_data(params), num_chunks, chunk_idx)
+
+    with (filestore or _worker_filestore()).open(sar_chunks[chunk_idx], 'rb') as f:
+        return pd.read_parquet(f)
+
+
+def get_keys_format(params):
+    """ Return the oasislmf 'keys_format' and matching file extension for the
+        distributed lookup. Chunk merging only supports the tabular formats, so
+        'json' falls back to the default, 'parquet'.
+    """
+    keys_format = (params.get('keys_format') or 'parquet').lower()
+    if keys_format not in KEYS_FORMAT_EXT:
+        logger.warning(f'keys_format "{keys_format}" is not supported for distributed lookups, using "parquet"')
+        keys_format = 'parquet'
+    return keys_format, KEYS_FORMAT_EXT[keys_format]
+
+
+def generate_chunk_keys(params, num_chunks, chunk_idx, chunk_target_dir, filestore=None):
+    """ Run the keys lookup for one chunk of the exposure, writing its keys files
+        to `chunk_target_dir` (the body of the 'prepare_keys_file_chunk' task).
+    """
+    from oasislmf.preparation.lookup import OasisLookupFactory
+    _, lookup = OasisLookupFactory.create(
+        lookup_config_fp=params.get('lookup_config_json', None),
+        model_keys_data_path=params.get('lookup_data_dir', None),
+        model_version_file_path=params.get('model_version_csv', None),
+        lookup_module_path=params.get('lookup_module_path', None),
+        complex_lookup_config_fp=params.get('lookup_complex_config_json', None),
+        user_data_dir=params.get('user_data_dir', None),
+        output_directory=chunk_target_dir,
+    )
+
+    sar_df = load_subject_at_risk_chunk(params, num_chunks, chunk_idx, filestore=filestore)
+
+    # With no location file the chunk count isn't capped by the row count
+    # (see `_get_inputs_generation_chunks`), so a chunk can be empty. Skip the
+    # lookup, `collect_keys` merges whatever the other chunks produced.
+    if sar_df.empty:
+        logger.info(f'Lookup chunk {chunk_idx + 1}/{num_chunks} is empty --skipped--')
+    else:
+        keys_format, keys_ext = get_keys_format(params)
+        chunk_keys_fp = os.path.join(chunk_target_dir, f'keys.{keys_ext}')
+        chunk_keys_errors_fp = os.path.join(chunk_target_dir, f'keys-errors.{keys_ext}')
+        lookup.generate_key_files(
+            location_fp=None,
+            location_df=sar_df,
+            successes_fp=chunk_keys_fp,
+            errors_fp=chunk_keys_errors_fp,
+            output_format=keys_format,
+            keys_success_msg=False,
+            multiproc_enabled=params.get('lookup_multiprocessing', False),
+            multiproc_num_cores=params.get('lookup_num_processes', -1),
+            multiproc_num_partitions=params.get('lookup_num_chunks', -1),
+        )
+
+
+_CSV_LINE_SEP = '\x1f'  # ASCII unit separator, used as a never-matching CSV delimiter
+_CSV_SCAN_BLOCK = 1 << 24
+
+
+def _csv_lines_mergeable(paths):
+    """ True if the chunk CSVs can be merged as whole, unparsed lines: every file
+        has the same header and no file contains a quote or the line separator.
+
+        Any quote sends the merge to the column path. Line-level quote checks
+        can't reliably spot a quoted field spanning lines (a stray `"` in an
+        unquoted field can balance the count), and splitting such a field into
+        lines would let unique() drop its continuation lines without an error.
+        Quote-free files also have only one way to write each row, so matching
+        rows on their raw text gives the same result as matching on fields.
+    """
+    header = None
+    for path in paths:
+        with open(path, 'rb') as f:
+            first_line = f.readline().rstrip(b'\r\n')
+            if header is None:
+                header = first_line
+            elif first_line != header:
+                return False
+            f.seek(0)
+            while block := f.read(_CSV_SCAN_BLOCK):
+                if b'"' in block or _CSV_LINE_SEP.encode() in block:
+                    return False
+    return True
+
+
+def _merge_csv_streaming(paths, output_file):
+    import polars as pl
+    # scan_csv errors on a zero-byte file, so skip those first.
+    non_empty_paths = []
+    for path in paths:
+        if os.path.getsize(path) > 0:
+            non_empty_paths.append(str(path))  # polars mishandles pathlib2.Path
+        else:
+            logger.info(f"File {path} is empty. --skipped--")
+    if not non_empty_paths:
+        logger.warning(f"All files were empty: {paths}. --skipped--")
+        return
+
+    # Never infer types: inference breaks on header-only chunks (all-String),
+    # rewrites values across chunks (1 -> 1.0) and fails on values past the
+    # inference window. CSV in, CSV out, so values pass through as text.
+    if _csv_lines_mergeable(non_empty_paths):
+        # Fast path: each row is one string, so no field splitting and a single
+        # hash per row in unique(). Duplicates are matched on exact text in both
+        # paths (no type inference), so `1` and `1.0` are different rows.
+        lazy_frames = [
+            pl.scan_csv(path, separator=_CSV_LINE_SEP, quote_char=None, infer_schema=False)
+            for path in non_empty_paths
+        ]
+        merged = pl.concat(lazy_frames, how='vertical')
+        sink_kwargs = {'separator': _CSV_LINE_SEP, 'quote_style': 'never'}
+    else:
+        # diagonal concat: chunk files' column sets aren't always identical.
+        lazy_frames = [pl.scan_csv(path, infer_schema=False) for path in non_empty_paths]
+        merged = pl.concat(lazy_frames, how='diagonal')
+        sink_kwargs = {}
+    merged.unique(keep='first', maintain_order=True).sink_csv(str(output_file), **sink_kwargs)
+
+
+def _merge_parquet_streaming(paths, output_file):
+    import polars as pl
+    import pyarrow as pa
+    import pyarrow.parquet as pq
+    # Dedup by content, not index - chunk files carry no meaningful index.
+    valid_paths = []
+    for path in paths:
+        try:
+            pq.ParquetFile(path).schema_arrow
+            valid_paths.append(str(path))
+        except pa.lib.ArrowInvalid:
+            logger.info(f"File {path} is empty or unreadable. --skipped--")
+    if not valid_paths:
+        logger.warning(f"All files were empty or unreadable: {paths}. --skipped--")
+        return
+
+    # relaxed: a zero-row chunk written from pandas has all-null column types.
+    lazy_frames = [pl.scan_parquet(path) for path in valid_paths]
+    (
+        pl.concat(lazy_frames, how='diagonal_relaxed')
+        .unique(keep='first', maintain_order=True)
+        .sink_parquet(str(output_file))
+    )
+
+
+def merge_dataframes(paths, output_file, file_type):
+    if not paths:
+        logger.warning("merge_dataframes was called with an empty path list.")
+        return
+    if file_type == 'csv':
+        _merge_csv_streaming(paths, output_file)
+    elif file_type == 'parquet':
+        _merge_parquet_streaming(paths, output_file)
+
+
+def take_first(paths, output_file):
+    first_path = paths[0]
+    logger.info(f"Using {first_path} and ignoring others.")
+    shutil.copy2(first_path, output_file)

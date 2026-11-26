@@ -23,7 +23,7 @@ from src.server.oasisapi.queues.consumers import send_task_status_message, TaskS
     TaskStatusMessageAnalysisItem, build_task_status_message, build_all_queue_status_message
 from ..analysis_models.models import AnalysisModel, ModelChunkingOptions
 from ..data_files.models import DataFile
-from ..files.models import RelatedFile, file_storage_link
+from ..files.models import RelatedFile, delete_related_files, file_storage_link
 from ..portfolios.models import Portfolio
 from ..queues.utils import filter_queues_info
 from ....common.data import STORED_FILENAME, ORIGINAL_FILENAME
@@ -31,6 +31,7 @@ from ....conf import iniconf
 from ..combine.tasks import record_combine_output
 
 from .v1_api.tasks import record_generate_input_result, record_run_analysis_result
+from .v2_api.utils import delete_prev_output
 
 
 class AnalysisTaskStatusQuerySet(models.QuerySet):
@@ -250,6 +251,9 @@ class Analysis(TimeStampedModel):
         status_choices.RUN_ERROR,
         status_choices.RUN_CANCELLED,
     ]
+    # Cleared before a V2 run is dispatched. On failure the V2 chain only stores the files
+    # it has, so stale outputs from an earlier run would be returned as the failed run's.
+    RUN_OUTPUT_FIELDS = ['output_file', 'run_log_file', 'run_traceback_file']
 
     input_generation_traceback_file_id = None
 
@@ -301,6 +305,10 @@ class Analysis(TimeStampedModel):
     chunking_options = models.OneToOneField(ModelChunkingOptions, on_delete=models.CASCADE, auto_created=True, default=None, null=True)
     num_events_total = models.IntegerField(null=False, default=0, blank=True)
     num_events_complete = models.IntegerField(null=False, default=0, blank=True)
+    num_gul_processes = models.IntegerField(null=False, default=0, blank=True)
+    num_gul_ready = models.IntegerField(null=False, default=0, blank=True)
+    num_outputs_total = models.IntegerField(null=False, default=0, blank=True)
+    num_outputs_complete = models.IntegerField(null=False, default=0, blank=True)
 
     objects = AnalysisQuerySet.as_manager()
 
@@ -627,6 +635,10 @@ class Analysis(TimeStampedModel):
     def _reset_loss_progress(self):
         self.num_events_total = 0
         self.num_events_complete = 0
+        self.num_gul_processes = 0
+        self.num_gul_ready = 0
+        self.num_outputs_total = 0
+        self.num_outputs_complete = 0
 
     def _dispatch_v1(self, task, initiator, success_callback, failure_callback_name):
         task.link(success_callback.s(self.pk, initiator.pk))
@@ -676,6 +688,8 @@ class Analysis(TimeStampedModel):
         self.status = self.status_choices.RUN_QUEUED
         self._reset_loss_progress()
         self.save()
+        if run_mode == self.run_mode_choices.V2:
+            delete_prev_output(self, self.RUN_OUTPUT_FIELDS)
 
         if run_mode == self.run_mode_choices.V1:
             task_id = self._dispatch_v1(
@@ -733,6 +747,7 @@ class Analysis(TimeStampedModel):
         self._reset_input_generation()
         self._reset_loss_progress()
         self.save()
+        delete_prev_output(self, self.RUN_OUTPUT_FIELDS)
 
         task_id = self._dispatch_v2(
             self.v2_start_input_and_loss_generation_signature, initiator, [loc_lines, events_total],
@@ -862,24 +877,19 @@ def delete_connected_files(sender, instance, **kwargs):
         'lookup_success_file',
         'lookup_validation_file',
         'summary_levels_file',
-        'chunking_options',
     ]
-    for ref in for_removal:
-        obj_ref = getattr(instance, ref)
-        if obj_ref:
-            obj_ref.delete()
+    delete_related_files(instance, for_removal)
+
+    if instance.chunking_options_id is not None:
+        ModelChunkingOptions.objects.filter(pk=instance.chunking_options_id).delete()
 
 
 @receiver(post_delete, sender=AnalysisTaskStatus)
 def delete_connected_task_logs(sender, instance, **kwargs):
     """ Post delete handler to clear out any dangaling log files
     """
-    for_removal = [
+    delete_related_files(instance, [
         'output_log',
         'error_log',
         'retry_log',
-    ]
-    for ref in for_removal:
-        obj_ref = getattr(instance, ref)
-        if obj_ref:
-            obj_ref.delete()
+    ])

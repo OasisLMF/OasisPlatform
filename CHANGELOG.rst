@@ -1,6 +1,24 @@
 OasisPlatform Changelog
 =======================
 
+`2.5.10`_
+ ---------
+* [#1474](https://github.com/OasisLMF/OasisPlatform/pull/1474) - Exposure run: replace do_disaggregation with disaggregation mode
+* [#1485](https://github.com/OasisLMF/OasisPlatform/pull/1485) - Store gul_ready / outputs_total / outputs_complete run progress pings
+* [#1504](https://github.com/OasisLMF/OasisPlatform/pull/1504) - Fix RelatedFile.DoesNotExist when deleting analyses with a shared log file
+* [#1505](https://github.com/OasisLMF/OasisPlatform/pull/1505) - Fix pyasn1 CVE issues
+* [#1507](https://github.com/OasisLMF/OasisPlatform/pull/1507) - Set analysis_finish_status when recording input files (#1506)
+* [#1509](https://github.com/OasisLMF/OasisPlatform/pull/1509) - Fix worker cancellation issues when not running `prefork`
+* [#1515](https://github.com/OasisLMF/OasisPlatform/pull/1515) - CI Fix: Compare exposure run test output with float tolerance
+* [#1518](https://github.com/OasisLMF/OasisPlatform/pull/1518) - fix/csv-merge-infer-schema
+* [#1522](https://github.com/OasisLMF/OasisPlatform/pull/1522) - Collected Fixes and CI update to OasisModels
+* [#1524](https://github.com/OasisLMF/OasisPlatform/pull/1524) - CVE soupsieve 4.0.0
+* [#1527](https://github.com/OasisLMF/OasisPlatform/pull/1527) - Upgrade github/codeql-action to v4
+* [#1529](https://github.com/OasisLMF/OasisPlatform/pull/1529) - Fix api_server image build: block conflicting Alpine python3-ndbm
+* [#1530](https://github.com/OasisLMF/OasisPlatform/pull/1530) - Drop unused categories when splitting the exposure for lookup chunks
+* [#1532](https://github.com/OasisLMF/OasisPlatform/pull/1532) - Keep files written by the pre-analysis hook in the generated inputs
+.. _`2.5.10`:  https://github.com/OasisLMF/OasisPlatform/compare/2.5.9...2.5.10
+
 `2.5.9`_
  ---------
 * [#1452](https://github.com/OasisLMF/OasisPlatform/pull/1452) - Share validation and dispatch between generate_inputs, run and generate_and_run

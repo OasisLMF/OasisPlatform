@@ -1,4 +1,5 @@
 import os
+import shutil
 from unittest import TestCase
 
 import pandas as pd
@@ -12,21 +13,26 @@ from pathlib2 import Path
 
 from oasis_data_manager.filestore.backends.local import LocalStorage
 
-from src.model_execution_worker.distributed_tasks import (
+from src.model_execution_worker.utils import (
+    copy_pre_analysis_extra_files,
     load_subject_at_risk_chunk,
     load_subject_at_risk_data,
     store_subject_at_risk_chunks,
     merge_dataframes,
     split_subject_at_risk_data,
-    merge_chunk_log_storage,
+    _csv_lines_mergeable,
     _merge_csv_streaming,
     _merge_parquet_streaming,
     take_first,
+    get_keys_format,
+)
+from src.model_execution_worker.distributed_tasks import (
+    merge_chunk_log_storage,
     handle_task_failure,
+    generate_losses_chunk,
     generate_losses_output,
     prepare_losses_generation_directory,
     write_input_files,
-    get_keys_format,
     pre_analysis_hook,
 )
 
@@ -116,6 +122,76 @@ class MergeCsvStreaming(TestCase):
                 self.assertEqual(merged['id'].to_list(), [1])
                 self.assertEqual(merged['value'].to_list(), ['x'])
 
+    def assert_merges_on_both_paths(self, chunk_texts, expected):
+        """Merge chunk_texts via the line path and the column path; each must output `expected`."""
+        for lines_path in (True, False):
+            with self.subTest(lines_path=lines_path), TemporaryDirectory() as tmp_dir, \
+                    patch('src.model_execution_worker.utils._csv_lines_mergeable', return_value=lines_path):
+                chunks = []
+                for i, text in enumerate(chunk_texts):
+                    chunks.append(Path(tmp_dir, f'{i}.csv'))
+                    chunks[-1].write_text(text)
+                output_file = Path(tmp_dir, 'merged.csv')
+
+                _merge_csv_streaming(chunks, output_file)
+
+                self.assertEqual(output_file.read_text(), expected)
+
+    def test_int_and_float_chunks___values_are_not_rewritten(self):
+        self.assert_merges_on_both_paths(['id,value\n1,1\n', 'id,value\n2,1.5\n'], 'id,value\n1,1\n2,1.5\n')
+
+    def test_non_numeric_value_past_inference_window___merges(self):
+        chunk = 'id,value\n' + ''.join(f'{i},{i}\n' for i in range(150)) + '150,abc\n'
+        self.assert_merges_on_both_paths([chunk], chunk)
+
+    def test_duplicate_rows___first_kept_in_order(self):
+        self.assert_merges_on_both_paths(
+            ['id,value\n1,x\n2,y\n', 'id,value\n2,y\n3,z\n', 'id,value\n'], 'id,value\n1,x\n2,y\n3,z\n')
+
+    def test_quoted_fields___passed_through_unchanged(self):
+        self.assert_merges_on_both_paths(
+            ['id,value\n1,"x, y"\n2,"say ""hi"""\n', 'id,value\n1,"x, y"\n3,z\n'],
+            'id,value\n1,"x, y"\n2,"say ""hi"""\n3,z\n')
+
+    def test_quoted_field_spanning_lines___merged_as_one_row(self):
+        with TemporaryDirectory() as tmp_dir:
+            chunk_a = Path(tmp_dir, 'a.csv')
+            chunk_b = Path(tmp_dir, 'b.csv')
+            output_file = Path(tmp_dir, 'merged.csv')
+            chunk_a.write_text('id,value\n1,"a\nb"\n')
+            chunk_b.write_text('id,value\n1,"a\nb"\n2,b\n')
+
+            _merge_csv_streaming([chunk_a, chunk_b], output_file)
+
+            self.assertEqual(output_file.read_text(), 'id,value\n1,"a\nb"\n2,b\n')
+
+    def test_same_row_quoted_and_unquoted___deduplicated(self):
+        with TemporaryDirectory() as tmp_dir:
+            chunk_a = Path(tmp_dir, 'a.csv')
+            chunk_b = Path(tmp_dir, 'b.csv')
+            output_file = Path(tmp_dir, 'merged.csv')
+            chunk_a.write_text('id,value\n1,x\n')
+            chunk_b.write_text('id,value\n1,"x"\n2,y\n')
+
+            _merge_csv_streaming([chunk_a, chunk_b], output_file)
+
+            self.assertEqual(output_file.read_text(), 'id,value\n1,x\n2,y\n')
+
+    def test_stray_quotes_around_multi_line_field___raises(self):
+        # Every line has an even number of quotes, so only a full CSV parse can
+        # tell the field spans lines. Merging line by line would silently drop
+        # record 2's continuation lines as duplicates of record 1's.
+        with TemporaryDirectory() as tmp_dir:
+            chunk = Path(tmp_dir, 'chunk.csv')
+            output_file = Path(tmp_dir, 'merged.csv')
+            chunk.write_text(
+                'id,size,note,size2\n'
+                '1,5" pipe,"a\nb\nc",7" pipe\n'
+                '2,5" pipe,"d\nb\nc",7" pipe\n')
+
+            with self.assertRaises(pl.exceptions.ComputeError):
+                _merge_csv_streaming([chunk], output_file)
+
     def test_all_chunks_empty___no_output_file_is_written(self):
         with TemporaryDirectory() as tmp_dir:
             empty_chunk = Path(tmp_dir, 'empty.csv')
@@ -125,6 +201,34 @@ class MergeCsvStreaming(TestCase):
             _merge_csv_streaming([empty_chunk], output_file)
 
             self.assertFalse(output_file.exists())
+
+
+class CsvLinesMergeable(TestCase):
+    def check(self, chunk_texts):
+        with TemporaryDirectory() as tmp_dir:
+            chunks = []
+            for i, text in enumerate(chunk_texts):
+                chunks.append(Path(tmp_dir, f'{i}.csv'))
+                chunks[-1].write_text(text)
+            return _csv_lines_mergeable([str(c) for c in chunks])
+
+    def test_same_header_unquoted___true(self):
+        self.assertTrue(self.check(['id,value\n1,x\n', 'id,value\n', 'id,value\r\n2,y\r\n']))
+
+    def test_different_headers___false(self):
+        self.assertFalse(self.check(['id,value\n1,x\n', 'id,extra\n2,y\n']))
+
+    def test_quoted_fields_within_lines___false(self):
+        self.assertFalse(self.check(['id,value\n1,x\n', 'id,value\n2,"y, z"\n3,"say ""hi"""\n']))
+
+    def test_quoted_field_spanning_lines___false(self):
+        self.assertFalse(self.check(['id,value\n1,x\n', 'id,value\n2,"y\nz"\n']))
+
+    def test_stray_quote_in_unquoted_field___false(self):
+        self.assertFalse(self.check(['id,size\n1,5" pipe\n']))
+
+    def test_line_separator_in_data___false(self):
+        self.assertFalse(self.check(['id,value\n1,x\x1fy\n']))
 
 
 class MergeParquetStreaming(TestCase):
@@ -195,9 +299,9 @@ class MergeParquetStreaming(TestCase):
 
 class MergeDataframes(TestCase):
     def test_empty_path_list___warns_and_returns_without_dispatching(self):
-        with patch('src.model_execution_worker.distributed_tasks._merge_csv_streaming') as csv_mock, \
-                patch('src.model_execution_worker.distributed_tasks._merge_parquet_streaming') as parquet_mock, \
-                patch('src.model_execution_worker.distributed_tasks.logger') as logger_mock:
+        with patch('src.model_execution_worker.utils._merge_csv_streaming') as csv_mock, \
+                patch('src.model_execution_worker.utils._merge_parquet_streaming') as parquet_mock, \
+                patch('src.model_execution_worker.utils.logger') as logger_mock:
             merge_dataframes([], 'output.csv', 'csv')
 
             csv_mock.assert_not_called()
@@ -205,16 +309,16 @@ class MergeDataframes(TestCase):
             logger_mock.warning.assert_called_once()
 
     def test_csv_file_type___dispatches_to_csv_streaming(self):
-        with patch('src.model_execution_worker.distributed_tasks._merge_csv_streaming') as csv_mock, \
-                patch('src.model_execution_worker.distributed_tasks._merge_parquet_streaming') as parquet_mock:
+        with patch('src.model_execution_worker.utils._merge_csv_streaming') as csv_mock, \
+                patch('src.model_execution_worker.utils._merge_parquet_streaming') as parquet_mock:
             merge_dataframes(['a.csv'], 'output.csv', 'csv')
 
             csv_mock.assert_called_once_with(['a.csv'], 'output.csv')
             parquet_mock.assert_not_called()
 
     def test_parquet_file_type___dispatches_to_parquet_streaming(self):
-        with patch('src.model_execution_worker.distributed_tasks._merge_csv_streaming') as csv_mock, \
-                patch('src.model_execution_worker.distributed_tasks._merge_parquet_streaming') as parquet_mock:
+        with patch('src.model_execution_worker.utils._merge_csv_streaming') as csv_mock, \
+                patch('src.model_execution_worker.utils._merge_parquet_streaming') as parquet_mock:
             merge_dataframes(['a.parquet'], 'output.parquet', 'parquet')
 
             parquet_mock.assert_called_once_with(['a.parquet'], 'output.parquet')
@@ -270,6 +374,22 @@ class SplitSubjectAtRiskData(TestCase):
 
         self.assertEqual([len(c) for c in chunks], [1, 1, 0, 0])
 
+    def test_unused_categories_are_dropped(self):
+        # slicing keeps a categorical column's full category list unless trimmed (#1508)
+        sar_df = pd.DataFrame({
+            'loc_id': [1, 2, 3, 4],
+            'LocNumber': pd.Categorical(['a', 'b', 'c', 'd']),
+            'PostalCode': pd.Categorical(['x', None, 'y', 'x']),
+        })
+
+        chunks = [split_subject_at_risk_data(sar_df, 2, idx) for idx in range(2)]
+
+        self.assertEqual(chunks[0]['LocNumber'].cat.categories.to_list(), ['a', 'b'])
+        self.assertEqual(chunks[1]['LocNumber'].cat.categories.to_list(), ['c', 'd'])
+        self.assertEqual(chunks[0]['PostalCode'].cat.categories.to_list(), ['x'])
+        self.assertTrue(pd.isna(chunks[0]['PostalCode'][1]))
+        self.assertEqual(chunks[1]['PostalCode'].to_list(), ['y', 'x'])
+
 
 class LoadSubjectAtRiskData(TestCase):
     inputs_dir = os.path.join(os.path.dirname(__file__), 'inputs')
@@ -309,16 +429,15 @@ class SubjectAtRiskChunkFiles(TestCase):
             os.makedirs(os.path.join(tmp_dir, 'media', self.params['storage_subdir']))
             split_dir = os.path.join(tmp_dir, 'split')
             os.makedirs(split_dir)
-            with patch('src.model_execution_worker.distributed_tasks.filestore', storage):
-                self.params['sar_chunks'] = store_subject_at_risk_chunks(self.params, num_chunks, split_dir)
-                with patch('src.model_execution_worker.distributed_tasks.load_subject_at_risk_data') as full_load, \
-                        patch.object(storage, 'get') as storage_get:
-                    chunks = []
-                    for idx in range(num_chunks):
-                        chunks.append(load_subject_at_risk_chunk(self.params, num_chunks, idx))
-                    full_load.assert_not_called()
-                    # 'get' leaves a copy in the data cache on S3 / Azure
-                    storage_get.assert_not_called()
+            self.params['sar_chunks'] = store_subject_at_risk_chunks(self.params, num_chunks, split_dir, filestore=storage)
+            with patch('src.model_execution_worker.utils.load_subject_at_risk_data') as full_load, \
+                    patch.object(storage, 'get') as storage_get:
+                chunks = []
+                for idx in range(num_chunks):
+                    chunks.append(load_subject_at_risk_chunk(self.params, num_chunks, idx, filestore=storage))
+                full_load.assert_not_called()
+                # 'get' leaves a copy in the data cache on S3 / Azure
+                storage_get.assert_not_called()
             self.assertEqual(os.listdir(split_dir), [])
         return chunks
 
@@ -349,6 +468,16 @@ class SubjectAtRiskChunkFiles(TestCase):
         chunk = load_subject_at_risk_chunk(self.params, 3, 2)
 
         pd.testing.assert_frame_equal(chunk, split_subject_at_risk_data(self.full_sar_df, 3, 2))
+
+    def test_stored_chunks_only_hold_their_own_categories(self):
+        # each chunk file holds only its own rows' string values, not the whole portfolio's (#1508)
+        self.assertIsInstance(self.full_sar_df['LocNumber'].dtype, pd.CategoricalDtype)
+
+        chunks = self._store_and_load(3)
+
+        for chunk in chunks:
+            for col in chunk.select_dtypes('category').columns:
+                self.assertEqual(len(chunk[col].cat.categories), chunk[col].nunique(dropna=True), col)
 
 
 class MergeChunkLogStorage(TestCase):
@@ -484,7 +613,7 @@ class GenerateLossesOutputCombineFiles(TestCase):
                 patch('src.model_execution_worker.distributed_tasks.settings.get', side_effect=settings_get), \
                 patch('src.model_execution_worker.distributed_tasks.notify_api_task_started'), \
                 patch('src.model_execution_worker.distributed_tasks.filestore') as filestore_mock, \
-                patch('oasislmf.manager.OasisManager'):
+                patch('oasislmf.manager.OasisManager') as self.manager_mock:
             filestore_mock.put.side_effect = lambda ref, filename=None, **kw: filename or f'{os.path.basename(str(ref))}.tar.gz'
             result = generate_losses_output.run(params, analysis_id=1, run_data_uuid='run-uuid', slug='generate-losses-output')
 
@@ -520,6 +649,13 @@ class GenerateLossesOutputCombineFiles(TestCase):
 
             self.assertFalse(Path(model_run_dir, 'output', 'combine').exists())
             self.assertIn('output_location', result)
+
+    def test_outputs_run___analysis_pk_is_passed_for_progress_updates(self):
+        with TemporaryDirectory() as run_dir:
+            self._run_generate_losses_output(run_dir, input_location='stored-inputs.tar.gz')
+
+            output_kwargs = self.manager_mock.return_value.generate_losses_output.call_args.kwargs
+            self.assertEqual(output_kwargs['analysis_pk'], 1)
 
 
 class WriteInputFiles(TestCase):
@@ -607,6 +743,127 @@ class PreAnalysisHookChunks(TestCase):
         self.assertNotIn('sar_chunks', result)
 
 
+class CopyPreAnalysisExtraFiles(TestCase):
+    """ Files a pre-analysis hook writes, other than the step's own exposure files,
+        are carried into the generated inputs (#1502).
+    """
+
+    def _make_hook_dir(self, hook_dir):
+        for name in ['raw_location.parquet', 'location.parquet', 'exposure_info.json',
+                     'model_extra.json', os.path.join('sub', 'data.bin')]:
+            Path(hook_dir, name).parent.mkdir(parents=True, exist_ok=True)
+            Path(hook_dir, name).write_text(name)
+
+    def test_only_files_written_by_the_hook_are_copied(self):
+        with TemporaryDirectory() as hook_dir, TemporaryDirectory() as dst_dir:
+            self._make_hook_dir(hook_dir)
+            hook_output = {'original': {'location': 'raw_location.parquet'},
+                           'modified': {'location': 'location.parquet'}}
+
+            copied = copy_pre_analysis_extra_files(hook_dir, hook_output, dst_dir)
+
+            self.assertEqual(copied, ['model_extra.json', 'sub/data.bin'])
+            self.assertEqual(Path(dst_dir, 'sub', 'data.bin').read_text(), os.path.join('sub', 'data.bin'))
+            self.assertFalse(Path(dst_dir, 'location.parquet').exists())
+
+    def test_absolute_paths_in_hook_output(self):
+        with TemporaryDirectory() as hook_dir, TemporaryDirectory() as dst_dir:
+            self._make_hook_dir(hook_dir)
+            hook_output = {'original': {'location': '/somewhere/else/location.csv'},
+                           'modified': {'location': os.path.join(hook_dir, 'location.parquet')}}
+
+            copied = copy_pre_analysis_extra_files(hook_dir, hook_output, dst_dir)
+
+            self.assertEqual(copied, ['model_extra.json', 'raw_location.parquet', 'sub/data.bin'])
+
+    def test_no_extra_files(self):
+        with TemporaryDirectory() as hook_dir, TemporaryDirectory() as dst_dir:
+            Path(hook_dir, 'location.parquet').write_text('x')
+
+            self.assertEqual(copy_pre_analysis_extra_files(hook_dir, {'modified': {'location': 'location.parquet'}}, dst_dir), [])
+
+
+HOOK_WRITING_EXTRA_FILES = """
+import os
+import shutil
+
+
+class ExposurePreAnalysis:
+    def __init__(self, input_dir, **kwargs):
+        self.input_dir = input_dir
+
+    def run(self):
+        with open(os.path.join(self.input_dir, 'model_extra.json'), 'w') as f:
+            f.write('{"from": "pre-analysis"}')
+        os.makedirs(os.path.join(self.input_dir, 'hook_data'))
+        with open(os.path.join(self.input_dir, 'hook_data', 'factors.csv'), 'w') as f:
+            f.write('a,b\\n1,2\\n')
+"""
+
+
+class PreAnalysisHookExtraFiles(TestCase):
+    """ #1502: files the pre-analysis hook writes reach the generated inputs, from which
+        the loss generation and post-analysis hook read them.
+    """
+    inputs_dir = os.path.join(os.path.dirname(__file__), 'inputs')
+
+    def test_hook_files_are_in_the_generated_inputs(self):
+        def settings_get(section, option, fallback=None):
+            return run_dir if option == 'base_run_dir' else fallback
+
+        with TemporaryDirectory() as run_dir:
+            storage = LocalStorage(root_dir=os.path.join(run_dir, 'media'), cache_dir=None)
+            os.makedirs(os.path.join(run_dir, 'media', 'analysis-1_files-run-uuid'))
+            hook_fp = os.path.join(run_dir, 'hook.py')
+            Path(hook_fp).write_text(HOOK_WRITING_EXTRA_FILES)
+            params = {
+                'log_storage': {},
+                'exposure_pre_analysis_module': hook_fp,
+                'oed_location_csv': os.path.join(self.inputs_dir, 'location.csv'),
+                'check_oed': False,
+            }
+            with patch('src.model_execution_worker.distributed_tasks.TASK_LOG_DIR', run_dir), \
+                    patch('src.model_execution_worker.distributed_tasks.settings.get', side_effect=settings_get), \
+                    patch('src.model_execution_worker.distributed_tasks.notify_api_task_started'), \
+                    patch('src.model_execution_worker.distributed_tasks.filestore', storage):
+                params = pre_analysis_hook.run(params, analysis_id=1, run_data_uuid='run-uuid',
+                                               slug='pre-analysis-hook', num_chunks=1)
+            self.assertIn('pre_analysis_files', params)
+            self.assertIn('pre_loc_file', params)
+
+            # 'write_input_files', possibly on another worker: keys from the lookup, then the hook's files
+            target_dir = os.path.join(run_dir, 'analysis-1_files-run-uuid')
+            shutil.rmtree(target_dir)
+            params['keys_data'] = 'keys-data.tar.gz'
+            target_files = {}
+
+            def extract(archive, dst, subdir):
+                if archive == params['pre_analysis_files']:
+                    return storage.extract(archive, dst, subdir)
+                Path(dst).mkdir(parents=True, exist_ok=True)
+                pl.DataFrame(schema=['LocID']).write_parquet(str(Path(dst, 'keys.parquet')))
+                pl.DataFrame(schema=['LocID']).write_parquet(str(Path(dst, 'keys-errors.parquet')))
+
+            def generate_files(**kwargs):
+                target_files.update({
+                    str(p.relative_to(kwargs['target_dir'])): p.read_text()
+                    for p in Path(kwargs['target_dir']).rglob('*') if p.is_file() and p.suffix != '.parquet'})
+
+            with patch('src.model_execution_worker.distributed_tasks.TASK_LOG_DIR', run_dir), \
+                    patch('src.model_execution_worker.distributed_tasks.settings.get', side_effect=settings_get), \
+                    patch('src.model_execution_worker.distributed_tasks.notify_api_task_started'), \
+                    patch('src.model_execution_worker.distributed_tasks.filestore') as filestore_mock, \
+                    patch('oasislmf.manager.OasisManager') as manager_mock:
+                filestore_mock.extract.side_effect = extract
+                manager_mock.return_value.generate_files.side_effect = generate_files
+                write_input_files.run(params, analysis_id=1, run_data_uuid='run-uuid', slug='write-input-files')
+
+        self.assertEqual(target_files.get('model_extra.json'), '{"from": "pre-analysis"}')
+        self.assertEqual(target_files.get(os.path.join('hook_data', 'factors.csv')), 'a,b\n1,2\n')
+        # the hook step's own exposure snapshots are not copied into the inputs
+        self.assertNotIn('exposure_info.json', target_files)
+
+
 class GetKeysFormat(TestCase):
     def test_missing_keys_format___defaults_to_parquet(self):
         self.assertEqual(get_keys_format({}), ('parquet', 'parquet'))
@@ -670,3 +927,74 @@ class ArchiveCompressionType(TestCase):
             dir_puts = {c.args[0]: c.kwargs.get('compression') for c in filestore_mock.put.call_args_list}
             for name in ['output', 'log']:
                 self.assertEqual(dir_puts[str(Path(model_run_dir, name))], 'zst')
+
+
+class ModelStorageJson(TestCase):
+    """ The worker's model data storage (OASIS_WORKER_MODEL_DATA_*) overrides the model's own
+        'model_storage_json' (from its oasislmf.json); when it isn't set, the model's value is kept.
+    """
+    MODEL_STORAGE_JSON = '/home/worker/model/model_data/model_storage.json'
+
+    def _run(self, task, params, model_storage, **task_kwargs):
+        """Run a loss task, return (kwargs OasisManager was called with, task result, storage config file content)"""
+        seen = {}
+
+        def capture(**kwargs):
+            seen.update(kwargs)
+            fp = kwargs.get('model_storage_json')
+            if fp and fp != self.MODEL_STORAGE_JSON:
+                with open(fp) as f:
+                    seen['storage_config'] = f.read()
+            return {}
+
+        def settings_get(section, option, fallback=None):
+            return run_dir if option == 'base_run_dir' else fallback
+
+        with TemporaryDirectory() as run_dir, \
+                patch('src.model_execution_worker.distributed_tasks.TASK_LOG_DIR', run_dir), \
+                patch('src.model_execution_worker.distributed_tasks.settings.get', side_effect=settings_get), \
+                patch('src.model_execution_worker.distributed_tasks.notify_api_task_started'), \
+                patch('src.model_execution_worker.distributed_tasks.model_storage', model_storage), \
+                patch('src.model_execution_worker.distributed_tasks.filestore') as filestore_mock, \
+                patch('oasislmf.manager.OasisManager') as manager_mock:
+            filestore_mock.archive_suffix.return_value = 'tar.gz'
+            manager_mock.return_value.generate_losses_dir.side_effect = capture
+            manager_mock.return_value.generate_losses_partial.side_effect = capture
+            params = {'model_run_dir': os.path.join(run_dir, 'run-data'), **params}
+            result = task.run(params, analysis_id=1, run_data_uuid='run-uuid', slug='task', **task_kwargs)
+        return seen, result
+
+    def _worker_storage(self):
+        storage = LocalStorage(root_dir='/worker/model_data')
+        return storage
+
+    def test_prepare___no_worker_storage___model_storage_json_is_kept(self):
+        seen, result = self._run(prepare_losses_generation_directory,
+                                 {'model_storage_json': self.MODEL_STORAGE_JSON}, model_storage=None)
+        self.assertEqual(seen['model_storage_json'], self.MODEL_STORAGE_JSON)
+        self.assertEqual(result['model_storage_json'], self.MODEL_STORAGE_JSON)
+
+    def test_prepare___no_storage_set___none_is_passed(self):
+        seen, result = self._run(prepare_losses_generation_directory, {}, model_storage=None)
+        self.assertIsNone(seen.get('model_storage_json'))
+
+    def test_prepare___worker_storage___overrides_and_is_not_returned(self):
+        seen, result = self._run(prepare_losses_generation_directory,
+                                 {'model_storage_json': self.MODEL_STORAGE_JSON},
+                                 model_storage=self._worker_storage())
+        self.assertNotEqual(seen['model_storage_json'], self.MODEL_STORAGE_JSON)
+        self.assertIn('/worker/model_data', seen['storage_config'])
+        # the temp config file is gone once the task ends, so it isn't passed on to later tasks
+        self.assertEqual(result['model_storage_json'], self.MODEL_STORAGE_JSON)
+
+    def test_chunk___no_worker_storage___model_storage_json_is_kept(self):
+        seen, _ = self._run(generate_losses_chunk, {'model_storage_json': self.MODEL_STORAGE_JSON},
+                            model_storage=None, chunk_idx=0, num_chunks=2)
+        self.assertEqual(seen['model_storage_json'], self.MODEL_STORAGE_JSON)
+
+    def test_chunk___worker_storage___overrides(self):
+        seen, result = self._run(generate_losses_chunk, {'model_storage_json': self.MODEL_STORAGE_JSON},
+                                 model_storage=self._worker_storage(), chunk_idx=0, num_chunks=2)
+        self.assertNotEqual(seen['model_storage_json'], self.MODEL_STORAGE_JSON)
+        self.assertIn('/worker/model_data', seen['storage_config'])
+        self.assertEqual(result['model_storage_json'], self.MODEL_STORAGE_JSON)

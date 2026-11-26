@@ -306,3 +306,21 @@ class RelatedFile(TimeStampedModel):
         self.save()
 
         task.delay(self.id)
+
+
+def delete_related_files(instance, field_names):
+    """ Delete the RelatedFile rows referenced by `field_names` on `instance`.
+
+    Works from the stored FK ids instead of the related objects, so a file
+    referenced by more than one field (e.g. a failed V2 run stores the same file
+    as `run_traceback_file` and `run_log_file`) is deleted once, and a file
+    already removed earlier in the same cascade is skipped instead of raising
+    `RelatedFile.DoesNotExist`.
+    """
+    file_ids = {
+        getattr(instance, instance._meta.get_field(name).attname)
+        for name in field_names
+    }
+    file_ids.discard(None)
+    if file_ids:
+        RelatedFile.objects.filter(pk__in=file_ids).delete()
