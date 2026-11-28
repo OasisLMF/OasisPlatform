@@ -145,6 +145,7 @@ databases:
 #   type: redis|postgres|mysql
 #   name: name (used as deployment and service)
 #   port: port (for service)
+#   maxConnections: postgres max_connections (optional, postgres default 100)
   channel_layer:
     type: redis
     name: valkey
@@ -178,6 +179,9 @@ databases:
     name: celery-db
     dbName: celery
     port: 5432
+    # Every worker process holds a connection to the celery result backend, so this needs to be above the total
+    # number of worker processes (worker replicas x OASIS_CELERY_CONCURRENCY) plus the server and task controller
+    maxConnections: 300
     volumeSize: 2Gi
     user: celery
     password: password

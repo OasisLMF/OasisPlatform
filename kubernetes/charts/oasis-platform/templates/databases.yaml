@@ -110,6 +110,9 @@ spec:
 {{- end }}
 {{- if or (eq $v.type "postgres") (eq $v.type "azure_postgres") }}
           image: {{ $root.Values.images.postgres.image }}:{{ $root.Values.images.postgres.version }}
+          {{- if $v.maxConnections }}
+          args: ["postgres", "-c", "max_connections={{ $v.maxConnections }}"]
+          {{- end }}
           env:
             - name: POSTGRES_PASSWORD
               valueFrom:
