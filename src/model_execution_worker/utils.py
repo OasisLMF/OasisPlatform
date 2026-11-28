@@ -185,6 +185,9 @@ class _LevelTracker:
 
 _level_tracker = _LevelTracker()
 
+# Format of the per-task log files, the same as the worker's own log file (src/conf/iniconf.py)
+TASK_LOG_FORMAT = "%(asctime)s - %(levelname)s - %(message)s"
+
 
 class LoggingTaskContext:
     """ Adds a file log handler to the root logger and pushes a copy all logs to
@@ -203,6 +206,8 @@ class LoggingTaskContext:
         # upload (see __exit__ below); if the task is then retried by celery, that
         # retry must not append onto the previous failed attempt's leftover content.
         self.handler = logging.FileHandler(log_filename, mode='w')
+        # Always timestamp task logs (input_generation_traceback, run_traceback_file, sub-task logs), see #1460
+        self.handler.setFormatter(logging.Formatter(TASK_LOG_FORMAT))
         self.handler.addFilter(_ThreadScopedFilter())
         self.delete_on_exit = delete_on_exit
         self._filter = None

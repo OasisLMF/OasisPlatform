@@ -48,6 +48,19 @@ class LoggingTaskContextTests(TestCase):
         self.assertIn('KERNEL_STDERR', content)
         self.assertIn('STDOUT', content)
 
+    def test_log_lines_are_timestamped_whatever_the_level(self):
+        """ #1460: task logs (uploaded as input_generation_traceback, run_traceback_file
+            and the sub-task logs) carry a timestamp and level on every line, not only in debug mode.
+        """
+        for level in ('INFO', 'DEBUG'):
+            with self.subTest(level=level):
+                logger = logging.getLogger(f'test-logging-task-context-timestamp-{level}')
+                with LoggingTaskContext(logger, log_filename=self.log_path, level=level, delete_on_exit=False):
+                    logger.info('some task output')
+                with open(self.log_path) as f:
+                    line = f.read().strip()
+                self.assertRegex(line, r'^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3} - INFO - some task output$')
+
     def test_delete_on_exit_false___log_file_is_preserved_even_on_clean_exit(self):
         logger = logging.getLogger('test-logging-task-context-no-delete')
 
