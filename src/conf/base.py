@@ -34,6 +34,17 @@ if BROKER_URL.startswith('amqps://'):
         'cert_reqs': ssl.CERT_REQUIRED if _broker_ssl_ca_certs else ssl.CERT_NONE,
     }
 
+
+def default_db_ssl_mode(db_engine):
+    """Default query string for the celery results DB URI.
+
+    ``sslmode`` is a PostgreSQL connection option; other databases (e.g. MySQL via pymysql)
+    reject it, so it is only added by default for PostgreSQL engines (#1228). Setting
+    ``OASIS_CELERY_DB_SSL_MODE`` still overrides this for any engine.
+    """
+    return '?sslmode=prefer' if 'postgres' in (db_engine or '').lower() else ''
+
+
 #: Celery config - result backend URI
 CELERY_RESULTS_DB_BACKEND = settings.get('celery', 'DB_ENGINE', fallback='db+sqlite')
 if CELERY_RESULTS_DB_BACKEND == 'db+sqlite':
@@ -42,12 +53,13 @@ if CELERY_RESULTS_DB_BACKEND == 'db+sqlite':
         DB_NAME=settings.get('celery', 'db_name', fallback='celery.db.sqlite'),
     )
 else:
+    _celery_db_engine = settings.get('celery', 'db_engine')
     CELERY_RESULT_BACKEND = '{DB_ENGINE}://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}{SSL_MODE}'.format(
-        DB_ENGINE=settings.get('celery', 'db_engine'),
+        DB_ENGINE=_celery_db_engine,
         DB_USER=urllib.parse.quote(settings.get('celery', 'db_user')),
         DB_PASS=urllib.parse.quote(settings.get('celery', 'db_pass')),
         DB_HOST=settings.get('celery', 'db_host'),
         DB_PORT=settings.get('celery', 'db_port'),
         DB_NAME=settings.get('celery', 'db_name', fallback='celery'),
-        SSL_MODE=settings.get('celery', 'db_ssl_mode', fallback='?sslmode=prefer'),
+        SSL_MODE=settings.get('celery', 'db_ssl_mode', fallback=default_db_ssl_mode(_celery_db_engine)),
     )
