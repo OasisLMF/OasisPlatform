@@ -65,6 +65,9 @@ modelImages:
 # ui. In the future we might be able to put them on the same if either oasis ui or oasis api supports subpaths.
 ingress:
 
+  # IngressClass of the ingress controller (the bundled traefik chart creates 'traefik')
+  className: traefik
+
   # Certificate for TLS
   tls:
     # Strategies:
@@ -87,6 +90,11 @@ ingress:
 
 
 traefik:
+  # Name the IngressClass 'traefik' whatever the release is called (the chart default is '<release>-traefik'),
+  # so ingresses here and in oasis-monitoring can select it with ingressClassName: traefik
+  ingressClass:
+    name: traefik
+
   # Entry points configuration
   ports:
     web:

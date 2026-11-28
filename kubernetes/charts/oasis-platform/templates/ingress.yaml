@@ -4,7 +4,6 @@ kind: Ingress
 metadata:
   name: {{ $name }}
   annotations:
-    kubernetes.io/ingress.class: traefik
     {{- if or (eq .Values.ingress.tls.strategy "provided") (eq .Values.ingress.tls.strategy "letsencrypt") }}
     traefik.ingress.kubernetes.io/redirect-scheme: https
     {{- end }}
@@ -12,6 +11,7 @@ metadata:
     cert-manager.io/cluster-issuer: letsencrypt
     {{- end }}
 spec:
+  ingressClassName: {{ .Values.ingress.className | default "traefik" }}
   {{- if or (eq .Values.ingress.tls.strategy "provided") (eq .Values.ingress.tls.strategy "letsencrypt") (eq .Values.ingress.tls.strategy "default") }}
   tls:
     - secretName: {{ .Values.ingress.tls.certificateSecret }}

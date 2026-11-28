@@ -59,8 +59,7 @@ kube-prometheus-stack:
         allowed_origins: "https://*"
     ingress:
       enabled: true
-      annotations:
-        kubernetes.io/ingress.class: traefik
+      ingressClassName: traefik
       hosts:
         - ui.oasis.local
       path: /grafana/
