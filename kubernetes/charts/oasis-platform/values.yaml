@@ -65,6 +65,9 @@ modelImages:
 # ui. In the future we might be able to put them on the same if either oasis ui or oasis api supports subpaths.
 ingress:
 
+  # IngressClass of the ingress controller (the bundled traefik chart creates 'traefik')
+  className: traefik
+
   # Certificate for TLS
   tls:
     # Strategies:
@@ -87,6 +90,11 @@ ingress:
 
 
 traefik:
+  # Name the IngressClass 'traefik' whatever the release is called (the chart default is '<release>-traefik'),
+  # so ingresses here and in oasis-monitoring can select it with ingressClassName: traefik
+  ingressClass:
+    name: traefik
+
   # Entry points configuration
   ports:
     web:
@@ -145,6 +153,7 @@ databases:
 #   type: redis|postgres|mysql
 #   name: name (used as deployment and service)
 #   port: port (for service)
+#   maxConnections: postgres max_connections (optional, postgres default 100)
   channel_layer:
     type: redis
     name: valkey
@@ -178,6 +187,9 @@ databases:
     name: celery-db
     dbName: celery
     port: 5432
+    # Every worker process holds a connection to the celery result backend, so this needs to be above the total
+    # number of worker processes (worker replicas x OASIS_CELERY_CONCURRENCY) plus the server and task controller
+    maxConnections: 300
     volumeSize: 2Gi
     user: celery
     password: password
