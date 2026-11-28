@@ -23,6 +23,7 @@ from ..common.filestore.filestore import get_archive_compression, get_filestore,
 from ..conf import celeryconf_v2 as celery_conf
 from ..conf.iniconf import settings, settings_local
 from .celery_error_handler import OasisWorkerTask
+from .extract import extract_tar_once
 
 from .utils import (
     LoggingTaskContext,
@@ -727,9 +728,7 @@ def loss_generation_task(fn):
     def maybe_extract_tar(filestore_ref, dst, storage_subdir=''):
         logger.info(f'filestore_ref: {filestore_ref}')
         logger.info(f'dst: {dst}')
-        with filelock.FileLock(f'{dst}.lock'):
-            if not Path(dst).exists():
-                filestore.extract(filestore_ref, dst, storage_subdir)
+        extract_tar_once(filestore, filestore_ref, dst, storage_subdir)
 
     def maybe_prepare_complex_data_files(complex_data_files, user_data_dir):
         with filelock.FileLock(f'{user_data_dir}.lock'):
